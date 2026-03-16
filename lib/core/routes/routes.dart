@@ -1,0 +1,32 @@
+class RouteNames {
+  RouteNames._();
+  static const initial = '/';
+  static const test = '/test';
+  static const mainScreen = '/mainscreen';
+  static const welcome = '/welcome';
+  static const storeView = '/store-view';
+  static const createOrder = '/create-order';
+  static const attendanceView = '/attendance-view';
+  static const checkInOutScreen = '/check-in-out-screen';
+  static const profile = '/profile';
+  static const addEditStore = '/add-edit-store';
+  static const collectCash = '/collect-cash';
+  static const login = '/login';
+  static const markVisit = '/mark-visit';
+  static const distributorView = '/distributor-view';
+  static const schemeScreen = '/scheme-screen';
+  static const changePassword = '/change-password';
+  static const otp = '/otp';
+  static const register = '/register';
+  static const orderSummary = '/order-summary';
+  static const bottomNav = '/bottomNav';
+  static const bookingPage = '/bookingPage';
+  static const addStopsPage = '/addStopsPage';
+  static const locateOnMapPage = '/locateOnMapPage';
+  static const addStopDetailsPage = '/addStopDetailsPage';
+  static const setPickUpDetailsPage = '/setPickUpDetailsPage';
+  static const selectVehiclePage = '/selectVehiclePage';
+  static const zipCode = '/zipcode';
+  static const services = '/services';
+  static const bookingDetail = '/booking-detail';
+}
