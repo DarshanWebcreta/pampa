@@ -19,4 +19,14 @@ abstract class BookingRepository {
     required String appointmentDate,
     required String appointmentTime,
   });
+
+  Future<String> createCheckoutSession({
+    required int serviceId,
+    required num price,
+    required num tipAmount,
+    required int addressId,
+    required int providerId,
+    required String appointmentDate,
+    required String appointmentTime,
+  });
 }

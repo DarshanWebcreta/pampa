@@ -29,4 +29,5 @@ class RouteNames {
   static const zipCode = '/zipcode';
   static const services = '/services';
   static const bookingDetail = '/booking-detail';
+  static const myBookingDetail = '/my-booking-detail';
 }

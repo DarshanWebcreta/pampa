@@ -111,6 +111,49 @@ class BookingRepositoryImpl implements BookingRepository {
     }
   }
 
+  @override
+  Future<String> createCheckoutSession({
+    required int serviceId,
+    required num price,
+    required num tipAmount,
+    required int addressId,
+    required int providerId,
+    required String appointmentDate,
+    required String appointmentTime,
+  }) async {
+    try {
+      final response = await _apiService.createCheckoutSession({
+        'service_id': serviceId,
+        'price': price,
+        'tip_amount': tipAmount,
+        'address_id': addressId,
+        'provider_id': providerId,
+        'appointment_date': appointmentDate,
+        'appointment_time': appointmentTime,
+      });
+
+      final map = response as Map<String, dynamic>;
+      if (map['status'] == true) {
+        final data = map['data'];
+        if (data is Map<String, dynamic>) {
+          final url = data['url']?.toString();
+          if (url != null && url.isNotEmpty) return url;
+        }
+        throw Exception('Invalid checkout session response.');
+      }
+
+      throw Exception(
+          map['message'] ?? 'Failed to create checkout session.');
+    } on DioException catch (e) {
+      final serverMessage = _extractServerMessage(e);
+      throw Exception(serverMessage ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (_) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
   String? _extractServerMessage(DioException e) {
     try {
       final data = e.response?.data;

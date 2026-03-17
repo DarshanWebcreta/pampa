@@ -10,6 +10,7 @@ import 'package:pampa/core/values/colors.dart';
 
 import 'package:toastification/toastification.dart';
 
+import 'package:get_storage/get_storage.dart';
 import 'core/routes/pages.dart';
 import 'data/service/di.dart';
 
@@ -19,10 +20,12 @@ import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
 import 'package:pampa/features/categories/presentation/provider/category_provider.dart';
 import 'package:pampa/features/services/presentation/provider/service_provider.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
+import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await GetStorage.init();
   FunctionalComponent.changeStatusBarColor();
   setup();
   runApp(
@@ -41,6 +44,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => getIt<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<CategoryProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<AddressProvider>()),
+        ChangeNotifierProvider(create: (_) => getIt<MyBookingsProvider>()),
     ],
     child:Container(
       color: Platform.isAndroid?AppColor.primaryColor:AppColor.transperent,

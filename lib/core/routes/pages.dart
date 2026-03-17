@@ -13,6 +13,7 @@ import 'package:pampa/features/services/presentation/provider/service_provider.d
 import 'package:pampa/features/services/presentation/services_screen.dart';
 import 'package:pampa/features/booking/presentation/booking_screen.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
+import 'package:pampa/features/my_bookings/presentation/booking_detail_screen.dart';
 import 'package:provider/provider.dart';
 
 class AppRouter {
@@ -119,6 +120,15 @@ class AppRouter {
             create: (_) => getIt<BookingProvider>(),
             child: BookingScreen(serviceId: serviceId),
           );
+        },
+      ),
+
+      GoRoute(
+        path: RouteNames.myBookingDetail,
+        name: RouteNames.myBookingDetail,
+        builder: (context, state) {
+          final bookingId = state.extra as int;
+          return BookingDetailScreen(bookingId: bookingId);
         },
       ),
 

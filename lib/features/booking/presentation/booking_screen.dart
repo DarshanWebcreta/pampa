@@ -12,6 +12,7 @@ import 'package:pampa/features/address/presentation/provider/address_provider.da
 import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
 import 'package:pampa/features/services/data/models/service_model.dart';
+import 'package:pampa/features/booking/presentation/booking_review_screen.dart';
 
 // ─── Icon helper ─────────────────────────────────────────────────────────────
 IconData _iconForCategory(String name) {
@@ -84,78 +85,23 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Future<void> _onConfirmBooking() async {
-    final provider = context.read<BookingProvider>();
-    final success = await provider.confirmBooking();
+  void _onConfirmBooking() {
+    final addresses = context.read<AddressProvider>().addresses;
+    final selectedAddress = addresses.firstWhere(
+      (a) => a.isDefault,
+      orElse: () => addresses.first,
+    );
 
-    if (!mounted) return;
-    if (success) {
-      _showSuccessDialog(provider.successMessage);
-    } else {
-      FunctionalComponent.showSnackBar(
-        context: context,
-        title: provider.submitError,
-        success: false,
-      );
-      provider.resetSubmit();
-    }
-  }
-
-  void _showSuccessDialog(String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: const BoxDecoration(
-                  color: AppColor.authBg,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check_circle_rounded,
-                    color: AppColor.authButton, size: 40),
-              ),
-              const SizedBox(height: 20),
-              AppText('Booking Confirmed!',
-                  fontSize: FontSizes.medium,
-                  fontWeight: FontWeights.bold,
-                  color: AppColor.authButton),
-              const SizedBox(height: 10),
-              AppText(message,
-                  fontSize: FontSizes.small,
-                  color: AppColor.grey,
-                  align: TextAlign.center,
-                  maxLines: 3),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColor.authButton,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pop();
-                  },
-                  child: AppText('Done',
-                      fontSize: FontSizes.regular,
-                      fontWeight: FontWeights.semiBold,
-                      color: AppColor.white),
-                ),
-              ),
-            ],
-          ),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(
+                value: context.read<BookingProvider>()),
+            ChangeNotifierProvider.value(
+                value: context.read<AddressProvider>()),
+          ],
+          child: BookingReviewScreen(address: selectedAddress),
         ),
       ),
     );
@@ -169,7 +115,7 @@ class _BookingScreenState extends State<BookingScreen> {
       body: Consumer<BookingProvider>(
         builder: (context, provider, _) => _buildBody(provider),
       ),
-      bottomNavigationBar: _buildBottomBar(),
+      bottomNavigationBar: buildBottomBar(),
     );
   }
 
@@ -272,12 +218,19 @@ class _BookingScreenState extends State<BookingScreen> {
             provider: provider,
             onSelect: provider.selectTime,
           ),
+
+          const SizedBox(height: 24),
+
+          _TipCard(
+            tipAmount: provider.tipAmount,
+            onSelect: provider.selectTip,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildBottomBar() {
+  Widget buildBottomBar() {
     return Consumer<BookingProvider>(
       builder: (context, provider, _) {
         final canBook = provider.canBook;
@@ -799,6 +752,227 @@ class _TimeSlotsSection extends StatelessWidget {
   }
 }
 
+// ─── Tip card ─────────────────────────────────────────────────────────────────
+class _TipCard extends StatefulWidget {
+  final double tipAmount;
+  final ValueChanged<double> onSelect;
+
+  const _TipCard({required this.tipAmount, required this.onSelect});
+
+  @override
+  State<_TipCard> createState() => _TipCardState();
+}
+
+class _TipCardState extends State<_TipCard> {
+  static const _presets = [0.0, 5.0, 10.0, 15.0, 20.0];
+  bool _showCustom = false;
+  final _customCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _customCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _isCustomSelected =>
+      !_presets.contains(widget.tipAmount) && widget.tipAmount > 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColor.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: AppColor.authBg,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.volunteer_activism_rounded,
+                    color: AppColor.authButton, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText('Add a Tip',
+                        fontSize: FontSizes.regular,
+                        fontWeight: FontWeights.bold,
+                        color: AppColor.darkGrey),
+                    AppText('Show appreciation for your provider',
+                        fontSize: 11,
+                        color: AppColor.grey),
+                  ],
+                ),
+              ),
+              if (widget.tipAmount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColor.authBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: AppText(
+                    '\$${widget.tipAmount % 1 == 0 ? widget.tipAmount.toInt() : widget.tipAmount.toStringAsFixed(2)}',
+                    fontSize: 13,
+                    fontWeight: FontWeights.semiBold,
+                    color: AppColor.authButton,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ..._presets.map((amount) {
+                final isSelected =
+                    widget.tipAmount == amount && !_isCustomSelected;
+                final label = amount == 0 ? 'No Tip' : '\$${amount.toInt()}';
+                return GestureDetector(
+                  onTap: () {
+                    widget.onSelect(amount);
+                    if (_showCustom) setState(() => _showCustom = false);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColor.authButton
+                          : AppColor.lightGrey,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: AppText(
+                      label,
+                      fontSize: 13,
+                      fontWeight: isSelected
+                          ? FontWeights.semiBold
+                          : FontWeights.regular,
+                      color: isSelected ? AppColor.white : AppColor.darkGrey,
+                    ),
+                  ),
+                );
+              }),
+              GestureDetector(
+                onTap: () => setState(() => _showCustom = !_showCustom),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 18, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _isCustomSelected || _showCustom
+                        ? AppColor.authButton
+                        : AppColor.lightGrey,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: AppText(
+                    'Custom',
+                    fontSize: 13,
+                    fontWeight: _isCustomSelected || _showCustom
+                        ? FontWeights.semiBold
+                        : FontWeights.regular,
+                    color: _isCustomSelected || _showCustom
+                        ? AppColor.white
+                        : AppColor.darkGrey,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_showCustom) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _customCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                    style: const TextStyle(
+                        fontSize: 14, color: AppColor.darkGrey),
+                    decoration: InputDecoration(
+                      hintText: 'Enter amount',
+                      hintStyle: const TextStyle(
+                          fontSize: 13, color: AppColor.mediumGrey),
+                      prefixText: '\$ ',
+                      prefixStyle: const TextStyle(
+                          fontSize: 14,
+                          color: AppColor.darkGrey,
+                          fontWeight: FontWeight.w600),
+                      filled: true,
+                      fillColor: const Color(0xFFF8F8F8),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            const BorderSide(color: AppColor.lightGrey),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            const BorderSide(color: AppColor.lightGrey),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                            color: AppColor.authButton, width: 1.5),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: () {
+                    final val = double.tryParse(_customCtrl.text.trim()) ?? 0;
+                    if (val > 0) {
+                      widget.onSelect(val);
+                      setState(() => _showCustom = false);
+                      _customCtrl.clear();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColor.authButton,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: AppText('Apply',
+                        fontSize: 13,
+                        fontWeight: FontWeights.semiBold,
+                        color: AppColor.white),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _SlotHint extends StatelessWidget {
   final String message;
   const _SlotHint(this.message);
@@ -836,7 +1010,7 @@ class _ProviderSelectionSheet extends StatelessWidget {
       ),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
       child: Consumer<BookingProvider>(
-        builder: (_, provider, __) {
+        builder: (_, provider, _) {
           return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -898,7 +1072,7 @@ class _ProviderSelectionSheet extends StatelessWidget {
                   child: ListView.separated(
                     shrinkWrap: true,
                     itemCount: provider.providers.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const Divider(height: 1, color: AppColor.lightGrey),
                     itemBuilder: (_, index) {
                       final p = provider.providers[index];
@@ -1152,7 +1326,7 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
           const SizedBox(height: 24),
 
           Consumer<AddressProvider>(
-            builder: (_, provider, __) {
+            builder: (_, provider, _) {
               final saving = provider.isSaving;
               return SizedBox(
                 width: double.infinity,

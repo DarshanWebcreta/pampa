@@ -53,9 +53,11 @@ class BookingProvider extends ChangeNotifier {
   // ── Selection state ────────────────────────────────────────────────────────
   DateTime _selectedDate = DateTime.now();
   String? _selectedTime;
+  double _tipAmount = 0;
 
   DateTime get selectedDate => _selectedDate;
   String? get selectedTime => _selectedTime;
+  double get tipAmount => _tipAmount;
 
   bool get canBook =>
       _selectedTime != null &&
@@ -135,6 +137,11 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void selectTip(double amount) {
+    _tipAmount = amount;
+    notifyListeners();
+  }
+
   // ── Internal: fetch available slots ───────────────────────────────────────
   Future<void> _fetchSlots() async {
     final provider = _selectedProvider;
@@ -190,6 +197,42 @@ class BookingProvider extends ChangeNotifier {
       _submitStatus = BookingSubmitStatus.failed;
       notifyListeners();
       return false;
+    }
+  }
+
+  Future<String?> createCheckoutSessionUrl({
+    required int addressId,
+    required int providerId,
+  }) async {
+    final service = _service;
+    final time = _selectedTime;
+    if (service == null || time == null || _selectedProvider == null) {
+      return null;
+    }
+
+    _submitStatus = BookingSubmitStatus.submitting;
+    _submitError = '';
+    notifyListeners();
+
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+      final url = await _repository.createCheckoutSession(
+        serviceId: service.id,
+        price: service.deposit > 0 ? service.deposit : service.priceAsDouble,
+        tipAmount: _tipAmount,
+        addressId: addressId,
+        providerId: providerId,
+        appointmentDate: dateStr,
+        appointmentTime: time,
+      );
+      _submitStatus = BookingSubmitStatus.idle;
+      notifyListeners();
+      return url;
+    } catch (e) {
+      _submitError = e.toString().replaceFirst('Exception: ', '');
+      _submitStatus = BookingSubmitStatus.failed;
+      notifyListeners();
+      return null;
     }
   }
 
