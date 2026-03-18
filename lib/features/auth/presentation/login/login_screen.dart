@@ -228,19 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: GestureDetector(
-                onTap: () {},
-                child: AppText(
-                  'Forgot Password?',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColor.authButton,
-                ),
-              ),
-            ),
+
             const SizedBox(height: 28),
             Consumer<AuthProvider>(
               builder: (context, auth, _) {

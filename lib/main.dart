@@ -21,6 +21,7 @@ import 'package:pampa/features/categories/presentation/provider/category_provide
 import 'package:pampa/features/services/presentation/provider/service_provider.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
 import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
+import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +46,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => getIt<CategoryProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<AddressProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<MyBookingsProvider>()),
+        ChangeNotifierProvider(create: (_) => getIt<ProfileProvider>()),
     ],
     child:Container(
       color: Platform.isAndroid?AppColor.primaryColor:AppColor.transperent,

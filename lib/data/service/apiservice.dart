@@ -65,6 +65,18 @@ abstract class ApiService {
   @POST(ApiPath.storeAddress)
   Future<dynamic> storeAddress(@Body() Map<String, dynamic> body);
 
+  @PUT("customer/addresses/{id}")
+  Future<dynamic> updateAddress(
+    @Path("id") int id,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST("customer/addresses/{id}/default")
+  Future<dynamic> setDefaultAddress(@Path("id") int id);
+
+  @DELETE("customer/addresses/{id}")
+  Future<dynamic> deleteAddress(@Path("id") int id);
+
   @GET(ApiPath.providers)
   Future<dynamic> getProviders();
 

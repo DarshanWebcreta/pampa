@@ -22,6 +22,9 @@ import 'package:pampa/features/address/presentation/provider/address_provider.da
 import 'package:pampa/features/my_bookings/data/repositories/my_bookings_repository_impl.dart';
 import 'package:pampa/features/my_bookings/domain/repositories/my_bookings_repository.dart';
 import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
+import 'package:pampa/features/profile/data/repositories/profile_repository_impl.dart';
+import 'package:pampa/features/profile/domain/repositories/profile_repository.dart';
+import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
 
 final getIt = GetIt.instance;
 
@@ -84,5 +87,13 @@ void setup() {
   );
   getIt.registerLazySingleton<MyBookingsProvider>(
     () => MyBookingsProvider(getIt<MyBookingsRepository>()),
+  );
+
+  // Profile
+  getIt.registerLazySingleton<ProfileRepository>(
+    () => ProfileRepositoryImpl(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<ProfileProvider>(
+    () => ProfileProvider(getIt<ProfileRepository>()),
   );
 }

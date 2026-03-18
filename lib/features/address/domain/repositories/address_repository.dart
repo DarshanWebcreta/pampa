@@ -9,4 +9,17 @@ abstract class AddressRepository {
     required String zipCode,
     required String city,
   });
+
+  Future<AddressModel> updateAddress({
+    required int id,
+    required String addressName,
+    required String streetAddress,
+    required String zipCode,
+    required String city,
+    required bool isDefault,
+  });
+
+  Future<void> setDefaultAddress(int id);
+
+  Future<void> deleteAddress(int id);
 }

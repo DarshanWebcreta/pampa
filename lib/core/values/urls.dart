@@ -44,6 +44,9 @@ class ApiPath {
   static const String createBooking = "bookings";
   static const String storeAddress = "customer/addresses";
   static const String getAddresses = "customer/addresses";
+  static String updateAddress(int id) => "customer/addresses/$id";
+  static String setDefaultAddress(int id) => "customer/addresses/$id/default";
+  static String deleteAddress(int id) => "customer/addresses/$id";
   static const String bookings = "bookings";
   static const String providers = "providers";
   static String availableSlots(int providerId) =>

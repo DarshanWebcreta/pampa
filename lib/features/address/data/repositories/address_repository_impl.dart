@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:pampa/core/error/exception.dart';
 import 'package:pampa/data/service/apiservice.dart';
+import 'package:pampa/features/address/data/models/address_api_response.dart';
 import 'package:pampa/features/address/data/models/address_model.dart';
 import 'package:pampa/features/address/domain/repositories/address_repository.dart';
 
@@ -8,6 +9,12 @@ class AddressRepositoryImpl implements AddressRepository {
   final ApiService _apiService;
 
   AddressRepositoryImpl(this._apiService);
+
+  // ── Parses the common { status, message, data } envelope ──────────────────
+  AddressApiResponse _parseResponse(dynamic raw) {
+    final map = raw as Map<String, dynamic>;
+    return AddressApiResponse.fromJson(map);
+  }
 
   @override
   Future<List<AddressModel>> getAddresses() async {
@@ -24,12 +31,9 @@ class AddressRepositoryImpl implements AddressRepository {
 
       throw Exception(map['message'] ?? 'Failed to load addresses.');
     } on DioException catch (e) {
-      final msg = _extractServerMessage(e);
-      throw Exception(msg ?? HandleExeption.handleError(e));
+      throw Exception(_extractServerMessage(e) ?? HandleExeption.handleError(e));
     } on Exception {
       rethrow;
-    } catch (_) {
-      throw Exception('Something went wrong. Please try again.');
     }
   }
 
@@ -41,45 +45,98 @@ class AddressRepositoryImpl implements AddressRepository {
     required String city,
   }) async {
     try {
-      final response = await _apiService.storeAddress({
+      final raw = await _apiService.storeAddress({
         'address_name': addressName,
         'street_address': streetAddress,
         'zip_code': zipCode,
         'city': city,
       });
 
-      final map = response as Map<String, dynamic>;
+      final result = _parseResponse(raw);
+      if (!result.status) throw Exception(result.message.isNotEmpty ? result.message : 'Failed to save address.');
+      // if (result.address != null) return result.address!;
 
-      if (map['status'] == true) {
-        final data = map['data'];
-        if (data is Map<String, dynamic>) {
-          return AddressModel.fromJson(data);
-        }
-        // Some APIs return the address directly in data list or top-level
-        if (data is List && data.isNotEmpty) {
-          return AddressModel.fromJson(data.first as Map<String, dynamic>);
-        }
-        // Fallback: construct a minimal model from the request body
-        return AddressModel(
-          id: 0,
-          userId: 0,
-          addressName: addressName,
-          streetAddress: streetAddress,
-          zipCode: zipCode,
-          city: city,
-          country: '',
-          isDefault: false,
-        );
-      }
-
-      throw Exception(map['message'] ?? 'Failed to save address.');
+      // Fallback when API returns no address body
+      return AddressModel(
+        id: 0,
+        userId: 0,
+        addressName: addressName,
+        streetAddress: streetAddress,
+        zipCode: zipCode,
+        city: city,
+        country: '',
+        isDefault: false,
+      );
     } on DioException catch (e) {
-      final msg = _extractServerMessage(e);
-      throw Exception(msg ?? HandleExeption.handleError(e));
+      throw Exception(_extractServerMessage(e) ?? HandleExeption.handleError(e));
     } on Exception {
       rethrow;
-    } catch (_) {
-      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  @override
+  Future<AddressModel> updateAddress({
+    required int id,
+    required String addressName,
+    required String streetAddress,
+    required String zipCode,
+    required String city,
+    required bool isDefault,
+  }) async {
+    try {
+      final raw = await _apiService.updateAddress(id, {
+        'address_name': addressName,
+        'street_address': streetAddress,
+        'zip_code': zipCode,
+        'city': city,
+        'is_default': isDefault ? 1 : 0,
+      });
+
+      final result = _parseResponse(raw);
+      if (!result.status) throw Exception(result.message.isNotEmpty ? result.message : 'Failed to update address.');
+      // if (result.address != null) return result.address!;
+
+      // Fallback: return updated values if API returns no body
+      return AddressModel(
+        id: id,
+        userId: 0,
+        addressName: addressName,
+        streetAddress: streetAddress,
+        zipCode: zipCode,
+        city: city,
+        country: '',
+        isDefault: isDefault,
+      );
+    } on DioException catch (e) {
+      throw Exception(_extractServerMessage(e) ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> setDefaultAddress(int id) async {
+    try {
+      final raw = await _apiService.setDefaultAddress(id);
+      final result = _parseResponse(raw);
+      if (!result.status) throw Exception(result.message.isNotEmpty ? result.message : 'Failed to set default address.');
+    } on DioException catch (e) {
+      throw Exception(_extractServerMessage(e) ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteAddress(int id) async {
+    try {
+      final raw = await _apiService.deleteAddress(id);
+      final result = _parseResponse(raw);
+      if (!result.status) throw Exception(result.message.isNotEmpty ? result.message : 'Failed to delete address.');
+    } on DioException catch (e) {
+      throw Exception(_extractServerMessage(e) ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
     }
   }
 

@@ -6,6 +6,8 @@ enum AddressFetchStatus { initial, loading, loaded, error }
 
 enum AddressSaveStatus { idle, saving, saved, failed }
 
+enum AddressDeleteStatus { idle, deleting, deleted, failed }
+
 class AddressProvider extends ChangeNotifier {
   final AddressRepository _repository;
 
@@ -13,19 +15,24 @@ class AddressProvider extends ChangeNotifier {
 
   AddressFetchStatus _fetchStatus = AddressFetchStatus.initial;
   AddressSaveStatus _saveStatus = AddressSaveStatus.idle;
+  AddressDeleteStatus _deleteStatus = AddressDeleteStatus.idle;
   List<AddressModel> _addresses = [];
   int? _selectedAddressId;
   String _fetchError = '';
   String _saveError = '';
+  String _deleteError = '';
 
   AddressFetchStatus get fetchStatus => _fetchStatus;
   AddressSaveStatus get saveStatus => _saveStatus;
+  AddressDeleteStatus get deleteStatus => _deleteStatus;
   List<AddressModel> get addresses => _addresses;
   bool get hasAddresses => _addresses.isNotEmpty;
   bool get isLoading => _fetchStatus == AddressFetchStatus.loading;
   bool get isSaving => _saveStatus == AddressSaveStatus.saving;
+  bool get isDeleting => _deleteStatus == AddressDeleteStatus.deleting;
   String get fetchError => _fetchError;
   String get saveError => _saveError;
+  String get deleteError => _deleteError;
 
   AddressModel? get selectedAddress {
     if (_addresses.isEmpty) return null;
@@ -93,6 +100,89 @@ class AddressProvider extends ChangeNotifier {
   void resetSave() {
     _saveStatus = AddressSaveStatus.idle;
     _saveError = '';
+    notifyListeners();
+  }
+
+  Future<bool> updateAddress({
+    required int id,
+    required String addressName,
+    required String streetAddress,
+    required String zipCode,
+    required String city,
+    required bool isDefault,
+  }) async {
+    _saveStatus = AddressSaveStatus.saving;
+    _saveError = '';
+    notifyListeners();
+
+    try {
+      final updated = await _repository.updateAddress(
+        id: id,
+        addressName: addressName,
+        streetAddress: streetAddress,
+        zipCode: zipCode,
+        city: city,
+        isDefault: isDefault,
+      );
+      _addresses = _addresses.map((a) => a.id == id ? updated : a).toList();
+      _saveStatus = AddressSaveStatus.saved;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _saveError = e.toString().replaceFirst('Exception: ', '');
+      _saveStatus = AddressSaveStatus.failed;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> setDefaultAddress(int id) async {
+    try {
+      await _repository.setDefaultAddress(id);
+      _addresses = _addresses.map((a) {
+        return AddressModel(
+          id: a.id,
+          userId: a.userId,
+          addressName: a.addressName,
+          streetAddress: a.streetAddress,
+          zipCode: a.zipCode,
+          city: a.city,
+          state: a.state,
+          country: a.country,
+          isDefault: a.id == id,
+        );
+      }).toList();
+      _selectedAddressId = id;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteAddress(int id) async {
+    _deleteStatus = AddressDeleteStatus.deleting;
+    _deleteError = '';
+    notifyListeners();
+
+    try {
+      await _repository.deleteAddress(id);
+      _addresses = _addresses.where((a) => a.id != id).toList();
+      if (_selectedAddressId == id) _selectedAddressId = null;
+      _deleteStatus = AddressDeleteStatus.deleted;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _deleteError = e.toString().replaceFirst('Exception: ', '');
+      _deleteStatus = AddressDeleteStatus.failed;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  void resetDelete() {
+    _deleteStatus = AddressDeleteStatus.idle;
+    _deleteError = '';
     notifyListeners();
   }
 }

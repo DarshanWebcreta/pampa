@@ -9,10 +9,12 @@ import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/features/address/data/models/address_model.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
 import 'package:pampa/features/categories/data/models/category_model.dart';
 import 'package:pampa/features/categories/presentation/provider/category_provider.dart';
 import 'package:pampa/features/my_bookings/presentation/my_bookings_tab.dart';
+import 'package:pampa/features/profile/presentation/profile_tab.dart';
 
 // ─── Icon mapping for category names ──────────────────────────────────────────
 IconData _iconForCategory(String name) {
@@ -88,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const _PlaceholderTab(icon: Icons.calendar_today_rounded, label: 'Calendar'),
           const MyBookingsTab(),
           const _PlaceholderTab(icon: Icons.chat_bubble_rounded,    label: 'Messages'),
-          const _PlaceholderTab(icon: Icons.person_rounded,         label: 'Profile'),
+          const ProfileTab(),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(),
@@ -97,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
-      preferredSize: const Size.fromHeight(kToolbarHeight + 52),
+      preferredSize: const Size.fromHeight(90),
       child: Container(
         color: AppColor.white,
         child: SafeArea(
@@ -125,62 +127,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              // ── Address bar ────────────────────────────────────────────
-              GestureDetector(
-                onTap: _showAddressPickerSheet,
-                child: Consumer<AddressProvider>(
-                  builder: (_, addrProvider, __) {
-                    final addr = addrProvider.selectedAddress;
-                    return Container(
-                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: AppColor.authBg,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: AppColor.authButton.withValues(alpha: 0.15)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.location_on_rounded,
-                              color: AppColor.authButton, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: addr == null
-                                ? AppText(
-                                    addrProvider.isLoading
-                                        ? 'Loading address...'
-                                        : 'Add your address',
-                                    fontSize: 13,
-                                    color: AppColor.grey,
-                                  )
-                                : Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      AppText(
-                                        addr.addressName,
-                                        fontSize: 13,
-                                        fontWeight: FontWeights.semiBold,
-                                        color: AppColor.darkGrey,
-                                      ),
-                                      AppText(
-                                        '${addr.city}, ${addr.zipCode}',
-                                        fontSize: 11,
-                                        color: AppColor.grey,
-                                      ),
-                                    ],
-                                  ),
-                          ),
-                          const Icon(Icons.keyboard_arrow_down_rounded,
-                              color: AppColor.authButton, size: 20),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
+              // ── Address strip ──────────────────────────────────────────
+              _AddressStrip(onTap: _showAddressPickerSheet),
             ],
           ),
         ),
@@ -578,6 +526,7 @@ class _AddressPickerSheet extends StatefulWidget {
 
 class _AddressPickerSheetState extends State<_AddressPickerSheet> {
   bool _showAddForm = false;
+  AddressModel? _editingAddress;
 
   @override
   Widget build(BuildContext context) {
@@ -595,14 +544,21 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
           top: 20,
           bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         ),
-        child: _showAddForm
-            ? _AddAddressForm(
-                onBack: () => setState(() => _showAddForm = false),
-                onSaved: () => setState(() => _showAddForm = false),
+        child: _editingAddress != null
+            ? _EditAddressForm(
+                address: _editingAddress!,
+                onBack: () => setState(() => _editingAddress = null),
+                onSaved: () => setState(() => _editingAddress = null),
               )
-            : _AddressList(
-                onAddNew: () => setState(() => _showAddForm = true),
-              ),
+            : _showAddForm
+                ? _AddAddressForm(
+                    onBack: () => setState(() => _showAddForm = false),
+                    onSaved: () => setState(() => _showAddForm = false),
+                  )
+                : _AddressList(
+                    onAddNew: () => setState(() => _showAddForm = true),
+                    onEdit: (addr) => setState(() => _editingAddress = addr),
+                  ),
       ),
     );
   }
@@ -611,7 +567,8 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
 // ─── Address list inside sheet ────────────────────────────────────────────────
 class _AddressList extends StatelessWidget {
   final VoidCallback onAddNew;
-  const _AddressList({required this.onAddNew});
+  final void Function(AddressModel) onEdit;
+  const _AddressList({required this.onAddNew, required this.onEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -713,43 +670,75 @@ class _AddressList extends StatelessWidget {
                     final addr = provider.addresses[i];
                     final isSelected =
                         provider.selectedAddress?.id == addr.id;
-                    return GestureDetector(
-                      onTap: () {
-                        provider.selectAddress(addr);
-                        Navigator.of(context).pop();
-                      },
-                      child: Container(
-                        color: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        child: Row(
-                          children: [
-                            Container(
+                    return Container(
+                      color: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Row(
+                        children: [
+                          // ── Tap to select ────────────────────────────
+                          GestureDetector(
+                            onTap: () {
+                              provider.selectAddress(addr);
+                              Navigator.of(context).pop();
+                            },
+                            child: Container(
                               width: 40,
                               height: 40,
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColor.authButton
-                                    : AppColor.authBg,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.location_on_rounded,
-                                color: isSelected
-                                    ? AppColor.white
-                                    : AppColor.authButton,
-                                size: 18,
+                              color: Colors.transparent,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColor.authButton
+                                      : AppColor.authBg,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.location_on_rounded,
+                                  color: isSelected
+                                      ? AppColor.white
+                                      : AppColor.authButton,
+                                  size: 18,
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(
+                          ),
+                          const SizedBox(width: 12),
+                          // ── Address info ─────────────────────────────
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                provider.selectAddress(addr);
+                                Navigator.of(context).pop();
+                              },
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppText(
-                                    addr.addressName,
-                                    fontSize: FontSizes.regular,
-                                    fontWeight: FontWeights.semiBold,
-                                    color: AppColor.darkGrey,
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: AppText(
+                                          addr.addressName,
+                                          fontSize: FontSizes.regular,
+                                          fontWeight: FontWeights.semiBold,
+                                          color: AppColor.darkGrey,
+                                        ),
+                                      ),
+                                      if (addr.isDefault)
+                                        Container(
+                                          margin: const EdgeInsets.only(left: 6),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 7, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: AppColor.authBg,
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: AppText('Default',
+                                              fontSize: 9,
+                                              fontWeight: FontWeights.semiBold,
+                                              color: AppColor.authButton),
+                                        ),
+                                    ],
                                   ),
                                   const SizedBox(height: 2),
                                   AppText(
@@ -761,31 +750,115 @@ class _AddressList extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            if (isSelected)
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: const BoxDecoration(
-                                  color: AppColor.authButton,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.check_rounded,
-                                    color: AppColor.white, size: 14),
-                              )
-                            else if (addr.isDefault)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: AppColor.authBg,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: AppText('Default',
-                                    fontSize: 10,
-                                    color: AppColor.authButton),
+                          ),
+                          // ── Selected check ────────────────────────────
+                          if (isSelected)
+                            Container(
+                              width: 24,
+                              height: 24,
+                              margin: const EdgeInsets.only(right: 4),
+                              decoration: const BoxDecoration(
+                                color: AppColor.authButton,
+                                shape: BoxShape.circle,
                               ),
-                          ],
-                        ),
+                              child: const Icon(Icons.check_rounded,
+                                  color: AppColor.white, size: 14),
+                            ),
+                          // ── Actions menu ──────────────────────────────
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert_rounded,
+                                size: 20, color: AppColor.grey),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            onSelected: (value) async {
+                              if (value == 'default') {
+                                final ok =
+                                    await provider.setDefaultAddress(addr.id);
+                                if (context.mounted) {
+                                  FunctionalComponent.showSnackBar(
+                                    context: context,
+                                    title: ok
+                                        ? 'Default address updated'
+                                        : provider.saveError,
+                                    success: ok,
+                                  );
+                                }
+                              } else if (value == 'edit') {
+                                onEdit(addr);
+                              } else if (value == 'delete') {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(16)),
+                                    title: const Text('Delete Address'),
+                                    content: Text(
+                                        'Remove "${addr.addressName}"?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        child: const Text('Delete',
+                                            style: TextStyle(
+                                                color: Colors.red)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true && context.mounted) {
+                                  final ok = await provider
+                                      .deleteAddress(addr.id);
+                                  if (context.mounted) {
+                                    FunctionalComponent.showSnackBar(
+                                      context: context,
+                                      title: ok
+                                          ? 'Address deleted'
+                                          : provider.deleteError,
+                                      success: ok,
+                                    );
+                                    provider.resetDelete();
+                                  }
+                                }
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              if (!addr.isDefault)
+                                const PopupMenuItem(
+                                  value: 'default',
+                                  child: Row(children: [
+                                    Icon(Icons.star_outline_rounded,
+                                        size: 18),
+                                    SizedBox(width: 10),
+                                    Text('Set as Default'),
+                                  ]),
+                                ),
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(children: [
+                                  Icon(Icons.edit_outlined, size: 18),
+                                  SizedBox(width: 10),
+                                  Text('Edit'),
+                                ]),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(children: [
+                                  Icon(Icons.delete_outline_rounded,
+                                      size: 18, color: Colors.red),
+                                  SizedBox(width: 10),
+                                  Text('Delete',
+                                      style: TextStyle(color: Colors.red)),
+                                ]),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     );
                   },
@@ -1039,6 +1112,306 @@ class _HomeAddressField extends StatelessWidget {
           borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
       ),
+    );
+  }
+}
+
+// ─── Address strip in app bar ──────────────────────────────────────────────────
+class _AddressStrip extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddressStrip({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AddressProvider>(
+      builder: (_, provider, __) {
+        final addr = provider.selectedAddress;
+        return GestureDetector(
+          onTap: onTap,
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColor.authBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.location_on_rounded,
+                    color: AppColor.authButton, size: 16),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: provider.isLoading
+                      ? Container(
+                          height: 12,
+                          width: 120,
+                          decoration: BoxDecoration(
+                            color: AppColor.mediumGrey.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        )
+                      : addr == null
+                          ? AppText('Tap to select an address',
+                              fontSize: 12, color: AppColor.grey)
+                          : AppText(
+                              '${addr.addressName}  ·  ${addr.streetAddress}, ${addr.city}',
+                              fontSize: 12,
+                              fontWeight: FontWeights.medium,
+                              color: AppColor.authButton,
+                              maxLines: 1,
+                            ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.keyboard_arrow_down_rounded,
+                    color: AppColor.authButton, size: 18),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─── Edit address form inside sheet ───────────────────────────────────────────
+class _EditAddressForm extends StatefulWidget {
+  final AddressModel address;
+  final VoidCallback onBack;
+  final VoidCallback onSaved;
+  const _EditAddressForm(
+      {required this.address, required this.onBack, required this.onSaved});
+
+  @override
+  State<_EditAddressForm> createState() => _EditAddressFormState();
+}
+
+class _EditAddressFormState extends State<_EditAddressForm> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _streetCtrl;
+  late final TextEditingController _zipCtrl;
+  late final TextEditingController _cityCtrl;
+  late bool _isDefault;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.address.addressName);
+    _streetCtrl = TextEditingController(text: widget.address.streetAddress);
+    _zipCtrl = TextEditingController(text: widget.address.zipCode);
+    _cityCtrl = TextEditingController(text: widget.address.city);
+    _isDefault = widget.address.isDefault;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _streetCtrl.dispose();
+    _zipCtrl.dispose();
+    _cityCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    final provider = context.read<AddressProvider>();
+    final success = await provider.updateAddress(
+      id: widget.address.id,
+      addressName: _nameCtrl.text.trim(),
+      streetAddress: _streetCtrl.text.trim(),
+      zipCode: _zipCtrl.text.trim(),
+      city: _cityCtrl.text.trim(),
+      isDefault: _isDefault,
+    );
+    if (!mounted) return;
+    if (success) {
+      widget.onSaved();
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: 'Address updated!',
+        success: true,
+      );
+    } else {
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: provider.saveError,
+        success: false,
+      );
+      provider.resetSave();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColor.mediumGrey,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            GestureDetector(
+              onTap: widget.onBack,
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: AppColor.authBg,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.arrow_back_ios_new_rounded,
+                    color: AppColor.authButton, size: 14),
+              ),
+            ),
+            const SizedBox(width: 12),
+            AppText('Edit Address',
+                fontSize: FontSizes.medium,
+                fontWeight: FontWeights.bold,
+                color: AppColor.darkGrey),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              _HomeAddressField(
+                controller: _nameCtrl,
+                label: 'Full Address',
+                hint: 'e.g. 44/Otamba Society, Bapunagar',
+                icon: Icons.home_outlined,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Required' : null,
+              ),
+              const SizedBox(height: 12),
+              _HomeAddressField(
+                controller: _streetCtrl,
+                label: 'Street / House No.',
+                hint: 'e.g. 33',
+                icon: Icons.signpost_outlined,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Required' : null,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _HomeAddressField(
+                      controller: _zipCtrl,
+                      label: 'ZIP Code',
+                      hint: '382350',
+                      icon: Icons.pin_drop_outlined,
+                      keyboardType: TextInputType.number,
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Required' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HomeAddressField(
+                      controller: _cityCtrl,
+                      label: 'City',
+                      hint: 'Ahmedabad',
+                      icon: Icons.location_city_outlined,
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Required' : null,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        // ── Set as default toggle ──────────────────────────────────────
+        GestureDetector(
+          onTap: () => setState(() => _isDefault = !_isDefault),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: _isDefault ? AppColor.authBg : const Color(0xFFF8F8F8),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _isDefault ? AppColor.authButton : AppColor.lightGrey,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _isDefault ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: AppColor.authButton,
+                  size: 18,
+                ),
+                const SizedBox(width: 10),
+                AppText(
+                  'Set as default address',
+                  fontSize: FontSizes.small,
+                  fontWeight: FontWeights.medium,
+                  color: AppColor.darkGrey,
+                ),
+                const Spacer(),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: _isDefault ? AppColor.authButton : AppColor.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _isDefault
+                          ? AppColor.authButton
+                          : AppColor.mediumGrey,
+                    ),
+                  ),
+                  child: _isDefault
+                      ? const Icon(Icons.check_rounded,
+                          color: AppColor.white, size: 13)
+                      : null,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Consumer<AddressProvider>(
+          builder: (_, provider, __) {
+            return SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColor.authButton,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: provider.isSaving ? null : _submit,
+                child: provider.isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            color: AppColor.white, strokeWidth: 2.5),
+                      )
+                    : AppText('Update Address',
+                        fontSize: FontSizes.regular,
+                        fontWeight: FontWeights.semiBold,
+                        color: AppColor.white),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
