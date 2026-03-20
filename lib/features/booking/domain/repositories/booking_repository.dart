@@ -5,7 +5,7 @@ import 'package:pampa/features/services/data/models/service_model.dart';
 abstract class BookingRepository {
   Future<ServiceModel> getServiceDetail(int id);
 
-  Future<List<ProviderModel>> getProviders();
+  Future<List<ProviderModel>> getProviders(String zipCode);
 
   Future<List<TimeSlotModel>> getAvailableSlots({
     required int providerId,

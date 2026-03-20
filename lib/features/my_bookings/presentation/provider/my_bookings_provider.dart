@@ -4,7 +4,7 @@ import 'package:pampa/features/my_bookings/domain/repositories/my_bookings_repos
 
 enum MyBookingsFetchStatus { initial, loading, success, empty, error }
 
-enum BookingFilter { all, upcoming, completed, cancelled }
+enum BookingFilter { all, pending, confirmed, completed, cancelled }
 
 enum BookingDetailStatus { initial, loading, success, error }
 
@@ -29,8 +29,10 @@ class MyBookingsProvider extends ChangeNotifier {
     switch (_filter) {
       case BookingFilter.all:
         return _allBookings;
-      case BookingFilter.upcoming:
-        return _allBookings.where((b) => b.isUpcoming).toList();
+      case BookingFilter.pending:
+        return _allBookings.where((b) => b.isPending).toList();
+      case BookingFilter.confirmed:
+        return _allBookings.where((b) => b.isConfirmed).toList();
       case BookingFilter.completed:
         return _allBookings.where((b) => b.isCompleted).toList();
       case BookingFilter.cancelled:

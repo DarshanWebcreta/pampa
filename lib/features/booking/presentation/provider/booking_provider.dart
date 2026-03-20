@@ -95,7 +95,7 @@ class BookingProvider extends ChangeNotifier {
   }
 
   // ── Fetch providers ────────────────────────────────────────────────────────
-  Future<void> fetchProviders() async {
+  Future<void> fetchProviders(String zipCode) async {
     if (_providerFetchStatus == ProviderFetchStatus.loading) return;
 
     _providerFetchStatus = ProviderFetchStatus.loading;
@@ -103,7 +103,7 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _providers = await _repository.getProviders();
+      _providers = await _repository.getProviders(zipCode);
       _providerFetchStatus = ProviderFetchStatus.success;
     } catch (e) {
       _providerFetchError = e.toString().replaceFirst('Exception: ', '');

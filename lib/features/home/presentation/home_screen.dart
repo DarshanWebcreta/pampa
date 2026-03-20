@@ -14,6 +14,7 @@ import 'package:pampa/features/address/presentation/provider/address_provider.da
 import 'package:pampa/features/categories/data/models/category_model.dart';
 import 'package:pampa/features/categories/presentation/provider/category_provider.dart';
 import 'package:pampa/features/my_bookings/presentation/my_bookings_tab.dart';
+import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
 import 'package:pampa/features/profile/presentation/profile_tab.dart';
 
 // ─── Icon mapping for category names ──────────────────────────────────────────
@@ -29,6 +30,10 @@ IconData _iconForCategory(String name) {
   if (lower.contains('yoga') || lower.contains('fitness')) return Icons.fitness_center_rounded;
   return Icons.spa_rounded;
 }
+
+// ─── Tab switcher notifier ────────────────────────────────────────────────────
+final homeTabNotifier = ValueNotifier<int>(0);
+final homeSuccessMessageNotifier = ValueNotifier<String?>(null);
 
 // ─── Bottom-nav item data ──────────────────────────────────────────────────────
 class _NavItem {
@@ -55,15 +60,114 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = homeTabNotifier.value;
+    homeTabNotifier.addListener(_onTabChange);
+    homeSuccessMessageNotifier.addListener(_onSuccessMessage);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CategoryProvider>().fetchCategories();
       context.read<AddressProvider>().fetchAddresses();
+      final profileProvider = context.read<ProfileProvider>();
+      if (profileProvider.status == ProfileStatus.initial) {
+        profileProvider.fetchProfile();
+      }
     });
+  }
+
+  void _onTabChange() {
+    if (mounted) setState(() => _currentIndex = homeTabNotifier.value);
+  }
+
+  void _onSuccessMessage() {
+    final message = homeSuccessMessageNotifier.value;
+    if (!mounted || message == null || message.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _showPaymentSuccessDialog(message);
+    });
+    homeSuccessMessageNotifier.value = null;
+  }
+
+  Future<void> _showPaymentSuccessDialog(String message) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            decoration: BoxDecoration(
+              color: AppColor.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    color: AppColor.authButton.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColor.authButton,
+                    size: 44,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                AppText(
+                  'Payment Done',
+                  fontSize: FontSizes.large,
+                  fontWeight: FontWeights.bold,
+                  color: AppColor.darkGrey,
+                  align: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                AppText(
+                  message,
+                  fontSize: FontSizes.small,
+                  color: AppColor.grey,
+                  align: TextAlign.center,
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.authButton,
+                      foregroundColor: AppColor.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text('View Bookings'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    homeTabNotifier.removeListener(_onTabChange);
+    homeSuccessMessageNotifier.removeListener(_onSuccessMessage);
+    super.dispose();
   }
 
 
@@ -162,13 +266,42 @@ class _ServicesTab extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(left: 16,right: 16, top: 16),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
 
-                      FunctionalComponent.customAppBar(title: 'Dashboard'),
-                      SizedBox(
-                        width: 200,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 4,
+                        child: Consumer<ProfileProvider>(
+                          builder: (context, profileProvider, _) {
+                            final name = profileProvider.profile?.name.trim();
+                            final hasName = name != null && name.isNotEmpty;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AppText(
+                                  'Welcome 👋',
+                                  fontSize: 14,
+                                  fontWeight: FontWeights.medium,
+                                  color: AppColor.grey,
+                                  maxLines: 1,
+                                ),
+                                AppText(
+                                  hasName ? name : 'Guest',
+                                  fontSize: FontSizes.large,
+                                  fontWeight: FontWeights.medium,
+                                  color: AppColor.authButton,
+                                  maxLines: 1,
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 5,
                         child: _AddressStrip(
                           onTap: () {
                             FunctionalComponent.showAddressPickerSheet(
@@ -257,6 +390,9 @@ class _CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconUrl = category.icon?.trim();
+    final hasIcon = iconUrl != null && iconUrl.isNotEmpty;
+
     return GestureDetector(
       onTap: () {
         context.push(
@@ -286,11 +422,19 @@ class _CategoryCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(
-                _iconForCategory(category.categoryName),
-                size: 28,
-                color: AppColor.authButton,
-              ),
+              child: hasIcon
+                  ? ClipOval(
+                      child: FunctionalComponent.cachedNetworkImage(
+                        iconUrl,
+                        radius: 32,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Icon(
+                      _iconForCategory(category.categoryName),
+                      size: 28,
+                      color: AppColor.authButton,
+                    ),
             ),
             const SizedBox(height: 14),
             Padding(
@@ -1100,8 +1244,7 @@ class _AddressStrip extends StatelessWidget {
         return GestureDetector(
           onTap: onTap,
           child: Container(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
               color: AppColor.authBg,
               borderRadius: BorderRadius.circular(12),

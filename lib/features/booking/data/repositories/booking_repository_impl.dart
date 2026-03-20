@@ -30,9 +30,9 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
-  Future<List<ProviderModel>> getProviders() async {
+  Future<List<ProviderModel>> getProviders(String zipCode) async {
     try {
-      final response = await _apiService.getProviders();
+      final response = await _apiService.getProviders(zipCode);
       final map = response as Map<String, dynamic>;
       if (map['status'] == true) {
         final data = map['data'] as List<dynamic>? ?? [];

@@ -5,6 +5,7 @@ class ServiceModel {
   final int categoryId;
   final String serviceName;
   final String price;
+  final String image;
   final int duration;
   final double deposit;
   final double priorityFee;
@@ -20,6 +21,7 @@ class ServiceModel {
     required this.categoryId,
     required this.serviceName,
     required this.price,
+    required this.image,
     required this.duration,
     required this.deposit,
     required this.priorityFee,
@@ -37,6 +39,7 @@ class ServiceModel {
       categoryId: json['category_id'] ?? 0,
       serviceName: json['service_name'] ?? '',
       price: json['price'] ?? '0.00',
+      image: json['image_url'] ?? '',
       duration: json['duration'] ?? 0,
       deposit: _toDouble(json['deposit']),
       priorityFee: _toDouble(json['priority_fee']),

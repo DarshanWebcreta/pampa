@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/values/imagepath.dart';
@@ -35,6 +36,7 @@ class FunctionalComponent {
       fontSize: FontSizes.large,
       fontWeight: FontWeights.bold,
       color: AppColor.authButton,
+      maxLines: 2,
     );
   }
   static Future<void> showAddressPickerSheet({
@@ -205,6 +207,7 @@ class FunctionalComponent {
       onTap: ontap,
       child: CardWidget(
         elevation: 0,
+
         radius: 12,
         color: currentTab==index?AppColor.white:AppColor.transperent,
         child: Padding(
@@ -213,6 +216,27 @@ class FunctionalComponent {
             child: AppText(title,fontSize: FontSizes.small,
               fontWeight: FontWeights.semiBold ,),
           ),
+        ),
+      ),
+    );
+  }
+
+  static Widget goBackArrow({required BuildContext context}) {
+    return InkWell(
+      onTap: () {
+        context.pop();
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(top: 10,bottom: 16),
+        child: Row(
+          spacing: 10,
+          children: [
+            Icon(Icons.arrow_back),
+            AppText('Back',
+                fontSize: FontSizes.medium,
+                fontWeight: FontWeights.medium,
+                color: AppColor.darkGrey),
+          ],
         ),
       ),
     );

@@ -3,12 +3,14 @@ import 'package:pampa/features/booking/data/models/provider_model.dart';
 class BookingServiceModel {
   final int id;
   final String serviceName;
+  final String image;
   final double price;
   final int duration;
 
   const BookingServiceModel({
     required this.id,
     required this.serviceName,
+    required this.image,
     required this.price,
     required this.duration,
   });
@@ -16,6 +18,7 @@ class BookingServiceModel {
   factory BookingServiceModel.fromJson(Map<String, dynamic> json) {
     return BookingServiceModel(
       id: json['id'] as int? ?? 0,
+      image:json['image']??'',
       serviceName: json['service_name'] as String? ?? '',
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0,
       duration: json['duration'] as int? ?? 0,
@@ -33,9 +36,11 @@ class MyBookingModel {
   final double price;
   final double depositAmount;
   final double balanceAmount;
+  final String tipAmount;
   final String balancePaymentStatus;
   final String paymentStatus;
   final String status;
+
   final DateTime createdAt;
   final BookingServiceModel service;
   final ProviderModel provider;
@@ -43,7 +48,9 @@ class MyBookingModel {
   const MyBookingModel({
     required this.id,
     required this.serviceId,
+
     required this.providerId,
+    required this.tipAmount,
     required this.addressId,
     required this.appointmentDate,
     required this.appointmentTime,
@@ -58,14 +65,16 @@ class MyBookingModel {
     required this.provider,
   });
 
-  bool get isUpcoming =>
-      status.toLowerCase() == 'confirmed' || status.toLowerCase() == 'pending';
+  bool get isPending => status.toLowerCase() == 'pending';
+  bool get isConfirmed => status.toLowerCase() == 'confirmed';
   bool get isCompleted => status.toLowerCase() == 'completed';
   bool get isCancelled => status.toLowerCase() == 'cancelled';
 
   factory MyBookingModel.fromJson(Map<String, dynamic> json) {
     return MyBookingModel(
+      tipAmount: json['tip_amount']??'0',
       id: json['id'] as int,
+
       serviceId: json['service_id'] as int? ?? 0,
       providerId: json['provider_id'] as int? ?? 0,
       addressId: json['address_id'] as int? ?? 0,

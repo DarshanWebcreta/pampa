@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pampa/core/values/urls.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/utils/functional_component.dart';
@@ -82,6 +83,47 @@ Color _paymentStatusBg(String status) {
       return const Color(0xFFf1faff);
     default:
       return AppColor.lightGrey;
+  }
+}
+
+class _ServiceImageThumb extends StatelessWidget {
+  final String imageUrl;
+  final double size;
+  final double radius;
+
+  const _ServiceImageThumb({
+    required this.imageUrl,
+    required this.size,
+    required this.radius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final trimmed = imageUrl.trim();
+    final hasImage = trimmed.isNotEmpty;
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: AppColor.authBg,
+        borderRadius: BorderRadius.circular(radius),
+      ),
+      child: hasImage
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(radius),
+              child: FunctionalComponent.cachedNetworkImage(
+                ApiStrings.imageUrl+trimmed,
+                radius: radius,
+                fit: BoxFit.cover,
+              ),
+            )
+          : const Icon(
+              Icons.spa_rounded,
+              color: AppColor.authButton,
+              size: 28,
+            ),
+    );
   }
 }
 
@@ -422,15 +464,10 @@ class _ServiceDetailsContent extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: AppColor.authBg,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.spa_rounded,
-              color: AppColor.authButton, size: 28),
+        _ServiceImageThumb(
+          imageUrl: booking.service.image,
+          size: 60,
+          radius: 12,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -552,15 +589,15 @@ class _ProviderContent extends StatelessWidget {
                   ),
                 ],
               ),
-              if (provider.bio != null && provider.bio!.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                AppText(
-                  provider.bio!,
-                  fontSize: 12,
-                  color: AppColor.grey,
-                  maxLines: 2,
-                ),
-              ],
+              // if (provider.bio != null && provider.bio!.isNotEmpty) ...[
+              //   const SizedBox(height: 6),
+              //   AppText(
+              //     provider.bio!,
+              //     fontSize: 12,
+              //     color: AppColor.grey,
+              //     maxLines: 2,
+              //   ),
+              // ],
               const SizedBox(height: 4),
               if (hasLocation)
                 Row(
@@ -646,7 +683,7 @@ class _PaymentSummaryContent extends StatelessWidget {
         const SizedBox(height: 8),
         _PayRow(
           label: 'Deposit Paid',
-          value: '\$${booking.depositAmount.toStringAsFixed(2)}',
+          value: '\$${booking.depositAmount}',
         ),
         if (booking.balanceAmount > 0) ...[
           const SizedBox(height: 8),
@@ -665,7 +702,7 @@ class _PaymentSummaryContent extends StatelessWidget {
               fontSize: FontSizes.small,
               color: AppColor.grey,
             ),
-            _PaymentBadge(booking.paymentStatus),
+            _PaymentBadge(booking.balancePaymentStatus),
           ],
         ),
         if (booking.depositAmount > 0 || booking.balanceAmount > 0) ...[
@@ -678,7 +715,7 @@ class _PaymentSummaryContent extends StatelessWidget {
                 fontSize: FontSizes.small,
                 color: AppColor.grey,
               ),
-              _PaymentBadge(booking.balancePaymentStatus),
+              _PaymentBadge(booking.paymentStatus),
             ],
           ),
         ],

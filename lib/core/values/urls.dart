@@ -3,6 +3,7 @@ class ApiStrings {
 
   static const String host = 'https://springgreen-goat-999550.hostingersite.com';
   static const String baseUrl = '$host/api/';
+  static const String imageUrl = '$host/public';
 
   static const String contentType = 'Content-Type';
   static const String accept = 'Accept';

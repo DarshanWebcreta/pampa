@@ -17,8 +17,15 @@ class CustomWebView extends StatefulWidget {
 }
 
 class _CustomWebViewState extends State<CustomWebView> {
+  bool _handledResult = false;
 
-  late InAppWebViewController _webViewController;
+  void _finish(bool success) {
+    if (_handledResult || !mounted) return;
+    _handledResult = true;
+    context.pop(success);
+
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,23 +37,17 @@ class _CustomWebViewState extends State<CustomWebView> {
         initialUrlRequest: URLRequest(
           url: WebUri(widget.checkoutUrl),
         ),
-        initialOptions: InAppWebViewGroupOptions(
-          crossPlatform: InAppWebViewOptions(
-            javaScriptEnabled: true,
-          ),
+        initialSettings: InAppWebViewSettings(
+          javaScriptEnabled: true,
         ),
-        onWebViewCreated: (controller) {
-          _webViewController = controller;
-        },
         onLoadStart: (controller, url) {
           if (url != null) {
             final urlStr = url.toString();
 
             if (urlStr.contains('flutter-payment-success')) {
-              context.pop(true); // return success
-            }
-            else if (urlStr.contains('flutter-payment-cancel')) {
-              context.pop(false); // return cancel
+              _finish(true);
+            } else if (urlStr.contains('flutter-payment-cancel')) {
+              _finish(false);
             }
           }
         },

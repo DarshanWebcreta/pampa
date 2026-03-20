@@ -45,7 +45,8 @@ class _BookingScreenState extends State<BookingScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BookingProvider>().fetchServiceDetail(widget.serviceId);
-      context.read<BookingProvider>().fetchProviders();
+      final savedZip = StorageManager.readData(StoreKeys.zipCode) as String?;
+      context.read<BookingProvider>().fetchProviders(savedZip?.trim() ?? '');
       _fetchAndCheckAddresses();
     });
   }
@@ -111,7 +112,7 @@ class _BookingScreenState extends State<BookingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
-      appBar: _buildAppBar(),
+      // appBar: _buildAppBar(),
       body: Consumer<BookingProvider>(
         builder: (context, provider, _) => _buildBody(provider),
       ),
@@ -168,6 +169,7 @@ class _BookingScreenState extends State<BookingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          FunctionalComponent.goBackArrow(context: context),
           AppText('Select Date & Time',
               fontSize: FontSizes.large,
               fontWeight: FontWeights.bold,
@@ -229,6 +231,7 @@ class _BookingScreenState extends State<BookingScreen> {
       ),
     );
   }
+
 
   Widget buildBottomBar() {
     return Consumer<BookingProvider>(
@@ -1078,6 +1081,8 @@ class _ProviderSelectionSheet extends StatelessWidget {
                       final p = provider.providers[index];
                       final isSelected =
                           provider.selectedProvider?.id == p.id;
+                      final photoUrl = p.photoUrl?.trim();
+                      final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
                       return ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 4, vertical: 6),
@@ -1090,11 +1095,19 @@ class _ProviderSelectionSheet extends StatelessWidget {
                                 : AppColor.lightGrey,
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.person_rounded,
-                              color: isSelected
-                                  ? AppColor.authButton
-                                  : AppColor.grey,
-                              size: 24),
+                          child: hasPhoto
+                              ? ClipOval(
+                                  child: FunctionalComponent.cachedNetworkImage(
+                                    photoUrl,
+                                    radius: 24,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : Icon(Icons.person_rounded,
+                                  color: isSelected
+                                      ? AppColor.authButton
+                                      : AppColor.grey,
+                                  size: 24),
                         ),
                         title: AppText(p.displayName,
                             fontSize: FontSizes.regular,

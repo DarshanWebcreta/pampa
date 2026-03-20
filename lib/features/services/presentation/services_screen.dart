@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pampa/core/utils/functional_component.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
@@ -26,12 +27,15 @@ class ServicesScreen extends StatefulWidget {
 }
 
 class _ServicesScreenState extends State<ServicesScreen> {
+  late final ServiceProvider _serviceProvider;
+
   @override
   void initState() {
     super.initState();
+    _serviceProvider = context.read<ServiceProvider>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final zipCode = StorageManager.readData(StoreKeys.zipCode) as String? ?? '';
-      context.read<ServiceProvider>().fetchServices(
+      _serviceProvider.fetchServices(
             zipCode: zipCode,
             categoryId: widget.categoryId,
           );
@@ -41,7 +45,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
   @override
   void dispose() {
     // Reset so stale data isn't shown next time
-    context.read<ServiceProvider>().reset();
+    _serviceProvider.reset();
     super.dispose();
   }
 
@@ -49,7 +53,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
-      appBar: _buildAppBar(context),
+      // appBar: _buildAppBar(context),
       body: Consumer<ServiceProvider>(
         builder: (context, provider, _) {
           return _buildBody(context, provider);
@@ -98,10 +102,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
           // ── Category header ──────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              padding: const EdgeInsets.fromLTRB(16,10, 20, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  FunctionalComponent.goBackArrow(context: context),
+
                   AppText(
                     widget.categoryName,
                     fontSize: FontSizes.extraLarge,
@@ -256,6 +262,9 @@ class _ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = service.image.trim();
+    final hasImage = imageUrl.isNotEmpty;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -278,7 +287,7 @@ class _ServiceCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Service icon placeholder
+                // Service image
                 Container(
                   width: 72,
                   height: 72,
@@ -286,11 +295,20 @@ class _ServiceCard extends StatelessWidget {
                     color: AppColor.authBg,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.spa_rounded,
-                    color: AppColor.authButton,
-                    size: 32,
-                  ),
+                  child: hasImage
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: FunctionalComponent.cachedNetworkImage(
+                            imageUrl,
+                            radius: 12,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.spa_rounded,
+                          color: AppColor.authButton,
+                          size: 32,
+                        ),
                 ),
                 const SizedBox(width: 14),
 

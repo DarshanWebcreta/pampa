@@ -1,3 +1,5 @@
+import 'package:pampa/core/values/urls.dart';
+
 class ProviderUserModel {
   final int id;
   final String name;
@@ -55,6 +57,7 @@ class ProviderModel {
 
   factory ProviderModel.fromJson(Map<String, dynamic> json) {
     final ratingRaw = json['rating'];
+    final rawPhoto = json['photo']?.toString();
     final ratingValue = ratingRaw is int
         ? ratingRaw.toDouble()
         : (ratingRaw is double ? ratingRaw : 0.0);
@@ -62,7 +65,7 @@ class ProviderModel {
     return ProviderModel(
       id: json['id'] as int,
       userId: json['user_id'] as int? ?? 0,
-      photoUrl: json['photo_url'] as String?,
+      photoUrl: _resolvePhotoUrl(rawPhoto),
       bio: json['bio'] as String?,
       rating: ratingValue,
       city: json['city'] as String?,
@@ -71,5 +74,21 @@ class ProviderModel {
       user: ProviderUserModel.fromJson(
           json['user'] as Map<String, dynamic>? ?? {}),
     );
+  }
+
+  static String? _resolvePhotoUrl(String? photo) {
+    if (photo == null) return null;
+
+    final trimmed = photo.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('/')) {
+      return '${ApiStrings.imageUrl}$trimmed';
+    }
+
+    return '${ApiStrings.imageUrl}/$trimmed';
   }
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pampa/core/utils/functional_component.dart';
+import 'package:pampa/core/values/strings.dart';
+import 'package:pampa/core/values/urls.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
@@ -99,6 +101,39 @@ Color _statusBgColor(String status) {
     default:
       return AppColor.lightGrey;
   }
+}
+
+Widget _serviceImageThumb({
+  required String imageUrl,
+  required double size,
+  required double radius,
+  double iconSize = 26,
+}) {
+  final trimmed = imageUrl.trim();
+  final hasImage = trimmed.isNotEmpty;
+
+  return Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: AppColor.authBg,
+      borderRadius: BorderRadius.circular(radius),
+    ),
+    child: hasImage
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(radius),
+            child: FunctionalComponent.cachedNetworkImage(
+              ApiStrings.imageUrl+trimmed,
+              radius: radius,
+              fit: BoxFit.cover,
+            ),
+          )
+        : Icon(
+            Icons.spa_rounded,
+            color: AppColor.authButton,
+            size: iconSize,
+          ),
+  );
 }
 
 // ─── Tab widget ───────────────────────────────────────────────────────────────
@@ -242,9 +277,15 @@ class _FilterChips extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             _Chip(
-              label: 'Upcoming',
-              active: current == BookingFilter.upcoming,
-              onTap: () => onSelect(BookingFilter.upcoming),
+              label: 'Pending',
+              active: current == BookingFilter.pending,
+              onTap: () => onSelect(BookingFilter.pending),
+            ),
+            const SizedBox(width: 8),
+            _Chip(
+              label: 'Confirmed',
+              active: current == BookingFilter.confirmed,
+              onTap: () => onSelect(BookingFilter.confirmed),
             ),
             const SizedBox(width: 8),
             _Chip(
@@ -337,18 +378,10 @@ class _BookingCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Service icon
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: AppColor.authBg,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.spa_rounded,
-                    color: AppColor.authButton,
-                    size: 26,
-                  ),
+                _serviceImageThumb(
+                  imageUrl: booking.service.image,
+                  size: 56,
+                  radius: 12,
                 ),
                 const SizedBox(width: 12),
 

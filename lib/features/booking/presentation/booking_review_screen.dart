@@ -8,6 +8,8 @@ import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/address/data/models/address_model.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
+import 'package:pampa/features/home/presentation/home_screen.dart';
+import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
 import 'package:pampa/features/webview/webview.dart';
 
 class BookingReviewScreen extends StatelessWidget {
@@ -43,7 +45,10 @@ class BookingReviewScreen extends StatelessWidget {
 
     if (!context.mounted) return;
     if (paymentSuccess == true) {
-      // Pop back to home / booking list
+      await context.read<MyBookingsProvider>().fetchBookings();
+      if (!context.mounted) return;
+      homeTabNotifier.value = 2;
+      homeSuccessMessageNotifier.value = 'Payment successful!';
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }

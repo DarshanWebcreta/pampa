@@ -1,3 +1,5 @@
+import 'package:pampa/core/values/urls.dart';
+
 class CategoryModel {
   final int id;
   final String categoryName;
@@ -16,10 +18,12 @@ class CategoryModel {
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    final rawIcon = json['icon']?.toString();
+
     return CategoryModel(
       id: json['id'] ?? 0,
       categoryName: json['category_name'] ?? '',
-      icon: json['icon'],
+      icon: _resolveIconUrl(rawIcon),
       status: json['status'] ?? 'Active',
       createdAt: json['created_at'] ?? '',
       updatedAt: json['updated_at'] ?? '',
@@ -27,4 +31,20 @@ class CategoryModel {
   }
 
   bool get isActive => status.toLowerCase() == 'active';
+
+  static String? _resolveIconUrl(String? icon) {
+    if (icon == null) return null;
+
+    final trimmed = icon.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('/')) {
+      return '${ApiStrings.imageUrl}$trimmed';
+    }
+
+    return '${ApiStrings.imageUrl}/$trimmed';
+  }
 }

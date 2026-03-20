@@ -78,7 +78,7 @@ abstract class ApiService {
   Future<dynamic> deleteAddress(@Path("id") int id);
 
   @GET(ApiPath.providers)
-  Future<dynamic> getProviders();
+  Future<dynamic> getProviders(@Query("zip_code") String zipCode);
 
   @GET("providers/{id}/available-slots")
   Future<dynamic> getAvailableSlots(
@@ -130,4 +130,3 @@ abstract class ApiService {
   @POST(ApiPath.payoutRequests)
   Future<dynamic> requestPayout(@Body() Map<String, dynamic> body);
 }
-
