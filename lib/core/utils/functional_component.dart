@@ -2,8 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/values/imagepath.dart';
@@ -16,7 +14,11 @@ import 'package:pampa/core/widgets/custom_image.dart';
 import 'package:pampa/core/widgets/rounded_button.dart';
 import 'package:pampa/core/widgets/text_field_widget.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/features/home/presentation/home_screen.dart';
+import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
+
+import '../../features/address/presentation/provider/address_provider.dart' show AddressProvider;
 
 class FunctionalComponent {
   FunctionalComponent._();
@@ -26,6 +28,27 @@ class FunctionalComponent {
       statusBarBrightness: Brightness.light, // For iOS: (dark icons)
     ));
 
+  }
+  static Widget customAppBar({required String title}) {
+    return AppText(
+      title,
+      fontSize: FontSizes.large,
+      fontWeight: FontWeights.bold,
+      color: AppColor.authButton,
+    );
+  }
+  static Future<void> showAddressPickerSheet({
+    required BuildContext context,
+  }) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ChangeNotifierProvider.value(
+        value: context.read<AddressProvider>(),
+        child: AddressPickerSheet(),
+      ),
+    );
   }
   static Widget floatingActionButton({required VoidCallback  onTap}) {
     return RoundedButton(iconColor: AppColor.white,iconSize: 32,bgColor: AppColor.primaryColor,onTap:onTap, icon: Icons.add);

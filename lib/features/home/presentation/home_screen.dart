@@ -66,23 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _showAddressPickerSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => ChangeNotifierProvider.value(
-        value: context.read<AddressProvider>(),
-        child: const _AddressPickerSheet(),
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.white,
-      appBar: _buildAppBar(),
       body: IndexedStack(
         index: _currentIndex,
         children: [
@@ -97,44 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(90),
-      child: Container(
-        color: AppColor.white,
-        child: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              // ── Brand row ──────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 8),
-                    AppText(
-                      'Pampa',
-                      fontSize: FontSizes.large,
-                      fontWeight: FontWeights.bold,
-                      color: AppColor.authButton,
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.menu_rounded,
-                          color: AppColor.authButton, size: 26),
-                      onPressed: () {},
-                    ),
-                  ],
-                ),
-              ),
-              // ── Address strip ──────────────────────────────────────────
-              _AddressStrip(onTap: _showAddressPickerSheet),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildBottomNav() {
     return Container(
@@ -192,10 +144,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // ─── Services tab ─────────────────────────────────────────────────────────────
 class _ServicesTab extends StatelessWidget {
+
   const _ServicesTab();
 
   @override
   Widget build(BuildContext context) {
+
     return Consumer<CategoryProvider>(
       builder: (context, provider, _) {
         return RefreshIndicator(
@@ -204,16 +158,31 @@ class _ServicesTab extends StatelessWidget {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                sliver: SliverToBoxAdapter(
-                  child: AppText(
-                    'Services',
-                    fontSize: FontSizes.extraLarge,
-                    fontWeight: FontWeights.bold,
-                    color: AppColor.black,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16,right: 16, top: 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+
+                      FunctionalComponent.customAppBar(title: 'Dashboard'),
+                      SizedBox(
+                        width: 200,
+                        child: _AddressStrip(
+                          onTap: () {
+                            FunctionalComponent.showAddressPickerSheet(
+                              context: context,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
               _buildBody(context, provider),
@@ -223,6 +192,8 @@ class _ServicesTab extends StatelessWidget {
       },
     );
   }
+
+
 
   Widget _buildBody(BuildContext context, CategoryProvider provider) {
     switch (provider.status) {
@@ -375,7 +346,7 @@ class _CategoryCardShimmerState extends State<_CategoryCardShimmer>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _animation,
-      builder: (_, __) => Opacity(
+      builder: (_, _) => Opacity(
         opacity: _animation.value,
         child: Container(
           decoration: BoxDecoration(
@@ -517,14 +488,14 @@ class _EmptyView extends StatelessWidget {
 }
 
 // ─── Address picker sheet ─────────────────────────────────────────────────────
-class _AddressPickerSheet extends StatefulWidget {
-  const _AddressPickerSheet();
+class AddressPickerSheet extends StatefulWidget {
+  const AddressPickerSheet();
 
   @override
-  State<_AddressPickerSheet> createState() => _AddressPickerSheetState();
+  State<AddressPickerSheet> createState() => AddressPickerSheetState();
 }
 
-class _AddressPickerSheetState extends State<_AddressPickerSheet> {
+class AddressPickerSheetState extends State<AddressPickerSheet> {
   bool _showAddForm = false;
   AddressModel? _editingAddress;
 
@@ -1124,7 +1095,7 @@ class _AddressStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<AddressProvider>(
-      builder: (_, provider, __) {
+      builder: (_, provider, _) {
         final addr = provider.selectedAddress;
         return GestureDetector(
           onTap: onTap,

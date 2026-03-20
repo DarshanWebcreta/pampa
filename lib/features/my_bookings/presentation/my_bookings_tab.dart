@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:pampa/core/utils/functional_component.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
@@ -135,12 +136,8 @@ class _MyBookingsTabState extends State<MyBookingsTab> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AppText(
-                        'My Bookings',
-                        fontSize: FontSizes.extraLarge,
-                        fontWeight: FontWeights.bold,
-                        color: AppColor.black,
-                      ),
+                      FunctionalComponent.customAppBar(title: 'Bookings'),
+
                       if (provider.status == MyBookingsFetchStatus.success) ...[
                         const SizedBox(height: 4),
                         AppText(

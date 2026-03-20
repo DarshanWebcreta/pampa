@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:pampa/core/utils/functional_component.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
@@ -44,6 +45,8 @@ class _ProfileTabState extends State<ProfileTab> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
             children: [
+              FunctionalComponent.customAppBar(title: 'Profile'),
+              SizedBox(height: 16,),
               _HeaderCard(profile: provider.profile),
               const SizedBox(height: 16),
               _buildBody(context, provider),
