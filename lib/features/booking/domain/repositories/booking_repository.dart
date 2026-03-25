@@ -7,6 +7,13 @@ abstract class BookingRepository {
 
   Future<List<ProviderModel>> getProviders(String zipCode);
 
+  Future<List<ProviderModel>> getAvailableProviders({
+    required List<int> serviceIds,
+    required String zipCode,
+    required String date,
+    required String time,
+  });
+
   Future<List<TimeSlotModel>> getAvailableSlots({
     required int providerId,
     required String date,
@@ -14,10 +21,15 @@ abstract class BookingRepository {
   });
 
   Future<String> createBooking({
-    required int serviceId,
+    required List<int> serviceIds,
     required int providerId,
+    int? addressId,
     required String appointmentDate,
     required String appointmentTime,
+    num? tipAmount,
+    String? notes,
+    String? pinterestLink,
+    String? inspirationPhotoPath,
   });
 
   Future<String> createCheckoutSession({

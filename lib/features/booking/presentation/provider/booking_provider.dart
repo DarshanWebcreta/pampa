@@ -1,7 +1,8 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pampa/features/booking/data/models/provider_model.dart';
-import 'package:pampa/features/booking/data/models/time_slot_model.dart';
 import 'package:pampa/features/booking/domain/repositories/booking_repository.dart';
 import 'package:pampa/features/services/data/models/service_model.dart';
 
@@ -10,8 +11,6 @@ enum BookingFetchStatus { initial, loading, success, error }
 enum BookingSubmitStatus { idle, submitting, submitted, failed }
 
 enum ProviderFetchStatus { initial, loading, success, error }
-
-enum SlotFetchStatus { initial, loading, success, error }
 
 class BookingProvider extends ChangeNotifier {
   final BookingRepository _repository;
@@ -39,16 +38,6 @@ class BookingProvider extends ChangeNotifier {
   String get providerFetchError => _providerFetchError;
   bool get isLoadingProviders =>
       _providerFetchStatus == ProviderFetchStatus.loading;
-
-  // ── Available time slots ───────────────────────────────────────────────────
-  SlotFetchStatus _slotFetchStatus = SlotFetchStatus.initial;
-  List<TimeSlotModel> _slots = [];
-  String _slotFetchError = '';
-
-  SlotFetchStatus get slotFetchStatus => _slotFetchStatus;
-  List<TimeSlotModel> get slots => _slots;
-  String get slotFetchError => _slotFetchError;
-  bool get isLoadingSlots => _slotFetchStatus == SlotFetchStatus.loading;
 
   // ── Selection state ────────────────────────────────────────────────────────
   DateTime _selectedDate = DateTime.now();
@@ -113,23 +102,46 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Select provider → auto-fetch slots ────────────────────────────────────
-  void selectProvider(ProviderModel provider) {
-    _selectedProvider = provider;
-    _selectedTime = null;
+  Future<void> fetchAvailableProviders({required String zipCode}) async {
+    final service = _service;
+    final time = _selectedTime;
+    if (service == null || time == null) return;
+    if (_providerFetchStatus == ProviderFetchStatus.loading) return;
+
+    _providerFetchStatus = ProviderFetchStatus.loading;
+    _providerFetchError = '';
+    _providers = [];
+    _selectedProvider = null;
     notifyListeners();
-    _fetchSlots();
+
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+      _providers = await _repository.getAvailableProviders(
+        serviceIds: [service.id],
+        zipCode: zipCode,
+        date: dateStr,
+        time: time,
+      );
+      _providerFetchStatus = ProviderFetchStatus.success;
+    } catch (e) {
+      _providerFetchError = e.toString().replaceFirst('Exception: ', '');
+      _providerFetchStatus = ProviderFetchStatus.error;
+    }
+
+    notifyListeners();
   }
 
-  // ── Date selection → auto-refetch slots if provider selected ───────────────
+  // ── Provider selection ────────────────────────────────────────────────────
+  void selectProvider(ProviderModel provider) {
+    _selectedProvider = provider;
+    notifyListeners();
+  }
+
+  // ── Date selection ────────────────────────────────────────────────────────
   void selectDate(DateTime date) {
     if (date.isBefore(DateTime.now().subtract(const Duration(days: 1)))) return;
     _selectedDate = date;
-    _selectedTime = null;
     notifyListeners();
-    if (_selectedProvider != null) {
-      _fetchSlots();
-    }
   }
 
   void selectTime(String time) {
@@ -142,39 +154,32 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Internal: fetch available slots ───────────────────────────────────────
-  Future<void> _fetchSlots() async {
-    final provider = _selectedProvider;
-    final service = _service;
-    if (provider == null || service == null) return;
-
-    _slotFetchStatus = SlotFetchStatus.loading;
-    _slots = [];
-    _selectedTime = null;
-    _slotFetchError = '';
-    notifyListeners();
-
-    try {
-      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-      _slots = await _repository.getAvailableSlots(
-        providerId: provider.id,
-        date: dateStr,
-        serviceId: service.id,
-      );
-      _slotFetchStatus = SlotFetchStatus.success;
-    } catch (e) {
-      _slotFetchError = e.toString().replaceFirst('Exception: ', '');
-      _slotFetchStatus = SlotFetchStatus.error;
-    }
-
-    notifyListeners();
-  }
-
   // ── Create booking ─────────────────────────────────────────────────────────
   Future<bool> confirmBooking() async {
-    if (_service == null || _selectedTime == null || _selectedProvider == null) {
+    final service = _service;
+    final selectedTime = _selectedTime;
+    final selectedProvider = _selectedProvider;
+    if (service == null || selectedTime == null || selectedProvider == null) {
       return false;
     }
+
+    return submitBookingDetails(
+      serviceIds: [service.id],
+      providerId: selectedProvider.id,
+      appointmentTime: selectedTime,
+    );
+  }
+
+  Future<bool> submitBookingDetails({
+    required List<int> serviceIds,
+    required int providerId,
+    required String appointmentTime,
+    int? addressId,
+    String? notes,
+    String? pinterestLink,
+    String? inspirationPhotoPath,
+  }) async {
+    if (serviceIds.isEmpty) return false;
 
     _submitStatus = BookingSubmitStatus.submitting;
     _submitError = '';
@@ -183,10 +188,15 @@ class BookingProvider extends ChangeNotifier {
     try {
       final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
       _successMessage = await _repository.createBooking(
-        serviceId: _service!.id,
-        providerId: _selectedProvider!.id,
+        serviceIds: serviceIds,
+        providerId: providerId,
+        addressId: addressId,
         appointmentDate: dateStr,
-        appointmentTime: _selectedTime!,
+        appointmentTime: appointmentTime,
+        tipAmount: _tipAmount > 0 ? _tipAmount : null,
+        notes: notes,
+        pinterestLink: pinterestLink,
+        inspirationPhotoPath: inspirationPhotoPath,
       );
 
       _submitStatus = BookingSubmitStatus.submitted;
@@ -247,4 +257,7 @@ class BookingProvider extends ChangeNotifier {
 
   String get formattedDateForDisplay =>
       DateFormat('EEE, MMM d').format(_selectedDate);
+
+  UnmodifiableListView<ProviderModel> get activeProviders =>
+      UnmodifiableListView(_providers.where((p) => p.isActive));
 }

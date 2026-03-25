@@ -50,6 +50,7 @@ class ApiPath {
   static String deleteAddress(int id) => "customer/addresses/$id";
   static const String bookings = "bookings";
   static const String providers = "providers";
+  static const String availableProviders = "providers/available-providers";
   static String availableSlots(int providerId) =>
       "providers/$providerId/available-slots";
 

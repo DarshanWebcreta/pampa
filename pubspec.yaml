@@ -55,6 +55,7 @@ dependencies:
   equatable:
   flutter_inappwebview: ^6.1.5
   intl:
+  image_picker: ^1.2.1
 
 dev_dependencies:
   flutter_test:

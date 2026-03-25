@@ -52,6 +52,38 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
+  Future<List<ProviderModel>> getAvailableProviders({
+    required List<int> serviceIds,
+    required String zipCode,
+    required String date,
+    required String time,
+  }) async {
+    try {
+      final response = await _apiService.getAvailableProviders(
+        serviceIds,
+        zipCode,
+        date,
+        time,
+      );
+      final map = response as Map<String, dynamic>;
+      if (map['status'] == true) {
+        final data = map['data'] as List<dynamic>? ?? [];
+        return data
+            .map((e) => ProviderModel.fromJson(e as Map<String, dynamic>))
+            .where((p) => p.isActive)
+            .toList();
+      }
+      throw Exception(map['message'] ?? 'Failed to load available providers.');
+    } on DioException catch (e) {
+      throw Exception(HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (_) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  @override
   Future<List<TimeSlotModel>> getAvailableSlots({
     required int providerId,
     required String date,
@@ -83,18 +115,40 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<String> createBooking({
-    required int serviceId,
+    required List<int> serviceIds,
     required int providerId,
+    int? addressId,
     required String appointmentDate,
     required String appointmentTime,
+    num? tipAmount,
+    String? notes,
+    String? pinterestLink,
+    String? inspirationPhotoPath,
   }) async {
     try {
-      final response = await _apiService.createBooking({
-        'service_id': serviceId,
+      final formMap = <String, dynamic>{
+        'service_ids[]': serviceIds,
         'provider_id': providerId,
         'appointment_date': appointmentDate,
         'appointment_time': appointmentTime,
-      });
+      };
+
+      if (addressId != null) formMap['address_id'] = addressId;
+      if (tipAmount != null) formMap['tip_amount'] = tipAmount;
+      if (notes != null && notes.trim().isNotEmpty) {
+        formMap['notes'] = notes.trim();
+      }
+      if (pinterestLink != null && pinterestLink.trim().isNotEmpty) {
+        formMap['pinterest_link'] = pinterestLink.trim();
+      }
+      if (inspirationPhotoPath != null && inspirationPhotoPath.isNotEmpty) {
+        formMap['inspiration_photo'] = await MultipartFile.fromFile(
+          inspirationPhotoPath,
+          filename: inspirationPhotoPath.split('/').last,
+        );
+      }
+
+      final response = await _apiService.createBooking(FormData.fromMap(formMap));
 
       final map = response as Map<String, dynamic>;
       if (map['status'] == true) {

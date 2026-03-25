@@ -56,7 +56,7 @@ abstract class ApiService {
   /// BOOKINGS
 
   @POST(ApiPath.createBooking)
-  Future<dynamic> createBooking(@Body() Map<String, dynamic> body);
+  Future<dynamic> createBooking(@Body() dynamic body);
 
   @GET(ApiPath.getAddresses)
   Future<dynamic> getAddresses();
@@ -78,6 +78,14 @@ abstract class ApiService {
 
   @GET(ApiPath.providers)
   Future<dynamic> getProviders(@Query("zip_code") String zipCode);
+
+  @GET(ApiPath.availableProviders)
+  Future<dynamic> getAvailableProviders(
+    @Query("service_ids[]") List<int> serviceIds,
+    @Query("zip_code") String zipCode,
+    @Query("date") String date,
+    @Query("time") String time,
+  );
 
   @GET("providers/{id}/available-slots")
   Future<dynamic> getAvailableSlots(

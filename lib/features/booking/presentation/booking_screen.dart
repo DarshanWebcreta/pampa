@@ -10,8 +10,8 @@ import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/address/data/models/address_model.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
+import 'package:pampa/features/booking/presentation/choose_provider_screen.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
-import 'package:pampa/features/booking/presentation/booking_review_screen.dart';
 
 // ─── Icon helper for address name ─────────────────────────────────────────────
 IconData _iconForAddress(String name) {
@@ -44,8 +44,6 @@ class _BookingScreenState extends State<BookingScreen> {
       final ap = context.read<AddressProvider>();
 
       bp.fetchServiceDetail(widget.serviceId);
-      final savedZip = StorageManager.readData(StoreKeys.zipCode) as String? ?? '';
-      bp.fetchProviders(savedZip);
       await ap.fetchAddresses();
 
       if (!mounted) return;
@@ -103,14 +101,12 @@ class _BookingScreenState extends State<BookingScreen> {
       ),
     );
 
-    if (picked == null || !mounted) return;
+    if (picked == null || !context.mounted) return;
 
     if (isToday) {
       final pickedMins = picked.hour * 60 + picked.minute;
       final nowMins = now.hour * 60 + now.minute;
       if (pickedMins <= nowMins) {
-        if (!mounted) return;
-        // ignore: use_build_context_synchronously
         FunctionalComponent.showSnackBar(
           context: context,
           title: 'Please select a future time for today',
@@ -131,9 +127,6 @@ class _BookingScreenState extends State<BookingScreen> {
 
   void _onConfirm() {
     final bp = context.read<BookingProvider>();
-    if (bp.selectedProvider == null && bp.providers.isNotEmpty) {
-      bp.selectProvider(bp.providers.first);
-    }
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => MultiProvider(
@@ -142,7 +135,7 @@ class _BookingScreenState extends State<BookingScreen> {
             ChangeNotifierProvider.value(
                 value: context.read<AddressProvider>()),
           ],
-          child: BookingReviewScreen(address: _selectedAddress!),
+          child: ChooseProviderScreen(address: _selectedAddress!),
         ),
       ),
     );

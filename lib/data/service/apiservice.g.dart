@@ -171,7 +171,7 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> createBooking(Map<String, dynamic> body) async {
+  Future<dynamic> createBooking(dynamic body) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -310,6 +310,37 @@ class _ApiService implements ApiService {
           .compose(
             _dio.options,
             'providers',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> getAvailableProviders(
+    List<int> serviceIds,
+    String zipCode,
+    String date,
+    String time,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{
+      r'service_ids[]': serviceIds,
+      r'zip_code': zipCode,
+      r'date': date,
+      r'time': time,
+    };
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'providers/available-providers',
             queryParameters: queryParameters,
             data: _data,
           )
