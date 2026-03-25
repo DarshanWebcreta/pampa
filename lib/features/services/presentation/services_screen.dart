@@ -4,10 +4,8 @@ import 'package:pampa/core/utils/functional_component.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
-import 'package:pampa/core/storage/storage.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/values/app_text_value.dart';
-import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/services/data/models/service_model.dart';
 import 'package:pampa/features/services/presentation/provider/service_provider.dart';
@@ -34,11 +32,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
     super.initState();
     _serviceProvider = context.read<ServiceProvider>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final zipCode = StorageManager.readData(StoreKeys.zipCode) as String? ?? '';
-      _serviceProvider.fetchServices(
-            zipCode: zipCode,
-            categoryId: widget.categoryId,
-          );
+      _serviceProvider.fetchServices(categoryId: widget.categoryId);
     });
   }
 

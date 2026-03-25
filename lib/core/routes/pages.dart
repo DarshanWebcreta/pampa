@@ -7,6 +7,8 @@ import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/auth/presentation/login/login_screen.dart';
 import 'package:pampa/features/auth/presentation/register/register_screen.dart';
+import 'package:pampa/features/auth/presentation/welcome/welcome_screen.dart';
+import 'package:pampa/features/categories/presentation/category_list_screen.dart';
 import 'package:pampa/features/home/presentation/home_screen.dart';
 import 'package:pampa/features/onboarding/presentation/zipcode_screen.dart';
 import 'package:pampa/features/services/presentation/provider/service_provider.dart';
@@ -28,6 +30,7 @@ class AppRouter {
 
   // ── Auth-only routes (logged-in users must leave) ────────────────────────
   static const _publicRoutes = {
+    RouteNames.welcome,
     RouteNames.login,
     RouteNames.register,
   };
@@ -47,12 +50,12 @@ class AppRouter {
 
       // ── Landing: resolve '/' based on auth state ──────────────────────────
       if (path == RouteNames.initial) {
-        return isLoggedIn ? _afterLoginDestination() : RouteNames.login;
+        return isLoggedIn ? _afterLoginDestination() : RouteNames.welcome;
       }
 
-      // ── Not logged in trying to access protected route → login ────────────
+      // ── Not logged in trying to access protected route → welcome ─────────
       if (!isLoggedIn && _protectedRoutes.contains(path)) {
-        return RouteNames.login;
+        return RouteNames.welcome;
       }
 
       // ── Already logged in trying to visit login/register → skip ahead ─────
@@ -68,6 +71,12 @@ class AppRouter {
         path: RouteNames.initial,
         name: RouteNames.initial,
         builder: (context, state) => const SizedBox.shrink(),
+      ),
+
+      GoRoute(
+        path: RouteNames.welcome,
+        name: RouteNames.welcome,
+        builder: (context, state) => const WelcomeScreen(),
       ),
 
       GoRoute(
@@ -92,6 +101,12 @@ class AppRouter {
         path: RouteNames.mainScreen,
         name: RouteNames.mainScreen,
         builder: (context, state) => const HomeScreen(),
+      ),
+
+      GoRoute(
+        path: RouteNames.categoryList,
+        name: RouteNames.categoryList,
+        builder: (context, state) => const CategoryListScreen(),
       ),
 
       GoRoute(

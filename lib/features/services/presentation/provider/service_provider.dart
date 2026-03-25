@@ -18,7 +18,6 @@ class ServiceProvider extends ChangeNotifier {
   ServiceSortType _sortType = ServiceSortType.highestRated;
 
   // Current fetch params (for retry / refresh)
-  String _lastZipCode = '';
   int _lastCategoryId = 0;
 
   ServiceStatus get status => _status;
@@ -28,12 +27,10 @@ class ServiceProvider extends ChangeNotifier {
   ServiceSortType get sortType => _sortType;
 
   Future<void> fetchServices({
-    required String zipCode,
     required int categoryId,
   }) async {
     if (_status == ServiceStatus.loading) return;
 
-    _lastZipCode = zipCode;
     _lastCategoryId = categoryId;
 
     _status = ServiceStatus.loading;
@@ -42,7 +39,6 @@ class ServiceProvider extends ChangeNotifier {
 
     try {
       final result = await _repository.getServices(
-        zipCode: zipCode,
         categoryId: categoryId,
       );
 
@@ -65,7 +61,6 @@ class ServiceProvider extends ChangeNotifier {
   }
 
   Future<void> refresh() => fetchServices(
-        zipCode: _lastZipCode,
         categoryId: _lastCategoryId,
       );
 

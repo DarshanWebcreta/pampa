@@ -5,7 +5,7 @@ class AppColor {
 
   // ── Auth module colors ──────────────────────────────────────────────────────
   static const Color authButton = Color(0xFF5A1837);   // dark wine/maroon
-  static const Color authBg     = Color(0xFFF5E6ED);   // light blush pink
+  static const Color authBg     = Color(0xFFFDF8FA);   // light blush pink
   // ────────────────────────────────────────────────────────────────────────────
   static const  black = Colors.black;
   static const  darkGrey = Color(0xFF323232);

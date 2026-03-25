@@ -129,12 +129,9 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> getServices(String zipCode, int categoryId) async {
+  Future<dynamic> getServices(int categoryId) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{
-      r'zip_code': zipCode,
-      r'category_id': categoryId,
-    };
+    final queryParameters = <String, dynamic>{r'category_id': categoryId};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<dynamic>(

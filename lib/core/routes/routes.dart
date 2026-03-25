@@ -27,6 +27,7 @@ class RouteNames {
   static const setPickUpDetailsPage = '/setPickUpDetailsPage';
   static const selectVehiclePage = '/selectVehiclePage';
   static const zipCode = '/zipcode';
+  static const categoryList = '/category-list';
   static const services = '/services';
   static const bookingDetail = '/booking-detail';
   static const myBookingDetail = '/my-booking-detail';

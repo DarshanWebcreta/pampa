@@ -45,7 +45,6 @@ abstract class ApiService {
 
   @GET(ApiPath.services)
   Future<dynamic> getServices(
-      @Query("zip_code") String zipCode,
       @Query("category_id") int categoryId,
       );
 

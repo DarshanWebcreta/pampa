@@ -13,9 +13,12 @@ import 'package:pampa/features/address/data/models/address_model.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
 import 'package:pampa/features/categories/data/models/category_model.dart';
 import 'package:pampa/features/categories/presentation/provider/category_provider.dart';
+import 'package:pampa/features/my_bookings/data/models/my_booking_model.dart';
 import 'package:pampa/features/my_bookings/presentation/my_bookings_tab.dart';
+import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
 import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
 import 'package:pampa/features/profile/presentation/profile_tab.dart';
+import 'package:intl/intl.dart';
 
 // ─── Icon mapping for category names ──────────────────────────────────────────
 IconData _iconForCategory(String name) {
@@ -44,11 +47,11 @@ class _NavItem {
 }
 
 const _navItems = [
-  _NavItem(icon: Icons.home_outlined,      activeIcon: Icons.home_rounded,          label: 'Home'),
-  _NavItem(icon: Icons.calendar_today_outlined, activeIcon: Icons.calendar_today_rounded, label: 'Calendar'),
-  _NavItem(icon: Icons.bookmark_border_rounded, activeIcon: Icons.bookmark_rounded,       label: 'Bookings'),
-  _NavItem(icon: Icons.chat_bubble_outline_rounded, activeIcon: Icons.chat_bubble_rounded, label: 'Messages'),
-  _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded,         label: 'Profile'),
+  _NavItem(icon: Icons.home_outlined,               activeIcon: Icons.home_rounded,            label: 'Home'),
+  _NavItem(icon: Icons.explore_outlined,            activeIcon: Icons.explore_rounded,         label: 'Explore'),
+  _NavItem(icon: Icons.calendar_month_outlined,     activeIcon: Icons.calendar_month_rounded,  label: 'Appointments'),
+  _NavItem(icon: Icons.chat_bubble_outline_rounded, activeIcon: Icons.chat_bubble_rounded,     label: 'Messages'),
+  _NavItem(icon: Icons.person_outline_rounded,      activeIcon: Icons.person_rounded,          label: 'Profile'),
 ];
 
 // ─── Main shell ───────────────────────────────────────────────────────────────
@@ -75,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (profileProvider.status == ProfileStatus.initial) {
         profileProvider.fetchProfile();
       }
+      context.read<MyBookingsProvider>().fetchBookings();
     });
   }
 
@@ -179,10 +183,10 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
+          const _HomeTab(),
           const _ServicesTab(),
-          const _PlaceholderTab(icon: Icons.calendar_today_rounded, label: 'Calendar'),
           const MyBookingsTab(),
-          const _PlaceholderTab(icon: Icons.chat_bubble_rounded,    label: 'Messages'),
+          const _PlaceholderTab(icon: Icons.chat_bubble_rounded, label: 'Messages'),
           const ProfileTab(),
         ],
       ),
@@ -1526,6 +1530,593 @@ class _EditAddressFormState extends State<_EditAddressForm> {
           },
         ),
       ],
+    );
+  }
+}
+
+// ─── Home tab ──────────────────────────────────────────────────────────────────
+class _HomeTab extends StatelessWidget {
+  const _HomeTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColor.authBg,
+      body: RefreshIndicator(
+        color: AppColor.authButton,
+        onRefresh: () => context.read<MyBookingsProvider>().fetchBookings(),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(child: _HomeHeader()),
+            SliverToBoxAdapter(child: _BookNewServiceButton()),
+            SliverToBoxAdapter(child: _UpcomingSection()),
+            SliverToBoxAdapter(child: _PastServicesSection()),
+            SliverToBoxAdapter(child: _QuickLinksSection()),
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Consumer<ProfileProvider>(
+                builder: (_, p, __) {
+                  final firstName = p.profile?.name.trim().split(' ').first ?? '';
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText(
+                        'Welcome back${firstName.isNotEmpty ? ', $firstName' : ''}',
+                        fontSize: FontSizes.extraLarge,
+                        fontWeight: FontWeights.bold,
+                        color: AppColor.darkGrey,
+                        maxLines: 1,
+                      ),
+                      const SizedBox(height: 4),
+                      AppText(
+                        'Beauty & wellness, wherever you are',
+                        fontSize: FontSizes.regular,
+                        fontWeight: FontWeights.regular,
+                        color: AppColor.grey,
+                        maxLines: 1,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: () => homeTabNotifier.value = 4,
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColor.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColor.mediumGrey, width: 1),
+                ),
+                child: const Icon(Icons.person_outline_rounded, color: AppColor.authButton, size: 22),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BookNewServiceButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: GestureDetector(
+        onTap: () => context.push(RouteNames.categoryList),
+        child: Container(
+          height: 60,
+          decoration: BoxDecoration(
+            color: AppColor.authButton,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColor.white.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add_rounded, color: AppColor.white, size: 18),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: AppText(
+                  'Book a new service',
+                  fontSize: FontSizes.regular,
+                  fontWeight: FontWeights.semiBold,
+                  color: AppColor.white,
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded, color: AppColor.white, size: 14),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UpcomingSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<MyBookingsProvider>(
+      builder: (_, provider, __) {
+        final upcoming = provider.bookings
+            .where((b) => b.isPending || b.isConfirmed)
+            .toList();
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AppText(
+                    'Upcoming',
+                    fontSize: FontSizes.medium,
+                    fontWeight: FontWeights.bold,
+                    color: AppColor.darkGrey,
+                  ),
+                  if (upcoming.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColor.authButton.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: AppText(
+                        '${upcoming.length} appointment${upcoming.length != 1 ? 's' : ''}',
+                        fontSize: FontSizes.mini,
+                        fontWeight: FontWeights.semiBold,
+                        color: AppColor.authButton,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              if (provider.status == MyBookingsFetchStatus.loading)
+                const _HomeBookingShimmer()
+              else if (upcoming.isEmpty)
+                _HomeEmptyCard(
+                  icon: Icons.calendar_today_outlined,
+                  message: 'No upcoming appointments',
+                  sub: 'Book a service to get started',
+                )
+              else
+                ...upcoming.map((b) => _UpcomingBookingCard(booking: b)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PastServicesSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<MyBookingsProvider>(
+      builder: (_, provider, __) {
+        final past = provider.bookings.where((b) => b.isCompleted).toList();
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AppText(
+                    'Past Services',
+                    fontSize: FontSizes.medium,
+                    fontWeight: FontWeights.bold,
+                    color: AppColor.darkGrey,
+                  ),
+                  if (past.isNotEmpty)
+                    GestureDetector(
+                      onTap: () => homeTabNotifier.value = 2,
+                      child: AppText(
+                        'View all',
+                        fontSize: FontSizes.small,
+                        fontWeight: FontWeights.semiBold,
+                        color: AppColor.authButton,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              if (provider.status == MyBookingsFetchStatus.loading)
+                const _HomeBookingShimmer()
+              else if (past.isEmpty)
+                _HomeEmptyCard(
+                  icon: Icons.history_rounded,
+                  message: 'No past services',
+                  sub: 'Completed bookings will appear here',
+                )
+              else
+                ...past.take(2).map((b) => _PastBookingCard(booking: b)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _QuickLinksSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText(
+            'Quick Links',
+            fontSize: FontSizes.medium,
+            fontWeight: FontWeights.bold,
+            color: AppColor.darkGrey,
+          ),
+          const SizedBox(height: 14),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColor.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                _QuickLinkTile(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Profile Settings',
+                  onTap: () => homeTabNotifier.value = 4,
+                ),
+                Divider(height: 1, color: AppColor.lightGrey, indent: 56),
+                _QuickLinkTile(
+                  icon: Icons.tune_rounded,
+                  label: 'Preferences',
+                  onTap: () {},
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickLinkTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _QuickLinkTile({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColor.authButton.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 18, color: AppColor.authButton),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: AppText(
+                label,
+                fontSize: FontSizes.regular,
+                fontWeight: FontWeights.medium,
+                color: AppColor.darkGrey,
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColor.grey),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UpcomingBookingCard extends StatelessWidget {
+  final MyBookingModel booking;
+  const _UpcomingBookingCard({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = booking.service.image.trim();
+    final hasImage = imageUrl.isNotEmpty;
+    final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate);
+    final location = booking.provider.displayLocation;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColor.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: 60,
+              height: 60,
+              child: hasImage
+                  ? FunctionalComponent.cachedNetworkImage(imageUrl, radius: 12, fit: BoxFit.cover)
+                  : Container(
+                      color: AppColor.authBg,
+                      child: const Icon(Icons.spa_rounded, color: AppColor.authButton, size: 28),
+                    ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: AppText(
+                        booking.service.serviceName,
+                        fontSize: FontSizes.regular,
+                        fontWeight: FontWeights.semiBold,
+                        color: AppColor.darkGrey,
+                        maxLines: 1,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColor.authButton.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: AppText(
+                        '\$${booking.price.toStringAsFixed(0)}',
+                        fontSize: FontSizes.small,
+                        fontWeight: FontWeights.bold,
+                        color: AppColor.authButton,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                AppText(
+                  'with ${booking.provider.displayName}',
+                  fontSize: FontSizes.small,
+                  color: AppColor.grey,
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today_outlined, size: 12, color: AppColor.grey),
+                    const SizedBox(width: 4),
+                    AppText(dateStr, fontSize: FontSizes.mini, color: AppColor.grey),
+                    const SizedBox(width: 12),
+                    const Icon(Icons.access_time_rounded, size: 12, color: AppColor.grey),
+                    const SizedBox(width: 4),
+                    AppText(booking.appointmentTime, fontSize: FontSizes.mini, color: AppColor.grey),
+                  ],
+                ),
+                if (location.isNotEmpty && location != 'Location not set') ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 12, color: AppColor.grey),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: AppText(location, fontSize: FontSizes.mini, color: AppColor.grey, maxLines: 1),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PastBookingCard extends StatelessWidget {
+  final MyBookingModel booking;
+  const _PastBookingCard({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = booking.service.image.trim();
+    final hasImage = imageUrl.isNotEmpty;
+    final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate);
+    final rating = booking.provider.rating;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColor.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 52,
+                  height: 52,
+                  child: hasImage
+                      ? FunctionalComponent.cachedNetworkImage(imageUrl, radius: 12, fit: BoxFit.cover)
+                      : Container(
+                          color: AppColor.authBg,
+                          child: const Icon(Icons.spa_rounded, color: AppColor.authButton, size: 24),
+                        ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: AppText(
+                            booking.service.serviceName,
+                            fontSize: FontSizes.regular,
+                            fontWeight: FontWeights.semiBold,
+                            color: AppColor.darkGrey,
+                            maxLines: 1,
+                          ),
+                        ),
+                        if (rating > 0) ...[
+                          const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
+                          const SizedBox(width: 2),
+                          AppText(
+                            rating.toStringAsFixed(0),
+                            fontSize: FontSizes.small,
+                            fontWeight: FontWeights.semiBold,
+                            color: AppColor.darkGrey,
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    AppText(booking.provider.displayName, fontSize: FontSizes.small, color: AppColor.grey),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        AppText(dateStr, fontSize: FontSizes.mini, color: AppColor.grey),
+                        const SizedBox(width: 8),
+                        const Text('•', style: TextStyle(color: AppColor.grey, fontSize: 10)),
+                        const SizedBox(width: 8),
+                        AppText(booking.appointmentTime, fontSize: FontSizes.mini, color: AppColor.grey),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => context.push(RouteNames.bookingDetail, extra: booking.serviceId),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColor.mediumGrey),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  child: AppText('Book Again', fontSize: FontSizes.small, fontWeight: FontWeights.semiBold, color: AppColor.darkGrey),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColor.authButton,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  child: AppText('Review', fontSize: FontSizes.small, fontWeight: FontWeights.semiBold, color: AppColor.white),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeEmptyCard extends StatelessWidget {
+  final IconData icon;
+  final String message;
+  final String sub;
+  const _HomeEmptyCard({required this.icon, required this.message, required this.sub});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+      decoration: BoxDecoration(
+        color: AppColor.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 32, color: AppColor.mediumGrey),
+          const SizedBox(height: 10),
+          AppText(message, fontSize: FontSizes.regular, fontWeight: FontWeights.semiBold, color: AppColor.grey, align: TextAlign.center),
+          const SizedBox(height: 4),
+          AppText(sub, fontSize: FontSizes.small, color: AppColor.mediumGrey, align: TextAlign.center, maxLines: 2),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeBookingShimmer extends StatelessWidget {
+  const _HomeBookingShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 90,
+      decoration: BoxDecoration(
+        color: AppColor.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
     );
   }
 }
