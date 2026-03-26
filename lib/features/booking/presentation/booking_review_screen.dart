@@ -10,6 +10,7 @@ import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/address/data/models/address_model.dart';
+import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
 import 'package:pampa/features/home/presentation/home_screen.dart';
 import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
@@ -132,14 +133,25 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
         builder: (context, bookingProvider, _) {
           final service = bookingProvider.service!;
           final provider = bookingProvider.selectedProvider!;
+          final ids = widget.serviceIds.isNotEmpty
+              ? widget.serviceIds
+              : [service.id];
+          final selectedServices = ids
+              .map((id) => provider.serviceFor(id))
+              .whereType<ProviderServiceSummaryModel>()
+              .toList();
           final providerService = provider.serviceFor(service.id);
-          final fullPrice =
-              providerService?.priceAsDouble ?? service.priceAsDouble;
-          final duration = providerService?.duration ?? service.duration;
-          final depositAmount =
-              providerService != null && providerService.deposit > 0
+          final fullPrice = selectedServices.isNotEmpty
+              ? selectedServices.fold(0.0, (sum, s) => sum + s.priceAsDouble)
+              : (providerService?.priceAsDouble ?? service.priceAsDouble);
+          final duration = selectedServices.isNotEmpty
+              ? selectedServices.fold(0, (sum, s) => sum + s.duration)
+              : (providerService?.duration ?? service.duration);
+          final depositAmount = selectedServices.isNotEmpty
+              ? selectedServices.fold(0.0, (sum, s) => sum + s.deposit)
+              : (providerService != null && providerService.deposit > 0
                   ? providerService.deposit
-                  : service.deposit;
+                  : service.deposit);
           final priorityFee = service.priorityFee;
           final tip = bookingProvider.tipAmount;
           final todayDue =
@@ -169,7 +181,10 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                 const SizedBox(height: 20),
                 _ProviderSummaryCard(
                   providerName: provider.displayName,
-                  serviceName: providerService?.serviceName ?? service.serviceName,
+                  services: selectedServices.isNotEmpty
+                      ? selectedServices
+                      : (providerService != null ? [providerService] : []),
+                  fallbackServiceName: service.serviceName,
                   providerPhoto: provider.photoUrl,
                   date: bookingProvider.selectedDate,
                   time: bookingProvider.selectedTime ?? '',
@@ -222,6 +237,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                 ),
                 const SizedBox(height: 18),
                 _PricingBreakdownCard(
+                  selectedServices: selectedServices,
                   servicePrice: fullPrice,
                   depositAmount: depositAmount,
                   priorityFee: priorityFee,
@@ -283,7 +299,8 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
 
 class _ProviderSummaryCard extends StatelessWidget {
   final String providerName;
-  final String serviceName;
+  final List<ProviderServiceSummaryModel> services;
+  final String fallbackServiceName;
   final String? providerPhoto;
   final DateTime date;
   final String time;
@@ -291,7 +308,8 @@ class _ProviderSummaryCard extends StatelessWidget {
 
   const _ProviderSummaryCard({
     required this.providerName,
-    required this.serviceName,
+    required this.services,
+    required this.fallbackServiceName,
     required this.providerPhoto,
     required this.date,
     required this.time,
@@ -300,6 +318,10 @@ class _ProviderSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final serviceLabel = services.isEmpty
+        ? fallbackServiceName
+        : services.map((s) => s.serviceName).join(', ');
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -329,9 +351,10 @@ class _ProviderSummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     AppText(
-                      serviceName,
+                      serviceLabel,
                       fontSize: 12,
                       color: AppColor.grey,
+                      maxLines: 3,
                     ),
                   ],
                 ),
@@ -570,6 +593,7 @@ class _ImageUploadBox extends StatelessWidget {
 }
 
 class _PricingBreakdownCard extends StatelessWidget {
+  final List<ProviderServiceSummaryModel> selectedServices;
   final double servicePrice;
   final double depositAmount;
   final double priorityFee;
@@ -578,6 +602,7 @@ class _PricingBreakdownCard extends StatelessWidget {
   final double remainingBalance;
 
   const _PricingBreakdownCard({
+    required this.selectedServices,
     required this.servicePrice,
     required this.depositAmount,
     required this.priorityFee,
@@ -588,6 +613,8 @@ class _PricingBreakdownCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showIndividual = selectedServices.length > 1;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -605,7 +632,21 @@ class _PricingBreakdownCard extends StatelessWidget {
             color: AppColor.darkGrey,
           ),
           const SizedBox(height: 14),
-          _PriceRow(label: 'Service Price', value: _fmt(servicePrice)),
+          if (showIndividual) ...[
+            // Individual service rows
+            ...selectedServices.map((s) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _PriceRow(
+                label: s.serviceName,
+                value: _fmt(s.priceAsDouble),
+              ),
+            )),
+            Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
+            const SizedBox(height: 10),
+            _PriceRow(label: 'Subtotal', value: _fmt(servicePrice)),
+          ] else ...[
+            _PriceRow(label: 'Service Price', value: _fmt(servicePrice)),
+          ],
           if (depositAmount > 0) ...[
             const SizedBox(height: 10),
             _PriceRow(label: 'Deposit Due Today', value: _fmt(depositAmount)),

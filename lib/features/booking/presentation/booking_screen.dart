@@ -10,6 +10,8 @@ import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/address/data/models/address_model.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
+import 'package:pampa/features/booking/data/models/provider_model.dart';
+import 'package:pampa/features/booking/presentation/booking_review_screen.dart';
 import 'package:pampa/features/booking/presentation/choose_provider_screen.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
 
@@ -24,7 +26,15 @@ IconData _iconForAddress(String name) {
 // ─── Main screen ──────────────────────────────────────────────────────────────
 class BookingScreen extends StatefulWidget {
   final int serviceId;
-  const BookingScreen({super.key, required this.serviceId});
+  final ProviderModel? preSelectedProvider;
+  final List<int> preSelectedServiceIds;
+
+  const BookingScreen({
+    super.key,
+    required this.serviceId,
+    this.preSelectedProvider,
+    this.preSelectedServiceIds = const [],
+  });
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
@@ -127,6 +137,31 @@ class _BookingScreenState extends State<BookingScreen> {
 
   void _onConfirm() {
     final bp = context.read<BookingProvider>();
+    final preProvider = widget.preSelectedProvider;
+
+    if (preProvider != null) {
+      bp.selectProvider(preProvider);
+      final ids = widget.preSelectedServiceIds.isNotEmpty
+          ? widget.preSelectedServiceIds
+          : [widget.serviceId];
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => MultiProvider(
+            providers: [
+              ChangeNotifierProvider.value(value: bp),
+              ChangeNotifierProvider.value(
+                  value: context.read<AddressProvider>()),
+            ],
+            child: BookingReviewScreen(
+              address: _selectedAddress!,
+              serviceIds: ids,
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => MultiProvider(

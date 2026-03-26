@@ -38,7 +38,7 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
         builder: (_) => ProviderDetailScreen(
           provider: provider,
           initialServiceId: serviceId,
-          onSelectProvider: (ids) => _openReviewWithServices(provider, ids),
+          // No callback → standalone flow: address → date/time → review
         ),
       ),
     );

@@ -1,20 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/data/service/di.dart';
+import 'package:pampa/features/address/presentation/provider/address_provider.dart';
 import 'package:pampa/features/booking/data/models/provider_model.dart';
+import 'package:pampa/features/booking/presentation/booking_screen.dart';
+import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
 
 class ProviderDetailScreen extends StatefulWidget {
   final ProviderModel provider;
   final int initialServiceId;
-  final void Function(List<int> serviceIds) onSelectProvider;
+  /// When provided, called on "Continue" (used by ChooseProviderScreen flow).
+  /// When null, navigates to BookingScreen independently.
+  final void Function(List<int> serviceIds)? onSelectProvider;
 
   const ProviderDetailScreen({
     super.key,
     required this.provider,
     required this.initialServiceId,
-    required this.onSelectProvider,
+    this.onSelectProvider,
   });
 
   @override
@@ -48,6 +55,36 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
 
   String _fmtPrice(double p) =>
       p == p.truncateToDouble() ? '\$${p.toInt()}' : '\$${p.toStringAsFixed(2)}';
+
+  void _onContinue(BuildContext context) {
+    final selectedIds = _selectedIds.toList();
+    final callback = widget.onSelectProvider;
+    if (callback != null) {
+      Navigator.of(context).pop();
+      callback(selectedIds);
+      return;
+    }
+
+    // Standalone flow: navigate to BookingScreen (address → date/time → review)
+    final bp = getIt<BookingProvider>();
+    bp.fetchServiceDetail(widget.initialServiceId);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: bp),
+            ChangeNotifierProvider.value(
+                value: context.read<AddressProvider>()),
+          ],
+          child: BookingScreen(
+            serviceId: widget.initialServiceId,
+            preSelectedProvider: widget.provider,
+            preSelectedServiceIds: selectedIds,
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -175,10 +212,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            onPressed: () {
-              Navigator.of(context).pop();
-              widget.onSelectProvider(_selectedIds.toList());
-            },
+            onPressed: () => _onContinue(context),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
