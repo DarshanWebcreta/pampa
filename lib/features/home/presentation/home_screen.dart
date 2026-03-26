@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pampa/core/values/strings.dart';
+import 'package:pampa/core/values/urls.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
@@ -1860,12 +1862,14 @@ class _UpcomingBookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = booking.service.image.trim();
+    final imageUrl = "${ApiStrings.imageUrl}${booking.service.image.trim()}";
     final hasImage = imageUrl.isNotEmpty;
     final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate);
     final location = booking.provider.displayLocation;
 
-    return Container(
+    return GestureDetector(
+      onTap: () => context.push(RouteNames.myBookingDetail, extra: booking.id),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1956,7 +1960,7 @@ class _UpcomingBookingCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 }
 
@@ -1971,7 +1975,9 @@ class _PastBookingCard extends StatelessWidget {
     final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate);
     final rating = booking.provider.rating;
 
-    return Container(
+    return GestureDetector(
+      onTap: () => context.push(RouteNames.myBookingDetail, extra: booking.id),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2074,7 +2080,7 @@ class _PastBookingCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 }
 

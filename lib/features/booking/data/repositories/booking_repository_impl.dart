@@ -126,30 +126,42 @@ class BookingRepositoryImpl implements BookingRepository {
     String? inspirationPhotoPath,
   }) async {
     try {
-      final formMap = <String, dynamic>{
-        'service_ids[]': serviceIds,
-        'provider_id': providerId,
-        'appointment_date': appointmentDate,
-        'appointment_time': appointmentTime,
-      };
+      final formData = FormData();
 
-      if (addressId != null) formMap['address_id'] = addressId;
-      if (tipAmount != null) formMap['tip_amount'] = tipAmount;
+      // Add each service ID as a separate field so the backend receives
+      // service_ids[]=7&service_ids[]=8 etc.
+      for (final id in serviceIds) {
+        formData.fields.add(MapEntry('service_ids[]', id.toString()));
+      }
+
+      formData.fields.add(MapEntry('provider_id', providerId.toString()));
+      formData.fields.add(MapEntry('appointment_date', appointmentDate));
+      formData.fields.add(MapEntry('appointment_time', appointmentTime));
+
+      if (addressId != null) {
+        formData.fields.add(MapEntry('address_id', addressId.toString()));
+      }
+      if (tipAmount != null) {
+        formData.fields.add(MapEntry('tip_amount', tipAmount.toString()));
+      }
       if (notes != null && notes.trim().isNotEmpty) {
-        formMap['notes'] = notes.trim();
+        formData.fields.add(MapEntry('notes', notes.trim()));
       }
       if (pinterestLink != null && pinterestLink.trim().isNotEmpty) {
-        formMap['pinterest_link'] = pinterestLink.trim();
+        formData.fields.add(MapEntry('pinterest_link', pinterestLink.trim()));
       }
       if (inspirationPhotoPath != null && inspirationPhotoPath.isNotEmpty) {
-        formMap['inspiration_photo'] = await MultipartFile.fromFile(
-          inspirationPhotoPath,
-          filename: inspirationPhotoPath.split('/').last,
-        );
+        formData.files.add(MapEntry(
+          'inspiration_photo',
+          await MultipartFile.fromFile(
+            inspirationPhotoPath,
+            filename: inspirationPhotoPath.split('/').last,
+          ),
+        ));
       }
 
-      print('[createBooking] request: $formMap');
-      final response = await _apiService.createBooking(FormData.fromMap(formMap));
+      print('[createBooking] fields: ${formData.fields}');
+      final response = await _apiService.createBooking(formData);
       print('[createBooking] response: $response');
 
       if (response is! Map<String, dynamic>) {
