@@ -140,4 +140,21 @@ abstract class ApiService {
 
   @POST(ApiPath.payoutRequests)
   Future<dynamic> requestPayout(@Body() Map<String, dynamic> body);
+
+  /// MESSAGING
+
+  @GET(ApiPath.conversations)
+  Future<dynamic> getConversations();
+
+  @POST(ApiPath.conversations)
+  Future<dynamic> createOrGetConversation(@Body() Map<String, dynamic> body);
+
+  @GET("messages/conversations/{id}")
+  Future<dynamic> getConversationMessages(@Path("id") int id);
+
+  @POST("messages/conversations/{id}")
+  Future<dynamic> sendMessage(
+    @Path("id") int id,
+    @Body() Map<String, dynamic> body,
+  );
 }

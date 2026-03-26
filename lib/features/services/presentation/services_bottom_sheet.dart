@@ -38,16 +38,15 @@ class _ServicesSheetContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxHeight = MediaQuery.of(context).size.height * 0.85;
-
-    return Container(
-      constraints: BoxConstraints(maxHeight: maxHeight),
-      decoration: const BoxDecoration(
-        color: AppColor.authBg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return SizedBox(
+      height: 600,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColor.authBg,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
         children: [
           // ── Handle ────────────────────────────────────────────────────────
           const SizedBox(height: 12),
@@ -129,20 +128,14 @@ class _ServicesSheetContent extends StatelessWidget {
                   return const SizedBox.shrink();
                 }
 
-                return Container(
-                  margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  decoration: BoxDecoration(
-                    color: AppColor.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColor.lightGrey, width: 1),
-                  ),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    itemCount: provider.services.length,
-                    separatorBuilder: (_, __) => Divider(height: 1, color: AppColor.lightGrey, indent: 72),
-                    itemBuilder: (context, index) =>
-                        _ServiceSheetTile(service: provider.services[index]),
+                return ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  itemCount: provider.services.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) => ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: _ServiceSheetTile(service: provider.services[index]),
                   ),
                 );
               },
@@ -150,6 +143,7 @@ class _ServicesSheetContent extends StatelessWidget {
           ),
           SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
         ],
+      ),
       ),
     );
   }
@@ -164,8 +158,10 @@ class _ServiceSheetTile extends StatelessWidget {
     final imageUrl = service.image.trim();
     final hasImage = imageUrl.isNotEmpty;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return Material(
+      color: AppColor.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
       onTap: () => Navigator.of(context).pop(service.id),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -240,6 +236,7 @@ class _ServiceSheetTile extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
 }
@@ -251,14 +248,15 @@ class _ServicesShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColor.white,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(4, (index) => Padding(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(4, (index) => Padding(
+          padding: EdgeInsets.only(bottom: index < 3 ? 10 : 0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColor.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
@@ -279,8 +277,8 @@ class _ServicesShimmer extends StatelessWidget {
                 ),
               ],
             ),
-          )),
-        ),
+          ),
+        )),
       ),
     );
   }

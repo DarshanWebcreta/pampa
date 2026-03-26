@@ -84,4 +84,10 @@ class ApiPath {
 
   static const String providerBankDetails = "provider/bank-details";
   static const String payoutRequests = "provider/payout-requests";
+
+  /// ==============================
+  /// MESSAGING
+  /// ==============================
+
+  static const String conversations = "messages/conversations";
 }

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -51,7 +53,8 @@ class CategoryListScreen extends StatelessWidget {
         scrolledUnderElevation: 0,
         leading: GestureDetector(
           onTap: () => Navigator.of(context).pop(),
-          child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColor.darkGrey, size: 20),
+          child: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: AppColor.darkGrey, size: 20),
         ),
       ),
       body: Consumer<CategoryProvider>(
@@ -69,13 +72,13 @@ class CategoryListScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         AppText(
-                          'What brings you\njoy today?',
+                          'What brings you joy today?',
                           fontSize: FontSizes.extraLarge,
                           fontWeight: FontWeights.bold,
                           color: AppColor.darkGrey,
                           maxLines: 2,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         AppText(
                           'Select the service you\'d like to book',
                           fontSize: FontSizes.regular,
@@ -102,7 +105,7 @@ class CategoryListScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
-              (_, __) => const _CategoryListShimmer(),
+              (_, __) => const _CategoryShimmerTile(),
               childCount: 5,
             ),
           ),
@@ -116,16 +119,27 @@ class CategoryListScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.wifi_off_rounded, size: 48, color: AppColor.mediumGrey),
+                  const Icon(Icons.wifi_off_rounded,
+                      size: 48, color: AppColor.mediumGrey),
                   const SizedBox(height: 16),
-                  AppText(provider.errorMessage, fontSize: FontSizes.small, color: AppColor.grey, align: TextAlign.center, maxLines: 3),
+                  AppText(provider.errorMessage,
+                      fontSize: FontSizes.small,
+                      color: AppColor.grey,
+                      align: TextAlign.center,
+                      maxLines: 3),
                   const SizedBox(height: 20),
                   GestureDetector(
                     onTap: () => provider.refresh(),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                      decoration: BoxDecoration(color: AppColor.authButton, borderRadius: BorderRadius.circular(10)),
-                      child: AppText('Try Again', fontSize: FontSizes.small, fontWeight: FontWeights.semiBold, color: AppColor.white),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 28, vertical: 12),
+                      decoration: BoxDecoration(
+                          color: AppColor.authButton,
+                          borderRadius: BorderRadius.circular(10)),
+                      child: AppText('Try Again',
+                          fontSize: FontSizes.small,
+                          fontWeight: FontWeights.semiBold,
+                          color: AppColor.white),
                     ),
                   ),
                 ],
@@ -140,9 +154,13 @@ class CategoryListScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.spa_outlined, size: 48, color: AppColor.mediumGrey),
+                const Icon(Icons.spa_outlined,
+                    size: 48, color: AppColor.mediumGrey),
                 const SizedBox(height: 16),
-                AppText('No categories available', fontSize: FontSizes.regular, fontWeight: FontWeights.semiBold, color: AppColor.grey),
+                AppText('No categories available',
+                    fontSize: FontSizes.regular,
+                    fontWeight: FontWeights.semiBold,
+                    color: AppColor.grey),
               ],
             ),
           ),
@@ -156,30 +174,26 @@ class CategoryListScreen extends StatelessWidget {
         return SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverToBoxAdapter(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColor.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColor.lightGrey, width: 1),
-              ),
-              child: Column(
-                children: List.generate(categories.length, (index) {
-                  final category = categories[index];
-                  final isLast = index == categories.length - 1;
-                  return Column(
-                    children: [
-                      _CategoryListTile(category: category),
-                      if (!isLast) Divider(height: 1, color: AppColor.lightGrey, indent: 72),
-                    ],
-                  );
-                }),
-              ),
+            child: Column(
+              children: List.generate(categories.length, (index) {
+                final category = categories[index];
+                return Padding(
+                  padding: EdgeInsets.only(
+                      bottom: index < categories.length - 1 ? 10 : 0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: _CategoryListTile(category: category),
+                  ),
+                );
+              }),
             ),
           ),
         );
     }
   }
 }
+
+// ─── Category tile ────────────────────────────────────────────────────────────
 
 class _CategoryListTile extends StatelessWidget {
   final CategoryModel category;
@@ -190,57 +204,61 @@ class _CategoryListTile extends StatelessWidget {
     final iconUrl = category.icon?.trim();
     final hasIcon = iconUrl != null && iconUrl.isNotEmpty;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _showServicesSheet(context, category),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColor.authBg,
-                borderRadius: BorderRadius.circular(12),
+    return Material(
+      color: AppColor.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: () => _showServicesSheet(context, category),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: AppColor.authBg,
+                  shape: BoxShape.circle,
+                ),
+                child: hasIcon
+                    ? ClipOval(
+                        child: FunctionalComponent.cachedNetworkImage(
+                            iconUrl, radius: 23, fit: BoxFit.cover),
+                      )
+                    : Icon(_iconForCategoryName(category.categoryName),
+                        size: 22, color: AppColor.authButton),
               ),
-              child: hasIcon
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: FunctionalComponent.cachedNetworkImage(iconUrl, radius: 12, fit: BoxFit.cover),
-                    )
-                  : Icon(_iconForCategoryName(category.categoryName), size: 22, color: AppColor.authButton),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText(
-                    category.categoryName,
-                    fontSize: FontSizes.regular,
-                    fontWeight: FontWeights.semiBold,
-                    color: AppColor.darkGrey,
-                    maxLines: 1,
-                  ),
-                  const SizedBox(height: 2),
-                  AppText(
-                    _descForCategoryName(category.categoryName),
-                    fontSize: FontSizes.small,
-                    color: AppColor.grey,
-                    maxLines: 1,
-                  ),
-                ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText(
+                      category.categoryName,
+                      fontSize: FontSizes.regular,
+                      fontWeight: FontWeights.bold,
+                      color: AppColor.darkGrey,
+                      maxLines: 1,
+                    ),
+                    const SizedBox(height: 3),
+                    AppText(
+                      _descForCategoryName(category.categoryName),
+                      fontSize: FontSizes.small,
+                      color: AppColor.grey,
+                      maxLines: 1,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColor.grey),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Future<void> _showServicesSheet(BuildContext context, CategoryModel category) async {
+  Future<void> _showServicesSheet(
+      BuildContext context, CategoryModel category) async {
     final serviceId = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
@@ -256,18 +274,97 @@ class _CategoryListTile extends StatelessWidget {
   }
 }
 
-class _CategoryListShimmer extends StatelessWidget {
-  const _CategoryListShimmer();
+// ─── Shimmer tile ─────────────────────────────────────────────────────────────
+
+class _CategoryShimmerTile extends StatelessWidget {
+  const _CategoryShimmerTile();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      height: 72,
+      height: 76,
       decoration: BoxDecoration(
         color: AppColor.white,
         borderRadius: BorderRadius.circular(14),
       ),
     );
   }
+}
+
+// ─── Dashed border box ────────────────────────────────────────────────────────
+
+class _DashedBorderBox extends StatelessWidget {
+  final Widget child;
+  final Color color;
+  final double radius;
+  final double dashWidth;
+  final double dashGap;
+
+  const _DashedBorderBox({
+    required this.child,
+    required this.color,
+    this.radius = 16,
+    this.dashWidth = 6,
+    this.dashGap = 4,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DashedBorderPainter(
+        color: color,
+        radius: radius,
+        dashWidth: dashWidth,
+        dashGap: dashGap,
+      ),
+      child: child,
+    );
+  }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  final double dashWidth;
+  final double dashGap;
+
+  _DashedBorderPainter({
+    required this.color,
+    required this.radius,
+    required this.dashWidth,
+    required this.dashGap,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
+    final path = Path()..addRRect(rrect);
+
+    final metrics = path.computeMetrics();
+    for (final metric in metrics) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final next = distance + dashWidth;
+        canvas.drawPath(
+          metric.extractPath(distance, next.clamp(0, metric.length)),
+          paint,
+        );
+        distance += dashWidth + dashGap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter old) =>
+      old.color != color ||
+      old.radius != radius ||
+      old.dashWidth != dashWidth ||
+      old.dashGap != dashGap;
 }

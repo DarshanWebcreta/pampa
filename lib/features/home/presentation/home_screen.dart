@@ -19,6 +19,7 @@ import 'package:pampa/features/my_bookings/data/models/my_booking_model.dart';
 import 'package:pampa/features/my_bookings/presentation/my_bookings_tab.dart';
 import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
 import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
+import 'package:pampa/features/messaging/presentation/conversations_tab.dart';
 import 'package:pampa/features/profile/presentation/profile_tab.dart';
 import 'package:intl/intl.dart';
 
@@ -181,14 +182,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColor.white,
+      backgroundColor: AppColor.authBg,
       body: IndexedStack(
         index: _currentIndex,
         children: [
           const _HomeTab(),
           const _ServicesTab(),
           const MyBookingsTab(),
-          const _PlaceholderTab(icon: Icons.chat_bubble_rounded, label: 'Messages'),
+          const ConversationsTab(),
           const ProfileTab(),
         ],
       ),

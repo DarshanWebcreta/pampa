@@ -1,0 +1,149 @@
+import 'package:flutter/material.dart';
+import 'package:pampa/features/messaging/data/models/conversation_model.dart';
+import 'package:pampa/features/messaging/domain/repositories/messaging_repository.dart';
+
+enum ConversationsFetchStatus { initial, loading, success, error }
+enum MessagesFetchStatus { initial, loading, success, error }
+
+class MessagingProvider extends ChangeNotifier {
+  final MessagingRepository _repository;
+  MessagingProvider(this._repository);
+
+  // ── Conversations list ─────────────────────────────────────────────────────
+  ConversationsFetchStatus _convStatus = ConversationsFetchStatus.initial;
+  List<ConversationModel> _conversations = [];
+  String _convError = '';
+
+  ConversationsFetchStatus get convStatus => _convStatus;
+  List<ConversationModel> get conversations => _conversations;
+  String get convError => _convError;
+
+  // ── Active conversation ────────────────────────────────────────────────────
+  MessagesFetchStatus _msgStatus = MessagesFetchStatus.initial;
+  ConversationModel? _activeConversation;
+  List<MessageModel> _messages = [];
+  String _msgError = '';
+  bool _isSending = false;
+
+  MessagesFetchStatus get msgStatus => _msgStatus;
+  ConversationModel? get activeConversation => _activeConversation;
+  List<MessageModel> get messages => _messages;
+  String get msgError => _msgError;
+  bool get isSending => _isSending;
+
+  // ── Fetch conversations ────────────────────────────────────────────────────
+  Future<void> fetchConversations() async {
+    if (_convStatus == ConversationsFetchStatus.loading) return;
+    _convStatus = ConversationsFetchStatus.loading;
+    _convError = '';
+    notifyListeners();
+
+    try {
+      _conversations = await _repository.getConversations();
+      _convStatus = ConversationsFetchStatus.success;
+    } catch (e) {
+      _convError = e.toString().replaceFirst('Exception: ', '');
+      _convStatus = ConversationsFetchStatus.error;
+    }
+    notifyListeners();
+  }
+
+  Future<void> refreshConversations() async {
+    _convStatus = ConversationsFetchStatus.initial;
+    await fetchConversations();
+  }
+
+  // ── Open conversation (load messages) ─────────────────────────────────────
+  Future<void> openConversation(int conversationId) async {
+    _msgStatus = MessagesFetchStatus.loading;
+    _messages = [];
+    _msgError = '';
+    notifyListeners();
+
+    try {
+      final result = await _repository.getMessages(conversationId);
+      _activeConversation = result.conversation;
+      _messages = result.messages;
+      _msgStatus = MessagesFetchStatus.success;
+      // Update unread count in list
+      final idx = _conversations.indexWhere((c) => c.id == conversationId);
+      if (idx != -1) {
+        _conversations[idx] = ConversationModel(
+          id: _conversations[idx].id,
+          otherUser: _conversations[idx].otherUser,
+          lastMessage: _conversations[idx].lastMessage,
+          unreadCount: 0,
+          lastMessageAt: _conversations[idx].lastMessageAt,
+          createdAt: _conversations[idx].createdAt,
+        );
+      }
+    } catch (e) {
+      _msgError = e.toString().replaceFirst('Exception: ', '');
+      _msgStatus = MessagesFetchStatus.error;
+    }
+    notifyListeners();
+  }
+
+  // ── Send message ───────────────────────────────────────────────────────────
+  Future<bool> sendMessage({
+    required int conversationId,
+    required String body,
+  }) async {
+    if (body.trim().isEmpty) return false;
+    _isSending = true;
+    notifyListeners();
+
+    try {
+      final msg = await _repository.sendMessage(
+        conversationId: conversationId,
+        body: body.trim(),
+      );
+      _messages = [..._messages, msg];
+      // Update last message in conversation list
+      final idx = _conversations.indexWhere((c) => c.id == conversationId);
+      if (idx != -1) {
+        _conversations[idx] = ConversationModel(
+          id: _conversations[idx].id,
+          otherUser: _conversations[idx].otherUser,
+          lastMessage: ConversationLastMessage(
+            body: msg.body,
+            senderType: msg.senderType,
+            createdAt: msg.createdAt,
+          ),
+          unreadCount: 0,
+          lastMessageAt: msg.createdAt,
+          createdAt: _conversations[idx].createdAt,
+        );
+      }
+      _isSending = false;
+      notifyListeners();
+      return true;
+    } catch (_) {
+      _isSending = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ── Create or get conversation ─────────────────────────────────────────────
+  Future<ConversationModel?> createOrGetConversation({
+    required int providerId,
+    int? bookingId,
+  }) async {
+    try {
+      return await _repository.createOrGetConversation(
+        providerId: providerId,
+        bookingId: bookingId,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void clearActiveConversation() {
+    _activeConversation = null;
+    _messages = [];
+    _msgStatus = MessagesFetchStatus.initial;
+    notifyListeners();
+  }
+}
