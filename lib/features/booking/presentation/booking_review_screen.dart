@@ -16,8 +16,13 @@ import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_pro
 
 class BookingReviewScreen extends StatefulWidget {
   final AddressModel address;
+  final List<int> serviceIds;
 
-  const BookingReviewScreen({super.key, required this.address});
+  const BookingReviewScreen({
+    super.key,
+    required this.address,
+    this.serviceIds = const [],
+  });
 
   @override
   State<BookingReviewScreen> createState() => _BookingReviewScreenState();
@@ -67,8 +72,9 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
       }
     }
 
+    final ids = widget.serviceIds.isNotEmpty ? widget.serviceIds : [service.id];
     final success = await bookingProvider.submitBookingDetails(
-      serviceIds: [service.id],
+      serviceIds: ids,
       providerId: selectedProvider.id,
       addressId: widget.address.id,
       appointmentTime: appointmentTime,

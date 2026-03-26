@@ -56,7 +56,8 @@ abstract class ApiService {
   /// BOOKINGS
 
   @POST(ApiPath.createBooking)
-  Future<dynamic> createBooking(@Body() dynamic body);
+  @MultiPart()
+  Future<dynamic> createBooking(@Body() FormData body);
 
   @GET(ApiPath.getAddresses)
   Future<dynamic> getAddresses();
@@ -75,6 +76,9 @@ abstract class ApiService {
 
   @DELETE("customer/addresses/{id}")
   Future<dynamic> deleteAddress(@Path("id") int id);
+
+  @GET("providers/{id}")
+  Future<dynamic> getProviderDetail(@Path("id") int id);
 
   @GET(ApiPath.providers)
   Future<dynamic> getProviders(@Query("zip_code") String zipCode);

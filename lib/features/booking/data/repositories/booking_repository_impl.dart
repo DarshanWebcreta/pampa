@@ -148,20 +148,33 @@ class BookingRepositoryImpl implements BookingRepository {
         );
       }
 
+      print('[createBooking] request: $formMap');
       final response = await _apiService.createBooking(FormData.fromMap(formMap));
+      print('[createBooking] response: $response');
 
-      final map = response as Map<String, dynamic>;
-      if (map['status'] == true) {
-        return map['message'] as String? ?? 'Booking successful';
+      if (response is! Map<String, dynamic>) {
+        throw Exception('Booking failed. Please try again.');
       }
-      throw Exception(map['message'] ?? 'Booking failed. Please try again.');
+      if (response['status'] == true) {
+        return response['message'] as String? ?? 'Booking successful';
+      }
+      final msg = response['message'];
+      if (msg is Map || msg is List) {
+        // nested validation errors
+        final nested = _flattenMessage(msg);
+        throw Exception(nested ?? 'Booking failed. Please try again.');
+      }
+      throw Exception(msg?.toString() ?? 'Booking failed. Please try again.');
     } on DioException catch (e) {
+      print('[createBooking] DioException: ${e.response?.statusCode} ${e.response?.data}');
       final serverMessage = _extractServerMessage(e);
       throw Exception(serverMessage ?? HandleExeption.handleError(e));
-    } on Exception {
+    } on Exception catch (e) {
+      print('[createBooking] Exception: $e');
       rethrow;
-    } catch (_) {
-      throw Exception('Something went wrong. Please try again.');
+    } catch (e) {
+      print('[createBooking] Unknown error: $e');
+      throw Exception(e.toString());
     }
   }
 
@@ -205,6 +218,20 @@ class BookingRepositoryImpl implements BookingRepository {
       rethrow;
     } catch (_) {
       throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  String? _flattenMessage(dynamic msg) {
+    try {
+      if (msg is Map) {
+        final first = msg.values.first;
+        if (first is List && first.isNotEmpty) return first.first.toString();
+        return first?.toString();
+      }
+      if (msg is List && msg.isNotEmpty) return msg.first.toString();
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 

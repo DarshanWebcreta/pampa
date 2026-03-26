@@ -90,7 +90,7 @@ class MyBookingModel {
       balancePaymentStatus:
           json['balance_payment_status'] as String? ?? '',
       paymentStatus: json['payment_status'] as String? ?? '',
-      status: json['status'] as String? ?? '',
+      status: (json['status'] as String? ?? '').toLowerCase(),
       createdAt:
           DateTime.tryParse(json['created_at'] as String? ?? '') ??
               DateTime.now(),

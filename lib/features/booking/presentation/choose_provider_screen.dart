@@ -9,6 +9,7 @@ import 'package:pampa/features/address/data/models/address_model.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
 import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/booking/presentation/booking_review_screen.dart';
+import 'package:pampa/features/booking/presentation/provider_detail_screen.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
 
 class ChooseProviderScreen extends StatefulWidget {
@@ -31,7 +32,24 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
     });
   }
 
+  void _openProviderDetail(ProviderModel provider, int serviceId) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ProviderDetailScreen(
+          provider: provider,
+          initialServiceId: serviceId,
+          onSelectProvider: (ids) => _openReviewWithServices(provider, ids),
+        ),
+      ),
+    );
+  }
+
   void _openReview(ProviderModel provider) {
+    final serviceId = context.read<BookingProvider>().service?.id;
+    _openReviewWithServices(provider, serviceId != null ? [serviceId] : []);
+  }
+
+  void _openReviewWithServices(ProviderModel provider, List<int> serviceIds) {
     final bookingProvider = context.read<BookingProvider>();
     bookingProvider.selectProvider(provider);
     Navigator.of(context).push(
@@ -41,7 +59,10 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
             ChangeNotifierProvider.value(value: bookingProvider),
             ChangeNotifierProvider.value(value: context.read<AddressProvider>()),
           ],
-          child: BookingReviewScreen(address: widget.address),
+          child: BookingReviewScreen(
+            address: widget.address,
+            serviceIds: serviceIds,
+          ),
         ),
       ),
     );
@@ -136,6 +157,7 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
                                     provider: provider,
                                     selectedServiceId: service.id,
                                     onTap: () => _openReview(provider),
+                                    onViewTap: () => _openProviderDetail(provider, service.id),
                                   );
                                 },
                               ),
@@ -254,11 +276,13 @@ class _ProviderCard extends StatelessWidget {
   final ProviderModel provider;
   final int selectedServiceId;
   final VoidCallback onTap;
+  final VoidCallback onViewTap;
 
   const _ProviderCard({
     required this.provider,
     required this.selectedServiceId,
     required this.onTap,
+    required this.onViewTap,
   });
 
   @override
@@ -349,18 +373,35 @@ class _ProviderCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColor.authButton.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: AppText(
-                'Select',
-                fontSize: 12,
-                color: AppColor.authButton,
-                fontWeight: FontWeights.semiBold,
-              ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColor.authButton.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: AppText(
+                    'Select',
+                    fontSize: 12,
+                    color: AppColor.authButton,
+                    fontWeight: FontWeights.semiBold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: onViewTap,
+                  child: AppText(
+                    'View',
+                    fontSize: 12,
+                    color: AppColor.grey,
+                    fontWeight: FontWeights.medium,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

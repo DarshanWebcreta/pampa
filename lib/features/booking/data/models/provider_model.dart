@@ -34,6 +34,7 @@ class ProviderModel {
   final String? city;
   final String? state;
   final String status;
+  final String? cancellationPolicy;
   final List<ProviderGalleryImageModel> images;
   final List<ProviderServiceSummaryModel> services;
   final ProviderUserModel user;
@@ -49,6 +50,7 @@ class ProviderModel {
     this.city,
     this.state,
     required this.status,
+    this.cancellationPolicy,
     required this.images,
     required this.services,
     required this.user,
@@ -89,6 +91,7 @@ class ProviderModel {
       city: json['city'] as String?,
       state: json['state'] as String?,
       status: json['status'] as String? ?? '',
+      cancellationPolicy: json['cancellation_policy'] as String?,
       images: (json['images'] as List<dynamic>? ?? [])
           .map((e) =>
               ProviderGalleryImageModel.fromJson(e as Map<String, dynamic>))

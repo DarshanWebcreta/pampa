@@ -4,7 +4,7 @@ import 'package:pampa/features/my_bookings/domain/repositories/my_bookings_repos
 
 enum MyBookingsFetchStatus { initial, loading, success, empty, error }
 
-enum BookingFilter { all, pending, confirmed, completed, cancelled }
+enum AppointmentTab { upcoming, past }
 
 enum BookingDetailStatus { initial, loading, success, error }
 
@@ -19,26 +19,20 @@ class MyBookingsProvider extends ChangeNotifier {
   MyBookingsFetchStatus _status = MyBookingsFetchStatus.initial;
   List<MyBookingModel> _allBookings = [];
   String _error = '';
-  BookingFilter _filter = BookingFilter.all;
+  AppointmentTab _activeTab = AppointmentTab.upcoming;
 
   MyBookingsFetchStatus get status => _status;
   String get error => _error;
-  BookingFilter get filter => _filter;
+  AppointmentTab get activeTab => _activeTab;
 
-  List<MyBookingModel> get bookings {
-    switch (_filter) {
-      case BookingFilter.all:
-        return _allBookings;
-      case BookingFilter.pending:
-        return _allBookings.where((b) => b.isPending).toList();
-      case BookingFilter.confirmed:
-        return _allBookings.where((b) => b.isConfirmed).toList();
-      case BookingFilter.completed:
-        return _allBookings.where((b) => b.isCompleted).toList();
-      case BookingFilter.cancelled:
-        return _allBookings.where((b) => b.isCancelled).toList();
-    }
-  }
+  List<MyBookingModel> get upcomingBookings =>
+      _allBookings.where((b) => !b.isCompleted && !b.isCancelled).toList();
+
+  List<MyBookingModel> get pastBookings =>
+      _allBookings.where((b) => b.isCompleted).toList();
+
+  List<MyBookingModel> get bookings =>
+      _activeTab == AppointmentTab.upcoming ? upcomingBookings : pastBookings;
 
   Future<void> fetchBookings() async {
     if (_status == MyBookingsFetchStatus.loading) return;
@@ -60,9 +54,9 @@ class MyBookingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setFilter(BookingFilter f) {
-    if (_filter == f) return;
-    _filter = f;
+  void setTab(AppointmentTab tab) {
+    if (_activeTab == tab) return;
+    _activeTab = tab;
     notifyListeners();
   }
 
