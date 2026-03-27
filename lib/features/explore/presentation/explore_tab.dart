@@ -613,7 +613,15 @@ class _CategoryGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () => context.push(
+        RouteNames.services,
+        extra: {
+          'categoryId': category.id,
+          'categoryName': category.categoryName,
+        },
+      ),
+      child: Container(
       decoration: BoxDecoration(
         color: AppColor.white,
         borderRadius: BorderRadius.circular(16),
@@ -681,6 +689,7 @@ class _CategoryGridCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
