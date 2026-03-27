@@ -9,7 +9,6 @@ import 'package:pampa/features/address/data/models/address_model.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
 import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/booking/presentation/booking_review_screen.dart';
-import 'package:pampa/features/booking/presentation/provider_detail_screen.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
 
 class ChooseProviderScreen extends StatefulWidget {
@@ -30,18 +29,6 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
             zipCode: widget.address.zipCode,
           );
     });
-  }
-
-  void _openProviderDetail(ProviderModel provider, int serviceId) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ProviderDetailScreen(
-          provider: provider,
-          initialServiceId: serviceId,
-          // No callback → standalone flow: address → date/time → review
-        ),
-      ),
-    );
   }
 
   void _openReview(ProviderModel provider) {
@@ -157,7 +144,6 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
                                     provider: provider,
                                     selectedServiceId: service.id,
                                     onTap: () => _openReview(provider),
-                                    onViewTap: () => _openProviderDetail(provider, service.id),
                                   );
                                 },
                               ),
@@ -276,13 +262,11 @@ class _ProviderCard extends StatelessWidget {
   final ProviderModel provider;
   final int selectedServiceId;
   final VoidCallback onTap;
-  final VoidCallback onViewTap;
 
   const _ProviderCard({
     required this.provider,
     required this.selectedServiceId,
     required this.onTap,
-    required this.onViewTap,
   });
 
   @override
@@ -373,35 +357,19 @@ class _ProviderCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColor.authButton.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: AppText(
-                    'Select',
-                    fontSize: 12,
-                    color: AppColor.authButton,
-                    fontWeight: FontWeights.semiBold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: onViewTap,
-                  child: AppText(
-                    'View',
-                    fontSize: 12,
-                    color: AppColor.grey,
-                    fontWeight: FontWeights.medium,
-                  ),
-                ),
-              ],
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColor.authButton.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: AppText(
+                'Select',
+                fontSize: 12,
+                color: AppColor.authButton,
+                fontWeight: FontWeights.semiBold,
+              ),
             ),
           ],
         ),

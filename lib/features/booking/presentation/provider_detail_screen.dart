@@ -68,6 +68,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
     // Standalone flow: navigate to BookingScreen (address → date/time → review)
     final bp = getIt<BookingProvider>();
     bp.fetchServiceDetail(widget.initialServiceId);
+    bp.setSelectedServiceIds(selectedIds);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => MultiProvider(
@@ -184,68 +185,97 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
       ),
 
       // ── Bottom CTA ─────────────────────────────────────────────────────
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          12,
-          20,
-          MediaQuery.of(context).padding.bottom + 12,
-        ),
-        decoration: BoxDecoration(
-          color: AppColor.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        child: SizedBox(
-          height: 52,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColor.authButton,
-              foregroundColor: AppColor.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+      bottomNavigationBar: widget.provider.services.isEmpty
+          ? Container(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                12,
+                20,
+                MediaQuery.of(context).padding.bottom + 12,
               ),
-            ),
-            onPressed: () => _onContinue(context),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AppText(
-                  count == 1
-                      ? 'Continue to Book'
-                      : 'Continue · $count Services',
-                  color: AppColor.white,
-                  fontWeight: FontWeights.semiBold,
-                  fontSize: FontSizes.regular,
-                ),
-                if (total > 0) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: AppText(
-                      _fmtPrice(total),
-                      color: AppColor.white,
-                      fontWeight: FontWeights.bold,
-                      fontSize: 12,
-                    ),
+              decoration: BoxDecoration(
+                color: AppColor.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, -3),
                   ),
                 ],
-              ],
+              ),
+              child: SizedBox(
+                height: 52,
+                child: Center(
+                  child: AppText(
+                    'No services available at the moment',
+                    fontSize: FontSizes.regular,
+                    color: AppColor.grey,
+                  ),
+                ),
+              ),
+            )
+          : Container(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                12,
+                20,
+                MediaQuery.of(context).padding.bottom + 12,
+              ),
+              decoration: BoxDecoration(
+                color: AppColor.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, -3),
+                  ),
+                ],
+              ),
+              child: SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColor.authButton,
+                    foregroundColor: AppColor.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () => _onContinue(context),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AppText(
+                        count == 1
+                            ? 'Continue to Book'
+                            : 'Continue · $count Services',
+                        color: AppColor.white,
+                        fontWeight: FontWeights.semiBold,
+                        fontSize: FontSizes.regular,
+                      ),
+                      if (total > 0) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: AppText(
+                            _fmtPrice(total),
+                            color: AppColor.white,
+                            fontWeight: FontWeights.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }

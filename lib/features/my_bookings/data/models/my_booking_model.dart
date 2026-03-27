@@ -18,51 +18,57 @@ class BookingServiceModel {
   factory BookingServiceModel.fromJson(Map<String, dynamic> json) {
     return BookingServiceModel(
       id: json['id'] as int? ?? 0,
-      image:json['image']??'',
+      image: json['image'] as String? ?? '',
       serviceName: json['service_name'] as String? ?? '',
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0,
       duration: json['duration'] as int? ?? 0,
     );
   }
+
+  static BookingServiceModel empty() => const BookingServiceModel(
+        id: 0,
+        serviceName: '',
+        image: '',
+        price: 0,
+        duration: 0,
+      );
 }
 
 class MyBookingModel {
   final int id;
-  final int serviceId;
-  final int providerId;
-  final int addressId;
+  final int? serviceId;
+  final int? providerId;
+  final int? addressId;
   final DateTime appointmentDate;
   final String appointmentTime;
   final double price;
   final double depositAmount;
   final double balanceAmount;
-  final String tipAmount;
+  final String? tipAmount;
   final String balancePaymentStatus;
   final String paymentStatus;
   final String status;
-
-  final DateTime createdAt;
+  final DateTime? createdAt;
   final BookingServiceModel service;
-  final ProviderModel provider;
+  final ProviderModel? provider;
 
   const MyBookingModel({
     required this.id,
-    required this.serviceId,
-
-    required this.providerId,
-    required this.tipAmount,
-    required this.addressId,
+    this.serviceId,
+    this.providerId,
+    this.addressId,
     required this.appointmentDate,
     required this.appointmentTime,
     required this.price,
     required this.depositAmount,
     required this.balanceAmount,
+    this.tipAmount,
     required this.balancePaymentStatus,
     required this.paymentStatus,
     required this.status,
-    required this.createdAt,
+    this.createdAt,
     required this.service,
-    required this.provider,
+    this.provider,
   });
 
   bool get isPending => status.toLowerCase() == 'pending';
@@ -72,15 +78,14 @@ class MyBookingModel {
 
   factory MyBookingModel.fromJson(Map<String, dynamic> json) {
     return MyBookingModel(
-      tipAmount: json['tip_amount']??'0',
-      id: json['id'] as int,
-
-      serviceId: json['service_id'] as int? ?? 0,
-      providerId: json['provider_id'] as int? ?? 0,
-      addressId: json['address_id'] as int? ?? 0,
-      appointmentDate:
-          DateTime.tryParse(json['appointment_date'] as String? ?? '') ??
-              DateTime.now(),
+      id: json['id'] as int? ?? 0,
+      serviceId: json['service_id'] as int?,
+      providerId: json['provider_id'] as int?,
+      addressId: json['address_id'] as int?,
+      tipAmount: json['tip_amount']?.toString(),
+      appointmentDate: json['appointment_date'] != null
+          ? DateTime.tryParse(json['appointment_date']) ?? DateTime.now()
+          : DateTime.now(),
       appointmentTime: json['appointment_time'] as String? ?? '',
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0,
       depositAmount:
@@ -90,16 +95,16 @@ class MyBookingModel {
       balancePaymentStatus:
           json['balance_payment_status'] as String? ?? '',
       paymentStatus: json['payment_status'] as String? ?? '',
-      status: (json['status'] as String? ?? '').toLowerCase(),
-      createdAt:
-          DateTime.tryParse(json['created_at'] as String? ?? '') ??
-              DateTime.now(),
-      service: BookingServiceModel.fromJson(
-        json['service'] as Map<String, dynamic>? ?? {},
-      ),
-      provider: ProviderModel.fromJson(
-        json['provider'] as Map<String, dynamic>? ?? {},
-      ),
+      status: (json['status'] as String?)?.toLowerCase() ?? '',
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'])
+          : null,
+      service: json['service'] != null
+          ? BookingServiceModel.fromJson(json['service'])
+          : BookingServiceModel.empty(),
+      provider: json['provider'] != null
+          ? ProviderModel.fromJson(json['provider'])
+          : null,
     );
   }
 }

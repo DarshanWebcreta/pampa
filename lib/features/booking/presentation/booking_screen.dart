@@ -141,9 +141,11 @@ class _BookingScreenState extends State<BookingScreen> {
 
     if (preProvider != null) {
       bp.selectProvider(preProvider);
-      final ids = widget.preSelectedServiceIds.isNotEmpty
-          ? widget.preSelectedServiceIds
-          : [widget.serviceId];
+      final ids = bp.selectedServiceIds.isNotEmpty
+          ? bp.selectedServiceIds
+          : (widget.preSelectedServiceIds.isNotEmpty
+              ? widget.preSelectedServiceIds
+              : [widget.serviceId]);
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => MultiProvider(

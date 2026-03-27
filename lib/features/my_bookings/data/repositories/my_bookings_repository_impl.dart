@@ -25,7 +25,8 @@ class MyBookingsRepositoryImpl implements MyBookingsRepository {
       throw Exception(HandleExeption.handleError(e));
     } on Exception {
       rethrow;
-    } catch (_) {
+    } catch (e) {
+
       throw Exception('Something went wrong. Please try again.');
     }
   }

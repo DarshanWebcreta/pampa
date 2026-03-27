@@ -28,6 +28,9 @@ import 'package:pampa/features/messaging/presentation/provider/messaging_provide
 import 'package:pampa/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:pampa/features/profile/domain/repositories/profile_repository.dart';
 import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
+import 'package:pampa/features/explore/data/repositories/explore_repository_impl.dart';
+import 'package:pampa/features/explore/domain/repositories/explore_repository.dart';
+import 'package:pampa/features/explore/presentation/provider/explore_provider.dart';
 
 final getIt = GetIt.instance;
 
@@ -106,5 +109,13 @@ void setup() {
   );
   getIt.registerLazySingleton<MessagingProvider>(
     () => MessagingProvider(getIt<MessagingRepository>()),
+  );
+
+  // Explore
+  getIt.registerLazySingleton<ExploreRepository>(
+    () => ExploreRepositoryImpl(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<ExploreProvider>(
+    () => ExploreProvider(getIt<ExploreRepository>()),
   );
 }

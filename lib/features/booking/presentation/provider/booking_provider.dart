@@ -54,14 +54,24 @@ class BookingProvider extends ChangeNotifier {
       _fetchStatus == BookingFetchStatus.success &&
       _submitStatus == BookingSubmitStatus.idle;
 
+  // ── Selected service IDs (multi-select) ───────────────────────────────────
+  List<int> _selectedServiceIds = [];
+  List<int> get selectedServiceIds => _selectedServiceIds;
+
+  void setSelectedServiceIds(List<int> ids) {
+    _selectedServiceIds = List<int>.from(ids);
+  }
+
   // ── Submit state ───────────────────────────────────────────────────────────
   BookingSubmitStatus _submitStatus = BookingSubmitStatus.idle;
   String _submitError = '';
   String _successMessage = '';
+  String? _paymentLink;
 
   BookingSubmitStatus get submitStatus => _submitStatus;
   String get submitError => _submitError;
   String get successMessage => _successMessage;
+  String? get paymentLink => _paymentLink;
   bool get isSubmitting => _submitStatus == BookingSubmitStatus.submitting;
 
   // ── Fetch service detail ───────────────────────────────────────────────────
@@ -187,7 +197,7 @@ class BookingProvider extends ChangeNotifier {
 
     try {
       final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-      _successMessage = await _repository.createBooking(
+      final result = await _repository.createBooking(
         serviceIds: serviceIds,
         providerId: providerId,
         addressId: addressId,
@@ -198,6 +208,8 @@ class BookingProvider extends ChangeNotifier {
         pinterestLink: pinterestLink,
         inspirationPhotoPath: inspirationPhotoPath,
       );
+      _successMessage = result.message;
+      _paymentLink = result.paymentLink;
 
       _submitStatus = BookingSubmitStatus.submitted;
       notifyListeners();
@@ -249,6 +261,7 @@ class BookingProvider extends ChangeNotifier {
   void resetSubmit() {
     _submitStatus = BookingSubmitStatus.idle;
     _submitError = '';
+    _paymentLink = null;
     notifyListeners();
   }
 

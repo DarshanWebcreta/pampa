@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pampa/core/values/strings.dart';
 import 'package:pampa/core/values/urls.dart';
 import 'package:provider/provider.dart';
 
@@ -21,6 +20,7 @@ import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_pro
 import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
 import 'package:pampa/features/messaging/presentation/conversations_tab.dart';
 import 'package:pampa/features/profile/presentation/profile_tab.dart';
+import 'package:pampa/features/explore/presentation/explore_tab.dart';
 import 'package:intl/intl.dart';
 
 // ─── Icon mapping for category names ──────────────────────────────────────────
@@ -187,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _currentIndex,
         children: [
           const _HomeTab(),
-          const _ServicesTab(),
+          const ExploreTab(),
           const MyBookingsTab(),
           const ConversationsTab(),
           const ProfileTab(),
@@ -1575,7 +1575,7 @@ class _HomeHeader extends StatelessWidget {
           children: [
             Expanded(
               child: Consumer<ProfileProvider>(
-                builder: (_, p, __) {
+                builder: (_, p, _) {
                   final firstName = p.profile?.name.trim().split(' ').first ?? '';
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1863,10 +1863,10 @@ class _UpcomingBookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = "${ApiStrings.imageUrl}${booking.service.image.trim()}";
+    final imageUrl = "${ApiStrings.imageUrl}${booking.service?.image.trim()}";
     final hasImage = imageUrl.isNotEmpty;
-    final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate);
-    final location = booking.provider.displayLocation;
+    final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate??DateTime.now());
+    final location = booking.provider?.displayLocation;
 
     return GestureDetector(
       onTap: () => context.push(RouteNames.myBookingDetail, extra: booking.id),
@@ -1903,7 +1903,7 @@ class _UpcomingBookingCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: AppText(
-                        booking.service.serviceName,
+                        booking.service?.serviceName??'',
                         fontSize: FontSizes.regular,
                         fontWeight: FontWeights.semiBold,
                         color: AppColor.darkGrey,
@@ -1917,7 +1917,7 @@ class _UpcomingBookingCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: AppText(
-                        '\$${booking.price.toStringAsFixed(0)}',
+                        '\$${booking.price?.toStringAsFixed(0)}',
                         fontSize: FontSizes.small,
                         fontWeight: FontWeights.bold,
                         color: AppColor.authButton,
@@ -1927,7 +1927,7 @@ class _UpcomingBookingCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 AppText(
-                  'with ${booking.provider.displayName}',
+                  'with ${booking.provider?.displayName}',
                   fontSize: FontSizes.small,
                   color: AppColor.grey,
                   maxLines: 1,
@@ -1941,17 +1941,17 @@ class _UpcomingBookingCard extends StatelessWidget {
                     const SizedBox(width: 12),
                     const Icon(Icons.access_time_rounded, size: 12, color: AppColor.grey),
                     const SizedBox(width: 4),
-                    AppText(booking.appointmentTime, fontSize: FontSizes.mini, color: AppColor.grey),
+                    AppText(booking.appointmentTime??'', fontSize: FontSizes.mini, color: AppColor.grey),
                   ],
                 ),
-                if (location.isNotEmpty && location != 'Location not set') ...[
+                if ([location??[]].isNotEmpty && location != 'Location not set') ...[
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       const Icon(Icons.location_on_outlined, size: 12, color: AppColor.grey),
                       const SizedBox(width: 4),
                       Expanded(
-                        child: AppText(location, fontSize: FontSizes.mini, color: AppColor.grey, maxLines: 1),
+                        child: AppText(location??'', fontSize: FontSizes.mini, color: AppColor.grey, maxLines: 1),
                       ),
                     ],
                   ),
@@ -1971,10 +1971,10 @@ class _PastBookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = booking.service.image.trim();
-    final hasImage = imageUrl.isNotEmpty;
-    final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate);
-    final rating = booking.provider.rating;
+    final imageUrl = booking.service?.image.trim();
+    final hasImage = imageUrl?.isNotEmpty;
+    final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate??DateTime.now());
+    final rating = booking.provider?.rating;
 
     return GestureDetector(
       onTap: () => context.push(RouteNames.myBookingDetail, extra: booking.id),
@@ -1996,8 +1996,8 @@ class _PastBookingCard extends StatelessWidget {
                 child: SizedBox(
                   width: 52,
                   height: 52,
-                  child: hasImage
-                      ? FunctionalComponent.cachedNetworkImage(imageUrl, radius: 12, fit: BoxFit.cover)
+                  child: hasImage??false
+                      ? FunctionalComponent.cachedNetworkImage(imageUrl??'', radius: 12, fit: BoxFit.cover)
                       : Container(
                           color: AppColor.authBg,
                           child: const Icon(Icons.spa_rounded, color: AppColor.authButton, size: 24),
@@ -2014,18 +2014,18 @@ class _PastBookingCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: AppText(
-                            booking.service.serviceName,
+                            booking.service?.serviceName??'',
                             fontSize: FontSizes.regular,
                             fontWeight: FontWeights.semiBold,
                             color: AppColor.darkGrey,
                             maxLines: 1,
                           ),
                         ),
-                        if (rating > 0) ...[
+                        if ((rating??0) > 0) ...[
                           const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
                           const SizedBox(width: 2),
                           AppText(
-                            rating.toStringAsFixed(0),
+                            (rating??0).toStringAsFixed(0),
                             fontSize: FontSizes.small,
                             fontWeight: FontWeights.semiBold,
                             color: AppColor.darkGrey,
@@ -2034,7 +2034,7 @@ class _PastBookingCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 3),
-                    AppText(booking.provider.displayName, fontSize: FontSizes.small, color: AppColor.grey),
+                    AppText(booking.provider?.displayName??'', fontSize: FontSizes.small, color: AppColor.grey),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -2042,7 +2042,7 @@ class _PastBookingCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         const Text('•', style: TextStyle(color: AppColor.grey, fontSize: 10)),
                         const SizedBox(width: 8),
-                        AppText(booking.appointmentTime, fontSize: FontSizes.mini, color: AppColor.grey),
+                        AppText(booking.appointmentTime??'', fontSize: FontSizes.mini, color: AppColor.grey),
                       ],
                     ),
                   ],

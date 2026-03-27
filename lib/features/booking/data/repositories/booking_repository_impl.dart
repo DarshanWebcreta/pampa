@@ -114,7 +114,7 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
-  Future<String> createBooking({
+  Future<({String message, String? paymentLink})> createBooking({
     required List<int> serviceIds,
     required int providerId,
     int? addressId,
@@ -128,10 +128,10 @@ class BookingRepositoryImpl implements BookingRepository {
     try {
       final formData = FormData();
 
-      // Add each service ID as a separate field so the backend receives
-      // service_ids[]=7&service_ids[]=8 etc.
-      for (final id in serviceIds) {
-        formData.fields.add(MapEntry('service_ids[]', id.toString()));
+      for (int i = 0; i < serviceIds.length; i++) {
+        formData.fields.add(
+          MapEntry('service_ids[$i]', serviceIds[i].toString()),
+        );
       }
 
       formData.fields.add(MapEntry('provider_id', providerId.toString()));
@@ -160,32 +160,34 @@ class BookingRepositoryImpl implements BookingRepository {
         ));
       }
 
-      print('[createBooking] fields: ${formData.fields}');
       final response = await _apiService.createBooking(formData);
-      print('[createBooking] response: $response');
 
       if (response is! Map<String, dynamic>) {
         throw Exception('Booking failed. Please try again.');
       }
       if (response['status'] == true) {
-        return response['message'] as String? ?? 'Booking successful';
+        final message =
+            response['message'] as String? ?? 'Booking successful';
+        final data = response['data'];
+        String? paymentLink;
+        if (data is Map<String, dynamic>) {
+          final link = data['payment_link']?.toString();
+          if (link != null && link.isNotEmpty) paymentLink = link;
+        }
+        return (message: message, paymentLink: paymentLink);
       }
       final msg = response['message'];
       if (msg is Map || msg is List) {
-        // nested validation errors
         final nested = _flattenMessage(msg);
         throw Exception(nested ?? 'Booking failed. Please try again.');
       }
       throw Exception(msg?.toString() ?? 'Booking failed. Please try again.');
     } on DioException catch (e) {
-      print('[createBooking] DioException: ${e.response?.statusCode} ${e.response?.data}');
       final serverMessage = _extractServerMessage(e);
       throw Exception(serverMessage ?? HandleExeption.handleError(e));
-    } on Exception catch (e) {
-      print('[createBooking] Exception: $e');
+    } on Exception {
       rethrow;
     } catch (e) {
-      print('[createBooking] Unknown error: $e');
       throw Exception(e.toString());
     }
   }

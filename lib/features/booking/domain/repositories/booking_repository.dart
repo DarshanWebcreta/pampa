@@ -20,7 +20,7 @@ abstract class BookingRepository {
     required int serviceId,
   });
 
-  Future<String> createBooking({
+  Future<({String message, String? paymentLink})> createBooking({
     required List<int> serviceIds,
     required int providerId,
     int? addressId,

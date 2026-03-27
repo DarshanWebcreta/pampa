@@ -90,4 +90,10 @@ class ApiPath {
   /// ==============================
 
   static const String conversations = "messages/conversations";
+
+  /// ==============================
+  /// EXPLORE
+  /// ==============================
+
+  static const String explore = "explore";
 }

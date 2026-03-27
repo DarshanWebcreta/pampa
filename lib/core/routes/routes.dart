@@ -31,4 +31,5 @@ class RouteNames {
   static const services = '/services';
   static const bookingDetail = '/booking-detail';
   static const myBookingDetail = '/my-booking-detail';
+  static const chat = '/chat';
 }

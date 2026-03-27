@@ -14,6 +14,7 @@ import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
 import 'package:pampa/features/home/presentation/home_screen.dart';
 import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
+import 'package:pampa/features/webview/webview.dart';
 
 class BookingReviewScreen extends StatefulWidget {
   final AddressModel address;
@@ -54,6 +55,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
   Future<void> _submit(BuildContext context) async {
     final bookingProvider = context.read<BookingProvider>();
     final service = bookingProvider.service;
+
     final selectedProvider = bookingProvider.selectedProvider;
     final appointmentTime = bookingProvider.selectedTime;
     if (service == null || selectedProvider == null || appointmentTime == null) {
@@ -73,7 +75,10 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
       }
     }
 
-    final ids = widget.serviceIds.isNotEmpty ? widget.serviceIds : [service.id];
+    final ids = bookingProvider.selectedServiceIds.isNotEmpty
+        ? bookingProvider.selectedServiceIds
+        : (widget.serviceIds.isNotEmpty ? widget.serviceIds : [service.id]);
+    print(ids);
     final success = await bookingProvider.submitBookingDetails(
       serviceIds: ids,
       providerId: selectedProvider.id,
@@ -96,6 +101,34 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
       return;
     }
 
+    final paymentLink = bookingProvider.paymentLink;
+
+    if (paymentLink != null && paymentLink.isNotEmpty) {
+      // Open Stripe checkout in webview
+      final paid = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => CustomWebView(
+            checkoutUrl: paymentLink,
+            title: 'Complete Payment',
+          ),
+        ),
+      );
+
+      if (!context.mounted) return;
+
+      if (paid != true) {
+        // User cancelled — stay on the review screen
+        FunctionalComponent.showSnackBar(
+          context: context,
+          title: 'Payment cancelled. Your booking is pending.',
+          success: false,
+        );
+        bookingProvider.resetSubmit();
+        return;
+      }
+    }
+
+    // Payment done (or no payment link) — go to appointments tab
     await context.read<MyBookingsProvider>().fetchBookings();
     if (!context.mounted) return;
     homeTabNotifier.value = 2;
@@ -133,9 +166,9 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
         builder: (context, bookingProvider, _) {
           final service = bookingProvider.service!;
           final provider = bookingProvider.selectedProvider!;
-          final ids = widget.serviceIds.isNotEmpty
-              ? widget.serviceIds
-              : [service.id];
+          final ids = bookingProvider.selectedServiceIds.isNotEmpty
+              ? bookingProvider.selectedServiceIds
+              : (widget.serviceIds.isNotEmpty ? widget.serviceIds : [service.id]);
           final selectedServices = ids
               .map((id) => provider.serviceFor(id))
               .whereType<ProviderServiceSummaryModel>()
@@ -158,7 +191,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
               (depositAmount > 0 ? depositAmount : fullPrice) + priorityFee + tip;
           final remainingBalance =
               depositAmount > 0 ? fullPrice - depositAmount : 0.0;
-
+          print(selectedServices.length);
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
             child: Column(
@@ -633,14 +666,22 @@ class _PricingBreakdownCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           if (showIndividual) ...[
-            // Individual service rows
-            ...selectedServices.map((s) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _PriceRow(
+            // Individual service rows with per-service deposit
+            ...selectedServices.expand((s) => [
+              _PriceRow(
                 label: s.serviceName,
                 value: _fmt(s.priceAsDouble),
               ),
-            )),
+              if (s.deposit > 0) ...[
+                const SizedBox(height: 4),
+                _PriceRow(
+                  label: '  Deposit',
+                  value: _fmt(s.deposit),
+                  secondary: true,
+                ),
+              ],
+              const SizedBox(height: 10),
+            ]),
             Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
             const SizedBox(height: 10),
             _PriceRow(label: 'Subtotal', value: _fmt(servicePrice)),
@@ -649,7 +690,10 @@ class _PricingBreakdownCard extends StatelessWidget {
           ],
           if (depositAmount > 0) ...[
             const SizedBox(height: 10),
-            _PriceRow(label: 'Deposit Due Today', value: _fmt(depositAmount)),
+            _PriceRow(
+              label: showIndividual ? 'Total Deposit Due Today' : 'Deposit Due Today',
+              value: _fmt(depositAmount),
+            ),
           ],
           if (priorityFee > 0) ...[
             const SizedBox(height: 10),
@@ -691,33 +735,40 @@ class _PriceRow extends StatelessWidget {
   final String label;
   final String value;
   final bool highlight;
+  final bool secondary;
 
   const _PriceRow({
     required this.label,
     required this.value,
     this.highlight = false,
+    this.secondary = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final color = highlight ? AppColor.authButton : AppColor.darkGrey;
     final weight = highlight ? FontWeights.bold : FontWeights.medium;
+    final fontSize = secondary ? 12.0 : 13.0;
+    final labelColor = secondary
+        ? AppColor.grey.withValues(alpha: 0.7)
+        : (highlight ? AppColor.authButton : AppColor.grey);
+    final valueColor = secondary ? AppColor.grey : color;
 
     return Row(
       children: [
         Expanded(
           child: AppText(
             label,
-            fontSize: 13,
-            color: highlight ? AppColor.authButton : AppColor.grey,
+            fontSize: fontSize,
+            color: labelColor,
             maxLines: 2,
           ),
         ),
         AppText(
           value,
-          fontSize: 13,
-          color: color,
-          fontWeight: weight,
+          fontSize: fontSize,
+          color: valueColor,
+          fontWeight: secondary ? FontWeights.regular : weight,
         ),
       ],
     );

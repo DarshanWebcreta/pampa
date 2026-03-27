@@ -12,6 +12,7 @@ import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/home/presentation/home_screen.dart';
 import 'package:pampa/features/my_bookings/data/models/my_booking_model.dart';
 import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
+import 'package:pampa/features/chat/presentation/chat_screen.dart';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -244,7 +245,8 @@ class _TabItem extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+
+          duration: const Duration(milliseconds: 0),
           decoration: BoxDecoration(
             color: active ? AppColor.white : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
@@ -314,8 +316,8 @@ class _AppointmentCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _providerAvatar(
-                    booking.provider.photoUrl,
-                    booking.provider.displayName,
+                    booking.provider?.photoUrl,
+                    booking.provider?.displayName ?? '',
                     48,
                   ),
                   const SizedBox(width: 12),
@@ -332,7 +334,9 @@ class _AppointmentCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         AppText(
-                          'with ${booking.provider.displayName}',
+                          booking.provider != null
+                              ? 'with ${booking.provider!.displayName}'
+                              : '',
                           fontSize: 12,
                           color: AppColor.grey,
                           maxLines: 1,
@@ -384,6 +388,44 @@ class _AppointmentCard extends StatelessWidget {
                     color: AppColor.grey,
                   ),
                   const Spacer(),
+                  if (booking.isConfirmed && booking.providerId != null)
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => BookingChatScreen(
+                            bookingId: booking.id,
+                            providerId: booking.providerId!,
+                            providerName:
+                                booking.provider?.displayName ?? 'Provider',
+                          ),
+                        ),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFe8fff3),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 12,
+                              color: Color(0xFF50cd89),
+                            ),
+                            const SizedBox(width: 4),
+                            AppText(
+                              'Chat',
+                              fontSize: 12,
+                              fontWeight: FontWeights.semiBold,
+                              color: const Color(0xFF50cd89),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   if (showBookAgain)
                     GestureDetector(
                       onTap: () => context.push(

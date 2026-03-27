@@ -62,8 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         title: 'Registration successful! Welcome aboard.',
         success: true,
       );
-      final hasZip = (StorageManager.readData(StoreKeys.zipCode) as String?)?.isNotEmpty ?? false;
-      context.go(hasZip ? RouteNames.mainScreen : RouteNames.zipCode);
+      context.go(RouteNames.mainScreen);
     } else {
       FunctionalComponent.showSnackBar(
         context: context,

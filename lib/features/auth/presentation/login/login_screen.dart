@@ -50,8 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
         title: 'Login successful! Welcome back.',
         success: true,
       );
-      final hasZip = (StorageManager.readData(StoreKeys.zipCode) as String?)?.isNotEmpty ?? false;
-      context.go(hasZip ? RouteNames.mainScreen : RouteNames.zipCode);
+      context.go(RouteNames.mainScreen);
     } else {
       FunctionalComponent.showSnackBar(
         context: context,

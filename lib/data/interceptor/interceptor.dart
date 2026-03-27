@@ -8,7 +8,11 @@ class DefaultInterceptor extends Interceptor {
   @override
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
-    options.headers[ApiStrings.contentType] = ApiStrings.applicationXWWW;
+    // Don't override Content-Type for FormData — Dio sets multipart/form-data
+    // with the correct boundary automatically for FormData requests.
+    if (options.data is! FormData) {
+      options.headers[ApiStrings.contentType] = ApiStrings.applicationXWWW;
+    }
     options.headers[ApiStrings.accept] = ApiStrings.applicationJson;
 
     options.connectTimeout = const Duration(milliseconds: 20000);

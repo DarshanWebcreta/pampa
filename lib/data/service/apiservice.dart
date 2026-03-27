@@ -157,4 +157,9 @@ abstract class ApiService {
     @Path("id") int id,
     @Body() Map<String, dynamic> body,
   );
+
+  /// EXPLORE
+
+  @GET(ApiPath.explore)
+  Future<dynamic> explore(@Query("query") String? query);
 }

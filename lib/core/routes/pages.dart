@@ -10,19 +10,18 @@ import 'package:pampa/features/auth/presentation/register/register_screen.dart';
 import 'package:pampa/features/auth/presentation/welcome/welcome_screen.dart';
 import 'package:pampa/features/categories/presentation/category_list_screen.dart';
 import 'package:pampa/features/home/presentation/home_screen.dart';
-import 'package:pampa/features/onboarding/presentation/zipcode_screen.dart';
 import 'package:pampa/features/services/presentation/provider/service_provider.dart';
 import 'package:pampa/features/services/presentation/services_screen.dart';
 import 'package:pampa/features/booking/presentation/booking_screen.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
 import 'package:pampa/features/my_bookings/presentation/booking_detail_screen.dart';
+import 'package:pampa/features/chat/presentation/chat_screen.dart' show BookingChatScreen;
 import 'package:provider/provider.dart';
 
 class AppRouter {
 
   // ── Auth-gate routes (require a token) ──────────────────────────────────────
   static const _protectedRoutes = {
-    RouteNames.zipCode,
     RouteNames.mainScreen,
     RouteNames.services,
     RouteNames.bookingDetail,
@@ -36,9 +35,7 @@ class AppRouter {
   };
 
   static String _afterLoginDestination() {
-    final zip = StorageManager.readData(StoreKeys.zipCode) as String?;
-    final hasZip = zip != null && zip.isNotEmpty;
-    return hasZip ? RouteNames.mainScreen : RouteNames.zipCode;
+    return RouteNames.mainScreen;
   }
 
   static GoRouter router = GoRouter(
@@ -92,12 +89,6 @@ class AppRouter {
       ),
 
       GoRoute(
-        path: RouteNames.zipCode,
-        name: RouteNames.zipCode,
-        builder: (context, state) => const ZipCodeScreen(),
-      ),
-
-      GoRoute(
         path: RouteNames.mainScreen,
         name: RouteNames.mainScreen,
         builder: (context, state) => const HomeScreen(),
@@ -144,6 +135,19 @@ class AppRouter {
         builder: (context, state) {
           final bookingId = state.extra as int;
           return BookingDetailScreen(bookingId: bookingId);
+        },
+      ),
+
+      GoRoute(
+        path: RouteNames.chat,
+        name: RouteNames.chat,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return BookingChatScreen(
+            bookingId: extra['bookingId'] as int,
+            providerId: extra['providerId'] as int,
+            providerName: extra['providerName'] as String,
+          );
         },
       ),
 

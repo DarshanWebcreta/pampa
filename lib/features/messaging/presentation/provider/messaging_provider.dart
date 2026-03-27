@@ -114,6 +114,23 @@ class MessagingProvider extends ChangeNotifier {
           lastMessageAt: msg.createdAt,
           createdAt: _conversations[idx].createdAt,
         );
+      } else if (_activeConversation != null) {
+        // New conversation not yet in list — add it
+        _conversations = [
+          ConversationModel(
+            id: _activeConversation!.id,
+            otherUser: _activeConversation!.otherUser,
+            lastMessage: ConversationLastMessage(
+              body: msg.body,
+              senderType: msg.senderType,
+              createdAt: msg.createdAt,
+            ),
+            unreadCount: 0,
+            lastMessageAt: msg.createdAt,
+            createdAt: _activeConversation!.createdAt,
+          ),
+          ..._conversations,
+        ];
       }
       _isSending = false;
       notifyListeners();

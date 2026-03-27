@@ -528,6 +528,15 @@ class _ProviderContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = booking.provider;
+
+    if (provider == null) {
+      return AppText(
+        'Provider info unavailable',
+        fontSize: FontSizes.small,
+        color: AppColor.grey,
+      );
+    }
+
     final hasLocation = (provider.city != null && provider.city!.isNotEmpty) ||
         (provider.state != null && provider.state!.isNotEmpty);
 
@@ -589,15 +598,6 @@ class _ProviderContent extends StatelessWidget {
                   ),
                 ],
               ),
-              // if (provider.bio != null && provider.bio!.isNotEmpty) ...[
-              //   const SizedBox(height: 6),
-              //   AppText(
-              //     provider.bio!,
-              //     fontSize: 12,
-              //     color: AppColor.grey,
-              //     maxLines: 2,
-              //   ),
-              // ],
               const SizedBox(height: 4),
               if (hasLocation)
                 Row(
