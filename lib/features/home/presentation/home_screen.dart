@@ -1712,8 +1712,44 @@ class _UpcomingSection extends StatelessWidget {
                   message: 'No upcoming appointments',
                   sub: 'Book a service to get started',
                 )
-              else
-                ...upcoming.map((b) => _UpcomingBookingCard(booking: b)),
+              else ...[
+                ...upcoming.take(5).map((b) => _UpcomingBookingCard(booking: b)),
+                if (upcoming.length >= 5)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: GestureDetector(
+                      onTap: () => homeTabNotifier.value = 2,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: AppColor.authButton.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColor.authButton.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AppText(
+                              'View All Appointments',
+                              fontSize: FontSizes.regular,
+                              fontWeight: FontWeights.semiBold,
+                              color: AppColor.authButton,
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: AppColor.authButton,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ],
           ),
         );

@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "843557523861",
+    "project_id": "pampa-82b7c",
+    "storage_bucket": "pampa-82b7c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:843557523861:android:06da5b55a75961c576269c",
+        "android_client_info": {
+          "package_name": "com.example.pampa"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "843557523861-td1icafaacurh50gcuu13qiu945mvjfe.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.pampa",
+            "certificate_hash": "f10b9bda32b011db989eb40ef79406a511eb4c0d"
+          }
+        },
+        {
+          "client_id": "843557523861-t5ugqha6bm2qfdtilc49mh5rh8mdo4ae.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCXQetwwDpQiDVRcfK5bvCEDLAVl6OPQNw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "843557523861-t5ugqha6bm2qfdtilc49mh5rh8mdo4ae.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "843557523861-27rg3dto0bq0p9vd6q6aga2mp2s1ugen.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.pampa"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

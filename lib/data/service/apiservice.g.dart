@@ -66,6 +66,28 @@ class _ApiService implements ApiService {
   }
 
   @override
+  Future<dynamic> googleLogin(Map<String, dynamic> body) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(body);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'customer/auth/google',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
   Future<dynamic> getUser() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -177,7 +199,12 @@ class _ApiService implements ApiService {
     final _headers = <String, dynamic>{};
     final _data = body;
     final _options = _setStreamType<dynamic>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'multipart/form-data',
+          )
           .compose(
             _dio.options,
             'bookings',
@@ -682,12 +709,17 @@ class _ApiService implements ApiService {
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<dynamic>(
       Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(_dio.options, 'messages/conversations',
-              queryParameters: queryParameters, data: _data)
+          .compose(
+            _dio.options,
+            'messages/conversations',
+            queryParameters: queryParameters,
+            data: _data,
+          )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch(_options);
-    return _result.data;
+    final _value = _result.data;
+    return _value;
   }
 
   @override
@@ -699,12 +731,17 @@ class _ApiService implements ApiService {
     _data.addAll(body);
     final _options = _setStreamType<dynamic>(
       Options(method: 'POST', headers: _headers, extra: _extra)
-          .compose(_dio.options, 'messages/conversations',
-              queryParameters: queryParameters, data: _data)
+          .compose(
+            _dio.options,
+            'messages/conversations',
+            queryParameters: queryParameters,
+            data: _data,
+          )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch(_options);
-    return _result.data;
+    final _value = _result.data;
+    return _value;
   }
 
   @override
@@ -715,12 +752,17 @@ class _ApiService implements ApiService {
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<dynamic>(
       Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(_dio.options, 'messages/conversations/${id}',
-              queryParameters: queryParameters, data: _data)
+          .compose(
+            _dio.options,
+            'messages/conversations/${id}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch(_options);
-    return _result.data;
+    final _value = _result.data;
+    return _value;
   }
 
   @override
@@ -732,29 +774,39 @@ class _ApiService implements ApiService {
     _data.addAll(body);
     final _options = _setStreamType<dynamic>(
       Options(method: 'POST', headers: _headers, extra: _extra)
-          .compose(_dio.options, 'messages/conversations/${id}',
-              queryParameters: queryParameters, data: _data)
+          .compose(
+            _dio.options,
+            'messages/conversations/${id}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch(_options);
-    return _result.data;
+    final _value = _result.data;
+    return _value;
   }
 
   @override
   Future<dynamic> explore(String? query) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    if (query != null) queryParameters[r'query'] = query;
+    final queryParameters = <String, dynamic>{r'query': query};
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<dynamic>(
       Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(_dio.options, 'explore',
-              queryParameters: queryParameters, data: _data)
+          .compose(
+            _dio.options,
+            'explore',
+            queryParameters: queryParameters,
+            data: _data,
+          )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch(_options);
-    return _result.data;
+    final _value = _result.data;
+    return _value;
   }
 
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {

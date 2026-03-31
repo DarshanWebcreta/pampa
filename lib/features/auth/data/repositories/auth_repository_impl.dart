@@ -72,6 +72,58 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<AuthResponseModel> socialLogin({required String email}) async {
+    try {
+      final response = await _apiService.login({'email': email});
+
+      final map = response as Map<String, dynamic>;
+
+      if (map['status'] == true) {
+        return AuthResponseModel.fromJson(map['data'] as Map<String, dynamic>);
+      }
+
+      throw Exception(map['message'] ?? 'Login failed. Please try again.');
+    } on DioException catch (e) {
+      final serverMessage = _extractServerMessage(e);
+      throw Exception(serverMessage ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (e) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  @override
+  Future<AuthResponseModel> socialRegister({
+    required String name,
+    required String email,
+    required String mobile,
+  }) async {
+    try {
+      final response = await _apiService.register({
+        'name': name,
+        'email': email,
+        'mobile': mobile,
+      });
+
+      final map = response as Map<String, dynamic>;
+
+      if (map['status'] == true) {
+        return AuthResponseModel.fromJson(map['data'] as Map<String, dynamic>);
+      }
+
+      throw Exception(map['message'] ?? 'Registration failed. Please try again.');
+    } on DioException catch (e) {
+      final serverMessage = _extractServerMessage(e);
+      throw Exception(serverMessage ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (e) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  @override
   Future<void> logout() async {
     try {
       await _apiService.logout();

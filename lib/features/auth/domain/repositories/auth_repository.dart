@@ -14,5 +14,15 @@ abstract class AuthRepository {
     required String mobile,
   });
 
+  /// Social login — email only, no password.
+  Future<AuthResponseModel> socialLogin({required String email});
+
+  /// Social register — name + email + mobile, no password.
+  Future<AuthResponseModel> socialRegister({
+    required String name,
+    required String email,
+    required String mobile,
+  });
+
   Future<void> logout();
 }

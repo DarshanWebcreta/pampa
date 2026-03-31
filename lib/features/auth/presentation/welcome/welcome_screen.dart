@@ -1,12 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
+import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
+
+  Future<void> _onGoogleSignIn(BuildContext context) async {
+    final provider = context.read<AuthProvider>();
+    final success = await provider.googleSignIn();
+
+    if (!context.mounted) return;
+
+    if (success) {
+      context.go(RouteNames.mainScreen);
+    } else if (provider.errorMessage.isNotEmpty) {
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: provider.errorMessage,
+        success: false,
+      );
+      provider.resetState();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,18 +36,20 @@ class WelcomeScreen extends StatelessWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-
-              _buildTitle(),
-              const SizedBox(height: 32),
-
-              _buildButtons(context),
-              const SizedBox(height: 32),
-              _buildSignUp(context),
-              const SizedBox(height: 32),
-            ],
+          child: Consumer<AuthProvider>(
+            builder: (context, provider, _) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildTitle(),
+                  const SizedBox(height: 32),
+                  _buildButtons(context, provider),
+                  const SizedBox(height: 32),
+                  _buildSignUp(context),
+                  const SizedBox(height: 32),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -55,25 +78,34 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildButtons(BuildContext context) {
+  Widget _buildButtons(BuildContext context, AuthProvider provider) {
     return Column(
       children: [
         _OutlinedAuthButton(
           icon: const Icon(Icons.email_outlined, size: 20),
           label: 'Continue with Email',
-          onTap: () => context.push(RouteNames.login),
+          onTap: provider.isLoading ? null : () => context.push(RouteNames.login),
         ),
         const SizedBox(height: 12),
         _FilledAuthButton(
           icon: const Icon(Icons.apple, color: Colors.white, size: 22),
           label: 'Continue with Apple',
-          onTap: () => context.push(RouteNames.login),
+          onTap: provider.isLoading ? null : () => context.push(RouteNames.login),
         ),
         const SizedBox(height: 12),
         _OutlinedAuthButton(
-          icon: const _GoogleLogo(),
+          icon: provider.isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColor.authButton,
+                  ),
+                )
+              : const _GoogleLogo(),
           label: 'Continue with Google',
-          onTap: () => context.push(RouteNames.login),
+          onTap: provider.isLoading ? null : () => _onGoogleSignIn(context),
         ),
       ],
     );
@@ -112,7 +144,7 @@ class _OutlinedAuthButton extends StatelessWidget {
 
   final Widget icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -155,7 +187,7 @@ class _FilledAuthButton extends StatelessWidget {
 
   final Widget icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

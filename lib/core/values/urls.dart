@@ -2,6 +2,11 @@ class ApiStrings {
   ApiStrings._();
 
   static const String host = 'https://springgreen-goat-999550.hostingersite.com';
+
+  /// Web client ID from Firebase Console → Authentication → Sign-in method → Google
+  /// → Web SDK configuration → Web client ID.
+  /// Also found in google-services.json under oauth_client[].client_id where client_type == 3.
+  static const String googleServerClientId = '843557523861-t5ugqha6bm2qfdtilc49mh5rh8mdo4ae.apps.googleusercontent.com';
   static const String baseUrl = '$host/api/';
   static const String imageUrl = '$host/public';
 
@@ -25,6 +30,7 @@ class ApiPath {
 
   static const String register = "customer/register";
   static const String login = "customer/login";
+  static const String googleLogin = "customer/auth/google";
   static const String me = "customer/me";
   static const String logout = "customer/logout";
 

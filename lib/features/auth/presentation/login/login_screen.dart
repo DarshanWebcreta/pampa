@@ -3,10 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
-import 'package:pampa/core/storage/storage.dart';
 import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/colors.dart';
-import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/core/widgets/text_field_widget.dart';
 import 'package:pampa/core/widgets/custom_button.dart';

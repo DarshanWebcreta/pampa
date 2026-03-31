@@ -1,8 +1,7 @@
 import 'dart:io';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
-
 import 'package:loader_overlay/loader_overlay.dart';
 
 import 'package:pampa/core/utils/functional_component.dart';
@@ -27,7 +26,7 @@ import 'package:pampa/features/explore/presentation/provider/explore_provider.da
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await Firebase.initializeApp();
   await GetStorage.init();
   FunctionalComponent.changeStatusBarColor();
   setup();

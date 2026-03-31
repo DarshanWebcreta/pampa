@@ -32,6 +32,9 @@ abstract class ApiService {
   @POST(ApiPath.login)
   Future<dynamic> login(@Body() Map<String, dynamic> body);
 
+  @POST(ApiPath.googleLogin)
+  Future<dynamic> googleLogin(@Body() Map<String, dynamic> body);
+
   @GET(ApiPath.me)
   Future<dynamic> getUser();
 
