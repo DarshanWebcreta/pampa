@@ -14,14 +14,12 @@ abstract class AuthRepository {
     required String mobile,
   });
 
-  /// Social login — email only, no password.
-  Future<AuthResponseModel> socialLogin({required String email});
-
-  /// Social register — name + email + mobile, no password.
-  Future<AuthResponseModel> socialRegister({
-    required String name,
+  /// Social login — calls customer/social-login with Google profile data.
+  Future<AuthResponseModel> socialLogin({
     required String email,
-    required String mobile,
+    required String loginId,
+    required String fullName,
+    String? photoUrl,
   });
 
   Future<void> logout();

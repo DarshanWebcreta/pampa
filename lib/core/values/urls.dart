@@ -30,7 +30,7 @@ class ApiPath {
 
   static const String register = "customer/register";
   static const String login = "customer/login";
-  static const String googleLogin = "customer/auth/google";
+  static const String googleLogin = "customer/social-login";
   static const String me = "customer/me";
   static const String logout = "customer/logout";
 

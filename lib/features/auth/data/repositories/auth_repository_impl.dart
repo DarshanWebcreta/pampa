@@ -72,39 +72,22 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<AuthResponseModel> socialLogin({required String email}) async {
-    try {
-      final response = await _apiService.login({'email': email});
-
-      final map = response as Map<String, dynamic>;
-
-      if (map['status'] == true) {
-        return AuthResponseModel.fromJson(map['data'] as Map<String, dynamic>);
-      }
-
-      throw Exception(map['message'] ?? 'Login failed. Please try again.');
-    } on DioException catch (e) {
-      final serverMessage = _extractServerMessage(e);
-      throw Exception(serverMessage ?? HandleExeption.handleError(e));
-    } on Exception {
-      rethrow;
-    } catch (e) {
-      throw Exception('Something went wrong. Please try again.');
-    }
-  }
-
-  @override
-  Future<AuthResponseModel> socialRegister({
-    required String name,
+  Future<AuthResponseModel> socialLogin({
     required String email,
-    required String mobile,
+    required String loginId,
+    required String fullName,
+    String? photoUrl,
   }) async {
     try {
-      final response = await _apiService.register({
-        'name': name,
+      final body = <String, dynamic>{
         'email': email,
-        'mobile': mobile,
-      });
+        'login_id': loginId,
+        'login_type': 'google',
+        'full_name': fullName,
+        if (photoUrl != null && photoUrl.isNotEmpty) 'photo_url': photoUrl,
+      };
+
+      final response = await _apiService.googleLogin(body);
 
       final map = response as Map<String, dynamic>;
 
@@ -112,7 +95,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return AuthResponseModel.fromJson(map['data'] as Map<String, dynamic>);
       }
 
-      throw Exception(map['message'] ?? 'Registration failed. Please try again.');
+      throw Exception(map['message'] ?? 'Social login failed. Please try again.');
     } on DioException catch (e) {
       final serverMessage = _extractServerMessage(e);
       throw Exception(serverMessage ?? HandleExeption.handleError(e));

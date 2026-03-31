@@ -76,7 +76,7 @@ class _ApiService implements ApiService {
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            'customer/auth/google',
+            'customer/social-login',
             queryParameters: queryParameters,
             data: _data,
           )
