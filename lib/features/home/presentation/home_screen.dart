@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pampa/core/services/push_notification_service.dart';
 import 'package:pampa/core/values/urls.dart';
 import 'package:provider/provider.dart';
 
@@ -10,6 +11,7 @@ import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/address/data/models/address_model.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
 import 'package:pampa/features/categories/data/models/category_model.dart';
@@ -79,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
         profileProvider.fetchProfile();
       }
       context.read<MyBookingsProvider>().fetchBookings();
+      getIt<PushNotificationService>().syncTokenWithBackend();
     });
   }
 

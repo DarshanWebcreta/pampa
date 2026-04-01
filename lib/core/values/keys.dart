@@ -2,6 +2,8 @@ class StoreKeys {
   StoreKeys._();
   static const String welcomed = 'welcomed';
   static const String token = 'token';
+  static const String fcmToken = 'fcm_token';
+  static const String syncedFcmToken = 'synced_fcm_token';
   static const String zipCode = 'zip_code';
 }
 

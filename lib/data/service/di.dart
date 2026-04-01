@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:pampa/core/common_models/device_info.dart';
+import 'package:pampa/core/services/push_notification_service.dart';
 import 'package:pampa/providers/dummy_provider.dart';
 import 'package:pampa/data/service/apiservice.dart';
 import 'package:pampa/data/service/location_service.dart';
@@ -45,6 +46,12 @@ void setup() {
   getIt.registerLazySingleton(() => locationService);
 
   getIt.registerLazySingleton<DeviceInfoService>(() => DeviceInfoService());
+  getIt.registerLazySingleton<PushNotificationService>(
+    () => PushNotificationService(
+      getIt<ApiService>(),
+      getIt<DeviceInfoService>(),
+    ),
+  );
 
   getIt.registerLazySingleton<DummyProvider>(() => DummyProvider(apiService: getIt()));
 

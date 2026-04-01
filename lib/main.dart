@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 
+import 'package:pampa/core/services/push_notification_service.dart';
 import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/colors.dart';
 
@@ -17,7 +18,6 @@ import 'package:provider/provider.dart';
 import 'package:pampa/providers/dummy_provider.dart';
 import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
 import 'package:pampa/features/categories/presentation/provider/category_provider.dart';
-import 'package:pampa/features/services/presentation/provider/service_provider.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
 import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
 import 'package:pampa/features/messaging/presentation/provider/messaging_provider.dart';
@@ -31,6 +31,7 @@ void main() async {
   await GetStorage.init();
   FunctionalComponent.changeStatusBarColor();
   setup();
+  await getIt<PushNotificationService>().initialize();
   runApp(
     const MyApp(),
   );

@@ -169,6 +169,9 @@ abstract class ApiService {
   @POST(ApiPath.notificationPreferences)
   Future<dynamic> updateNotificationPreferences(@Body() Map<String, dynamic> body);
 
+  @POST(ApiPath.notificationToken)
+  Future<dynamic> submitNotificationToken(@Body() Map<String, dynamic> body);
+
   @GET(ApiPath.beautyPreferences)
   Future<dynamic> getBeautyPreferences();
 

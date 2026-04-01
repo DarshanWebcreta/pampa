@@ -43,6 +43,9 @@ class BookingScreen extends StatefulWidget {
 }
 
 class _BookingScreenState extends State<BookingScreen> {
+  static const int _slotStartMinutes = 9 * 60;
+  static const int _slotEndMinutes = 22 * 60;
+
   int _step = 0; // 0 = address, 1 = date & time
   AddressModel? _selectedAddress;
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
@@ -129,7 +132,7 @@ class _BookingScreenState extends State<BookingScreen> {
       }
     }
 
-    // Default: 8 AM – 8 PM every 30 min, skip past times if today
+    // Default: 9 AM – 10 PM every 30 min, skip past times if today
     _applySlots(_defaultSlots(date), date);
     setState(() => _slotsLoading = false);
   }
@@ -149,7 +152,11 @@ class _BookingScreenState extends State<BookingScreen> {
       if (parts.length < 2) continue;
       final h = int.tryParse(parts[0]) ?? 0;
       final m = int.tryParse(parts[1]) ?? 0;
-      if (isToday && h * 60 + m <= nowMins) continue;
+      final slotMinutes = h * 60 + m;
+      if (slotMinutes < _slotStartMinutes || slotMinutes > _slotEndMinutes) {
+        continue;
+      }
+      if (isToday && slotMinutes <= nowMins) continue;
       final period = h < 12 ? 'AM' : 'PM';
       final displayH = h % 12 == 0 ? 12 : h % 12;
       final displayM = m.toString().padLeft(2, '0');
@@ -163,11 +170,11 @@ class _BookingScreenState extends State<BookingScreen> {
 
   List<String> _defaultSlots(DateTime date) {
     final slots = <String>[];
-    for (int h = 8; h <= 19; h++) {
+    for (int h = 9; h <= 21; h++) {
       slots.add('${h.toString().padLeft(2, '0')}:00');
-      if (h < 20) slots.add('${h.toString().padLeft(2, '0')}:30');
+      slots.add('${h.toString().padLeft(2, '0')}:30');
     }
-    slots.add('20:00');
+    slots.add('22:00');
     return slots;
   }
 

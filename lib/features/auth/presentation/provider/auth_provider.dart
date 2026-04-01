@@ -137,6 +137,7 @@ class AuthProvider extends ChangeNotifier {
 
     StorageManager.deleteData(StoreKeys.token);
     StorageManager.deleteData(StoreKeys.zipCode);
+    StorageManager.deleteData(StoreKeys.syncedFcmToken);
     _user = null;
     _status = AuthStatus.initial;
     _errorMessage = '';

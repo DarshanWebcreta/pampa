@@ -104,6 +104,7 @@ class ApiPath {
   static const String favoriteProviders = "customer/favorites/providers";
   static const String notificationPreferences = "customer/preferences/notification";
   static const String beautyPreferences = "customer/preferences/beauty";
+  static const String notificationToken = "customer/notification-token";
 
   /// ==============================
   /// PAGES
