@@ -31,6 +31,7 @@ import 'package:pampa/features/profile/presentation/provider/profile_provider.da
 import 'package:pampa/features/explore/data/repositories/explore_repository_impl.dart';
 import 'package:pampa/features/explore/domain/repositories/explore_repository.dart';
 import 'package:pampa/features/explore/presentation/provider/explore_provider.dart';
+import 'package:pampa/features/favorites/presentation/provider/favorites_provider.dart';
 
 final getIt = GetIt.instance;
 
@@ -117,5 +118,10 @@ void setup() {
   );
   getIt.registerLazySingleton<ExploreProvider>(
     () => ExploreProvider(getIt<ExploreRepository>()),
+  );
+
+  // Favorites
+  getIt.registerLazySingleton<FavoritesProvider>(
+    () => FavoritesProvider(getIt<ApiService>()),
   );
 }

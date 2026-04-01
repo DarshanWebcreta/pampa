@@ -161,6 +161,36 @@ abstract class ApiService {
     @Body() Map<String, dynamic> body,
   );
 
+  /// NOTIFICATION PREFERENCES
+
+  @GET(ApiPath.notificationPreferences)
+  Future<dynamic> getNotificationPreferences();
+
+  @POST(ApiPath.notificationPreferences)
+  Future<dynamic> updateNotificationPreferences(@Body() Map<String, dynamic> body);
+
+  @GET(ApiPath.beautyPreferences)
+  Future<dynamic> getBeautyPreferences();
+
+  /// FAVORITES
+
+  @GET(ApiPath.favoriteProviders)
+  Future<dynamic> getFavoriteProviders();
+
+  @POST(ApiPath.favoriteProviders)
+  Future<dynamic> addFavoriteProvider(@Body() Map<String, dynamic> body);
+
+  @DELETE("${ApiPath.favoriteProviders}/{provider_id}")
+  Future<dynamic> removeFavoriteProvider(@Path("provider_id") int providerId);
+
+  /// PAGES
+
+  @GET(ApiPath.pages)
+  Future<dynamic> getPages();
+
+  @GET("${ApiPath.pages}/{slug}")
+  Future<dynamic> getPageBySlug(@Path("slug") String slug);
+
   /// EXPLORE
 
   @GET(ApiPath.explore)

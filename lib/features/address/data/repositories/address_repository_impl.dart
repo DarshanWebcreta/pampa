@@ -54,19 +54,13 @@ class AddressRepositoryImpl implements AddressRepository {
 
       final result = _parseResponse(raw);
       if (!result.status) throw Exception(result.message.isNotEmpty ? result.message : 'Failed to save address.');
-      // if (result.address != null) return result.address!;
+      if (result.address != null) return result.address!;
 
-      // Fallback when API returns no address body
-      return AddressModel(
-        id: 0,
-        userId: 0,
-        addressName: addressName,
-        streetAddress: streetAddress,
-        zipCode: zipCode,
-        city: city,
-        country: '',
-        isDefault: false,
-      );
+      // Fallback: re-fetch to get the server-assigned ID
+      final addresses = await getAddresses();
+      if (addresses.isNotEmpty) return addresses.first;
+
+      throw Exception('Address saved but could not retrieve ID.');
     } on DioException catch (e) {
       throw Exception(_extractServerMessage(e) ?? HandleExeption.handleError(e));
     } on Exception {

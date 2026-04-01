@@ -10,6 +10,7 @@ import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/booking/presentation/provider_detail_screen.dart';
 import 'package:pampa/features/explore/data/models/explore_model.dart';
 import 'package:pampa/features/explore/presentation/provider/explore_provider.dart';
+import 'package:pampa/features/favorites/presentation/provider/favorites_provider.dart';
 
 class ExploreTab extends StatefulWidget {
   const ExploreTab({super.key});
@@ -195,7 +196,7 @@ class _ExploreTabState extends State<ExploreTab> {
 
           // ── Recommended for You (Providers) ────────────────────────────
           if (result.providers.isNotEmpty) ...[
-            _SectionHeader(title: 'Recommended for You', icon: '✨'),
+            _SectionHeader(title: 'Recommended for You', icon: ''),
             const SizedBox(height: 12),
             ...result.providers.map((p) => _TappableProviderCard(
                   provider: p,
@@ -206,7 +207,7 @@ class _ExploreTabState extends State<ExploreTab> {
 
           // ── Trending Looks (Categories grid) ───────────────────────────
           if (result.categories.isNotEmpty) ...[
-            _SectionHeader(title: 'Trending Looks', icon: '📈'),
+            _SectionHeader(title: 'Trending Looks', icon: ''),
             const SizedBox(height: 12),
             _buildCategoryGrid(result.categories),
             const SizedBox(height: 24),
@@ -214,7 +215,7 @@ class _ExploreTabState extends State<ExploreTab> {
 
           // ── Services ───────────────────────────────────────────────────
           if (result.services.isNotEmpty) ...[
-            _SectionHeader(title: 'Services', icon: '✂️'),
+            _SectionHeader(title: 'Services', icon: ''),
             const SizedBox(height: 12),
             ...result.services.map((s) => _ServiceCard(service: s)),
           ],
@@ -437,7 +438,7 @@ class _SectionHeader extends StatelessWidget {
       child: Row(
         children: [
           AppText(
-            '$icon  $title',
+            title,
             fontSize: FontSizes.medium,
             fontWeight: FontWeights.bold,
             color: AppColor.darkGrey,
@@ -544,10 +545,22 @@ class _TappableProviderCard extends StatelessWidget {
             ),
           ),
           // Favourite icon
-          const Icon(
-            Icons.favorite_border_rounded,
-            size: 20,
-            color: AppColor.grey,
+          Consumer<FavoritesProvider>(
+            builder: (context, favProvider, _) {
+              final isFav = favProvider.isFavorite(provider.id);
+              return GestureDetector(
+                onTap: () => favProvider.toggleFavorite(provider.id),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    key: ValueKey(isFav),
+                    size: 20,
+                    color: isFav ? Colors.red : AppColor.grey,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),

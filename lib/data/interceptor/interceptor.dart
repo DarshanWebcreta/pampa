@@ -8,9 +8,11 @@ class DefaultInterceptor extends Interceptor {
   @override
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
-    // Don't override Content-Type for FormData — Dio sets multipart/form-data
-    // with the correct boundary automatically for FormData requests.
-    if (options.data is! FormData) {
+    // Don't override Content-Type for:
+    // • FormData — Dio sets multipart/form-data with boundary automatically
+    // • Requests that already declared a Content-Type via @Headers annotation
+    if (options.data is! FormData &&
+        !options.headers.containsKey(ApiStrings.contentType)) {
       options.headers[ApiStrings.contentType] = ApiStrings.applicationXWWW;
     }
     options.headers[ApiStrings.accept] = ApiStrings.applicationJson;

@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import 'package:pampa/core/storage/storage.dart';
 import 'package:pampa/core/utils/functional_component.dart';
+import 'package:pampa/data/service/apiservice.dart';
+import 'package:pampa/data/service/di.dart';
 import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/values/keys.dart';
@@ -46,6 +48,10 @@ class _BookingScreenState extends State<BookingScreen> {
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
   String? _selectedTimeDisplay;
 
+  List<String> _timeSlots = [];    // display labels e.g. "9:00 AM"
+  List<String> _timeSlots24 = [];  // raw 24h values e.g. "09:00"
+  bool _slotsLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -70,6 +76,7 @@ class _BookingScreenState extends State<BookingScreen> {
   void _goToStep1() {
     if (_selectedAddress == null) return;
     setState(() => _step = 1);
+    _loadSlots(context.read<BookingProvider>().selectedDate);
   }
 
   void _goBack() {
@@ -77,6 +84,8 @@ class _BookingScreenState extends State<BookingScreen> {
       setState(() {
         _step = 0;
         _selectedTimeDisplay = null;
+        _timeSlots = [];
+        _timeSlots24 = [];
       });
       context.read<BookingProvider>().selectTime('');
     } else {
@@ -84,55 +93,82 @@ class _BookingScreenState extends State<BookingScreen> {
     }
   }
 
-  Future<void> _pickTime(BuildContext context) async {
-    final bp = context.read<BookingProvider>();
-    final now = DateTime.now();
-    final sel = bp.selectedDate;
-    final isToday =
-        sel.year == now.year && sel.month == now.month && sel.day == now.day;
+  Future<void> _loadSlots(DateTime date) async {
+    setState(() {
+      _slotsLoading = true;
+      _selectedTimeDisplay = null;
+      _timeSlots = [];
+      _timeSlots24 = [];
+    });
+    context.read<BookingProvider>().selectTime('');
 
-    final initialTime = isToday
-        ? TimeOfDay(hour: now.hour, minute: (now.minute ~/ 15 + 1) * 15 % 60)
-        : const TimeOfDay(hour: 9, minute: 0);
-
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: AppColor.authButton,
-            onPrimary: AppColor.white,
-            surface: AppColor.white,
-            onSurface: AppColor.darkGrey,
-          ),
-        ),
-        child: child!,
-      ),
-    );
-
-    if (picked == null || !context.mounted) return;
-
-    if (isToday) {
-      final pickedMins = picked.hour * 60 + picked.minute;
-      final nowMins = now.hour * 60 + now.minute;
-      if (pickedMins <= nowMins) {
-        FunctionalComponent.showSnackBar(
-          context: context,
-          title: 'Please select a future time for today',
-          success: false,
-        );
-        return;
+    final provider = widget.preSelectedProvider;
+    if (provider != null) {
+      try {
+        final api = getIt<ApiService>();
+        final dateStr = DateFormat('yyyy-MM-dd').format(date);
+        final res = await api.getAvailableSlots(provider.id, dateStr, widget.serviceId);
+        final map = res as Map<String, dynamic>;
+        final rawSlots = <String>[];
+        if (map['data'] is List) {
+          for (final s in map['data'] as List) {
+            rawSlots.add(s.toString());
+          }
+        } else if (map['slots'] is List) {
+          for (final s in map['slots'] as List) {
+            rawSlots.add(s.toString());
+          }
+        }
+        if (rawSlots.isNotEmpty) {
+          _applySlots(rawSlots, date);
+          setState(() => _slotsLoading = false);
+          return;
+        }
+      } catch (_) {
+        // fall through to default slots
       }
     }
 
-    final formatted =
-        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-    bp.selectTime(formatted);
-    final hour = picked.hourOfPeriod == 0 ? 12 : picked.hourOfPeriod;
-    final min = picked.minute.toString().padLeft(2, '0');
-    final period = picked.period == DayPeriod.am ? 'AM' : 'PM';
-    setState(() => _selectedTimeDisplay = '$hour:$min $period');
+    // Default: 8 AM – 8 PM every 30 min, skip past times if today
+    _applySlots(_defaultSlots(date), date);
+    setState(() => _slotsLoading = false);
+  }
+
+  void _applySlots(List<String> slots24, DateTime date) {
+    final now = DateTime.now();
+    final isToday = date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+    final nowMins = now.hour * 60 + now.minute;
+
+    final filtered24 = <String>[];
+    final filteredDisplay = <String>[];
+
+    for (final s in slots24) {
+      final parts = s.split(':');
+      if (parts.length < 2) continue;
+      final h = int.tryParse(parts[0]) ?? 0;
+      final m = int.tryParse(parts[1]) ?? 0;
+      if (isToday && h * 60 + m <= nowMins) continue;
+      final period = h < 12 ? 'AM' : 'PM';
+      final displayH = h % 12 == 0 ? 12 : h % 12;
+      final displayM = m.toString().padLeft(2, '0');
+      filtered24.add('${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}');
+      filteredDisplay.add('$displayH:$displayM $period');
+    }
+
+    _timeSlots24 = filtered24;
+    _timeSlots = filteredDisplay;
+  }
+
+  List<String> _defaultSlots(DateTime date) {
+    final slots = <String>[];
+    for (int h = 8; h <= 19; h++) {
+      slots.add('${h.toString().padLeft(2, '0')}:00');
+      if (h < 20) slots.add('${h.toString().padLeft(2, '0')}:30');
+    }
+    slots.add('20:00');
+    return slots;
   }
 
   void _onConfirm() {
@@ -372,8 +408,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   selectedDate: provider.selectedDate,
                   onDateSelected: (date) {
                     provider.selectDate(date);
-                    setState(() => _selectedTimeDisplay = null);
-                    provider.selectTime('');
+                    _loadSlots(date);
                   },
                   onMonthChanged: (delta) => setState(() {
                     _visibleMonth = DateTime(
@@ -386,61 +421,15 @@ class _BookingScreenState extends State<BookingScreen> {
                     fontWeight: FontWeights.bold,
                     color: AppColor.darkGrey),
                 const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () => _pickTime(context),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: AppColor.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: hasTime
-                            ? AppColor.authButton
-                            : AppColor.mediumGrey,
-                        width: hasTime ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: AppColor.authButton
-                                .withValues(alpha: 0.08),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.access_time_rounded,
-                              color: AppColor.authButton, size: 18),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: AppText(
-                            hasTime
-                                ? _selectedTimeDisplay!
-                                : 'Tap to select a time',
-                            fontSize: FontSizes.regular,
-                            fontWeight: hasTime
-                                ? FontWeights.semiBold
-                                : FontWeights.regular,
-                            color: hasTime
-                                ? AppColor.darkGrey
-                                : AppColor.grey,
-                          ),
-                        ),
-                        Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: hasTime
-                              ? AppColor.authButton
-                              : AppColor.grey,
-                          size: 22,
-                        ),
-                      ],
-                    ),
-                  ),
+                _TimeSlotGrid(
+                  slots: _timeSlots,
+                  loading: _slotsLoading,
+                  selectedDisplay: _selectedTimeDisplay,
+                  onSelect: (i) {
+                    final raw = _timeSlots24[i];
+                    provider.selectTime(raw);
+                    setState(() => _selectedTimeDisplay = _timeSlots[i]);
+                  },
                 ),
               ],
             ),
@@ -457,6 +446,93 @@ class _BookingScreenState extends State<BookingScreen> {
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+// ─── Time slot grid ───────────────────────────────────────────────────────────
+class _TimeSlotGrid extends StatelessWidget {
+  final List<String> slots;
+  final bool loading;
+  final String? selectedDisplay;
+  final void Function(int index) onSelect;
+
+  const _TimeSlotGrid({
+    required this.slots,
+    required this.loading,
+    required this.selectedDisplay,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: List.generate(
+          8,
+          (_) => Container(
+            width: 82,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColor.lightGrey,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (slots.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: AppColor.white,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Center(
+          child: AppText(
+            'No available slots for this date',
+            fontSize: FontSizes.small,
+            color: AppColor.grey,
+          ),
+        ),
+      );
+    }
+
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: List.generate(slots.length, (i) {
+        final label = slots[i];
+        final isSelected = label == selectedDisplay;
+        return GestureDetector(
+          onTap: () => onSelect(i),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColor.authButton : AppColor.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isSelected
+                    ? AppColor.authButton
+                    : AppColor.authButton.withValues(alpha: 0.25),
+                width: isSelected ? 1.5 : 1,
+              ),
+            ),
+            child: AppText(
+              label,
+              fontSize: FontSizes.small,
+              fontWeight:
+                  isSelected ? FontWeights.semiBold : FontWeights.regular,
+              color: isSelected ? AppColor.white : AppColor.darkGrey,
+            ),
+          ),
+        );
+      }),
+    );
+  }
 }
 
 // ─── Address tile ─────────────────────────────────────────────────────────────
@@ -829,7 +905,7 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
     );
     if (!mounted) return;
     if (ok) {
-      final addr = ap.addresses.last;
+      final addr = ap.addresses.first;
       Navigator.of(context).pop();
       FunctionalComponent.showSnackBar(
           context: context,

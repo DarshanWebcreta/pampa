@@ -21,6 +21,7 @@ import 'package:pampa/features/profile/presentation/provider/profile_provider.da
 import 'package:pampa/features/messaging/presentation/conversations_tab.dart';
 import 'package:pampa/features/profile/presentation/profile_tab.dart';
 import 'package:pampa/features/explore/presentation/explore_tab.dart';
+import 'package:pampa/features/profile/presentation/beauty_preferences_screen.dart';
 import 'package:intl/intl.dart';
 
 // ─── Icon mapping for category names ──────────────────────────────────────────
@@ -66,13 +67,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late int _currentIndex;
-
   @override
   void initState() {
     super.initState();
-    _currentIndex = homeTabNotifier.value;
-    homeTabNotifier.addListener(_onTabChange);
     homeSuccessMessageNotifier.addListener(_onSuccessMessage);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CategoryProvider>().fetchCategories();
@@ -83,10 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       context.read<MyBookingsProvider>().fetchBookings();
     });
-  }
-
-  void _onTabChange() {
-    if (mounted) setState(() => _currentIndex = homeTabNotifier.value);
   }
 
   void _onSuccessMessage() {
@@ -172,7 +165,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    homeTabNotifier.removeListener(_onTabChange);
     homeSuccessMessageNotifier.removeListener(_onSuccessMessage);
     super.dispose();
   }
@@ -181,25 +173,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColor.authBg,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          const _HomeTab(),
-          const ExploreTab(),
-          const MyBookingsTab(),
-          const ConversationsTab(),
-          const ProfileTab(),
-        ],
+    return ValueListenableBuilder<int>(
+      valueListenable: homeTabNotifier,
+      builder: (context, currentIndex, _) => Scaffold(
+        backgroundColor: AppColor.authBg,
+        body: IndexedStack(
+          index: currentIndex,
+          children: [
+            const _HomeTab(),
+            const ExploreTab(),
+            const MyBookingsTab(),
+            const ConversationsTab(),
+            const ProfileTab(),
+          ],
+        ),
+        bottomNavigationBar: _buildBottomNav(currentIndex),
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
 
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(int currentIndex) {
     return Container(
       decoration: BoxDecoration(
         color: AppColor.white,
@@ -221,11 +216,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             children: List.generate(_navItems.length, (index) {
               final item = _navItems[index];
-              final isActive = _currentIndex == index;
+              final isActive = currentIndex == index;
               return Expanded(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => setState(() => _currentIndex = index),
+                  onTap: () => homeTabNotifier.value = index,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -254,10 +249,15 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ─── Services tab ─────────────────────────────────────────────────────────────
-class _ServicesTab extends StatelessWidget {
+class _ServicesTab extends StatefulWidget {
 
   const _ServicesTab();
 
+  @override
+  State<_ServicesTab> createState() => _ServicesTabState();
+}
+
+class _ServicesTabState extends State<_ServicesTab> {
   @override
   Widget build(BuildContext context) {
 
@@ -332,8 +332,6 @@ class _ServicesTab extends StatelessWidget {
       },
     );
   }
-
-
 
   Widget _buildBody(BuildContext context, CategoryProvider provider) {
     switch (provider.status) {
@@ -1505,7 +1503,7 @@ class _EditAddressFormState extends State<_EditAddressForm> {
         ),
         const SizedBox(height: 20),
         Consumer<AddressProvider>(
-          builder: (_, provider, __) {
+          builder: (_, provider, _) {
             return SizedBox(
               width: double.infinity,
               height: 50,
@@ -1841,7 +1839,9 @@ class _QuickLinksSection extends StatelessWidget {
                 _QuickLinkTile(
                   icon: Icons.tune_rounded,
                   label: 'Preferences',
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const BeautyPreferencesScreen(),
+                  )),
                 ),
               ],
             ),
@@ -1899,9 +1899,9 @@ class _UpcomingBookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = "${ApiStrings.imageUrl}${booking.service?.image.trim()}";
+    final imageUrl = "${ApiStrings.imageUrl}${booking.service.image.trim()}";
     final hasImage = imageUrl.isNotEmpty;
-    final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate??DateTime.now());
+    final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate);
     final location = booking.provider?.displayLocation;
 
     return GestureDetector(

@@ -206,7 +206,7 @@ class _TabSwitcher extends StatelessWidget {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: AppColor.authBg,
+        color: AppColor.lightGrey,
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(4),

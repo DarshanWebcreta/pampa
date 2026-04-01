@@ -98,6 +98,20 @@ class ApiPath {
   static const String conversations = "messages/conversations";
 
   /// ==============================
+  /// FAVORITES
+  /// ==============================
+
+  static const String favoriteProviders = "customer/favorites/providers";
+  static const String notificationPreferences = "customer/preferences/notification";
+  static const String beautyPreferences = "customer/preferences/beauty";
+
+  /// ==============================
+  /// PAGES
+  /// ==============================
+
+  static const String pages = "pages";
+
+  /// ==============================
   /// EXPLORE
   /// ==============================
 

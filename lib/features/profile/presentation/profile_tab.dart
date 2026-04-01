@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,10 @@ import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/address/presentation/saved_addresses_screen.dart';
 import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
 import 'package:pampa/features/profile/data/models/customer_profile_model.dart';
+import 'package:pampa/features/profile/presentation/beauty_preferences_screen.dart';
+import 'package:pampa/features/profile/presentation/notifications_screen.dart';
+import 'package:pampa/features/favorites/presentation/favorite_providers_screen.dart';
+import 'package:pampa/features/profile/presentation/page_detail_screen.dart';
 import 'package:pampa/features/profile/presentation/personal_information_screen.dart';
 import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
 
@@ -86,7 +91,9 @@ class _ProfileTabState extends State<ProfileTab> {
                   _MenuItem(
                     icon: Icons.notifications_outlined,
                     label: 'Notifications',
-                    onTap: () {},
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const NotificationsScreen(),
+                    )),
                   ),
                 ]),
                 const SizedBox(height: 20),
@@ -94,46 +101,53 @@ class _ProfileTabState extends State<ProfileTab> {
                 const SizedBox(height: 8),
                 _MenuGroup(items: [
                   _MenuItem(
-                    icon: Icons.favorite_border_rounded,
+                    icon: Icons.brush_outlined,
                     label: 'Beauty Preferences',
-                    onTap: () {},
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const BeautyPreferencesScreen(),
+                    )),
                   ),
                   _MenuItem(
                     icon: Icons.favorite_border_rounded,
                     label: 'Favorite Providers',
-                    onTap: () {},
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const FavoriteProvidersScreen(),
+                    )),
                   ),
                 ]),
                 const SizedBox(height: 20),
-                _SectionLabel('Payments & Rewards'),
-                const SizedBox(height: 8),
-                _MenuGroup(items: [
-                  _MenuItem(
-                    icon: Icons.credit_card_outlined,
-                    label: 'Payment Methods',
-                    onTap: () {},
-                  ),
-                  _MenuItem(
-                    icon: Icons.card_giftcard_rounded,
-                    label: 'Referrals & Credits',
-                    onTap: () {},
-                  ),
-                ]),
-                const SizedBox(height: 20),
-                _SectionLabel('Support'),
-                const SizedBox(height: 8),
-                _MenuGroup(items: [
-                  _MenuItem(
-                    icon: Icons.help_outline_rounded,
-                    label: 'Help Center',
-                    onTap: () {},
-                  ),
-                  _MenuItem(
-                    icon: Icons.security_outlined,
-                    label: 'Privacy & Safety',
-                    onTap: () {},
-                  ),
-                ]),
+                // _SectionLabel('Payments & Rewards'),
+                // const SizedBox(height: 8),
+                // _MenuGroup(items: [
+                //   _MenuItem(
+                //     icon: Icons.credit_card_outlined,
+                //     label: 'Payment Methods',
+                //     onTap: () {},
+                //   ),
+                //   _MenuItem(
+                //     icon: Icons.card_giftcard_rounded,
+                //     label: 'Referrals & Credits',
+                //     onTap: () {},
+                //   ),
+                // ]),
+                // const SizedBox(height: 20),
+                if (provider.pages.isNotEmpty) ...[
+                  _SectionLabel('Support'),
+                  const SizedBox(height: 8),
+                  _MenuGroup(items: provider.pages
+                      .map((page) => _MenuItem(
+                            label: page.title,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => PageDetailScreen(
+                                  slug: page.slug,
+                                  title: page.title,
+                                ),
+                              ),
+                            ),
+                          ))
+                      .toList()),
+                ],
                 const SizedBox(height: 28),
                 _SignOutButton(
                   isBusy: _isLoggingOut,
@@ -310,8 +324,10 @@ class _MenuGroup extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
                 child: Row(
                   children: [
-                    Icon(items[i].icon, size: 20, color: AppColor.authButton),
-                    const SizedBox(width: 14),
+                    if (items[i].icon != null) ...[
+                      Icon(items[i].icon!, size: 20, color: AppColor.authButton),
+                      const SizedBox(width: 14),
+                    ],
                     Expanded(
                       child: AppText(
                         items[i].label,
@@ -336,12 +352,12 @@ class _MenuGroup extends StatelessWidget {
 // ─── Menu item ────────────────────────────────────────────────────────────────
 
 class _MenuItem {
-  final IconData icon;
+  final IconData? icon;
   final String label;
   final VoidCallback onTap;
 
   const _MenuItem({
-    required this.icon,
+    this.icon,
     required this.label,
     required this.onTap,
   });

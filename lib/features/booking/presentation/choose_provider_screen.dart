@@ -276,13 +276,13 @@ class _ProviderCard extends StatelessWidget {
     final duration = service?.formattedDuration ?? '-';
 
     return InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(16),
       onTap: onTap,
       child: Ink(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.symmetric(vertical: 12,horizontal: 16),
         decoration: BoxDecoration(
           color: AppColor.white,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColor.authButton.withValues(alpha: 0.12)),
         ),
         child: Row(
@@ -299,12 +299,12 @@ class _ProviderCard extends StatelessWidget {
                 children: [
                   AppText(
                     provider.displayName,
-                    fontSize: FontSizes.medium,
+                    fontSize: FontSizes.regular,
                     fontWeight: FontWeights.bold,
                     color: AppColor.darkGrey,
                     maxLines: 2,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       const Icon(Icons.star_rounded,
@@ -336,12 +336,12 @@ class _ProviderCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       AppText(
                         _formatPrice(price),
-                        fontSize:  FontSizes.regular,
+                        fontSize:  FontSizes.small,
                         fontWeight: FontWeights.bold,
                         color: AppColor.authButton,
                       ),
