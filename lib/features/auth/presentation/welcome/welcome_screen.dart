@@ -18,7 +18,10 @@ class WelcomeScreen extends StatelessWidget {
     if (!context.mounted) return;
 
     if (success) {
-      context.go(RouteNames.mainScreen);
+      final dest = provider.userType == 'provider'
+          ? RouteNames.providerMainScreen
+          : RouteNames.mainScreen;
+      context.go(dest);
     } else if (provider.errorMessage.isNotEmpty) {
       FunctionalComponent.showSnackBar(
         context: context,

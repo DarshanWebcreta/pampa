@@ -5,6 +5,7 @@ class StoreKeys {
   static const String fcmToken = 'fcm_token';
   static const String syncedFcmToken = 'synced_fcm_token';
   static const String zipCode = 'zip_code';
+  static const String userType = 'user_type';
 }
 
 

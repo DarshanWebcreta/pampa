@@ -13,11 +13,13 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<AuthResponseModel> login({
     required String email,
     required String password,
+    required String type,
   }) async {
     try {
       final response = await _apiService.login({
         'email': email,
         'password': password,
+        'type': type,
       });
 
       final map = response as Map<String, dynamic>;
@@ -44,6 +46,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
     required String passwordConfirmation,
     required String mobile,
+    required String type,
   }) async {
     try {
       final response = await _apiService.register({
@@ -52,6 +55,7 @@ class AuthRepositoryImpl implements AuthRepository {
         'password': password,
         'password_confirmation': passwordConfirmation,
         'mobile': mobile,
+        'type': type,
       });
 
       final map = response as Map<String, dynamic>;
@@ -77,6 +81,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String loginId,
     required String fullName,
     String? photoUrl,
+    required String type,
   }) async {
     try {
       final body = <String, dynamic>{
@@ -84,6 +89,7 @@ class AuthRepositoryImpl implements AuthRepository {
         'login_id': loginId,
         'login_type': 'google',
         'full_name': fullName,
+        'type': type,
         if (photoUrl != null && photoUrl.isNotEmpty) 'photo_url': photoUrl,
       };
 

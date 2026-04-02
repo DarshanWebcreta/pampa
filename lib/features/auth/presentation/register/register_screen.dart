@@ -62,7 +62,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         title: 'Registration successful! Welcome aboard.',
         success: true,
       );
-      context.go(RouteNames.mainScreen);
+      final dest = provider.userType == 'provider'
+          ? RouteNames.providerMainScreen
+          : RouteNames.mainScreen;
+      context.go(dest);
     } else {
       FunctionalComponent.showSnackBar(
         context: context,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pampa/core/services/push_notification_service.dart';
 import 'package:pampa/core/values/urls.dart';
@@ -95,6 +96,30 @@ class _HomeScreenState extends State<HomeScreen> {
     homeSuccessMessageNotifier.value = null;
   }
 
+  Future<void> _showExitDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Exit App'),
+        content: const Text('Are you sure you want to exit?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('No', style: TextStyle(color: AppColor.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('Yes', style: TextStyle(color: AppColor.authButton)),
+          ),
+        ],
+      ),
+    );
+    if (shouldExit == true && mounted) {
+      SystemNavigator.pop();
+    }
+  }
+
   Future<void> _showPaymentSuccessDialog(String message) async {
     await showDialog<void>(
       context: context,
@@ -178,7 +203,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int>(
       valueListenable: homeTabNotifier,
-      builder: (context, currentIndex, _) => Scaffold(
+      builder: (context, currentIndex, _) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          if (currentIndex != 0) {
+            homeTabNotifier.value = 0;
+          } else {
+            _showExitDialog();
+          }
+        },
+        child: Scaffold(
         backgroundColor: AppColor.authBg,
         body: IndexedStack(
           index: currentIndex,
@@ -191,6 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         bottomNavigationBar: _buildBottomNav(currentIndex),
+        ),
       ),
     );
   }

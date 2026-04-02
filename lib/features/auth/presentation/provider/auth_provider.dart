@@ -17,11 +17,17 @@ class AuthProvider extends ChangeNotifier {
   AuthStatus _status = AuthStatus.initial;
   String _errorMessage = '';
   UserModel? _user;
+  String _userType = StorageManager.readData(StoreKeys.userType) as String? ?? 'customer';
 
   AuthStatus get status => _status;
   String get errorMessage => _errorMessage;
   UserModel? get user => _user;
   bool get isLoading => _status == AuthStatus.loading;
+  String get userType => _userType;
+
+  void setUserType(String type) {
+    _userType = type;
+  }
 
   /// Login with email and password.
   /// Returns true on success, false on failure.
@@ -35,9 +41,11 @@ class AuthProvider extends ChangeNotifier {
       final response = await _authRepository.login(
         email: email,
         password: password,
+        type: _userType,
       );
 
       StorageManager.saveData(StoreKeys.token, response.accessToken);
+      StorageManager.saveData(StoreKeys.userType, _userType);
       _user = response.user;
       _status = AuthStatus.success;
       _errorMessage = '';
@@ -69,9 +77,11 @@ class AuthProvider extends ChangeNotifier {
         password: password,
         passwordConfirmation: passwordConfirmation,
         mobile: mobile,
+        type: _userType,
       );
 
       StorageManager.saveData(StoreKeys.token, response.accessToken);
+      StorageManager.saveData(StoreKeys.userType, _userType);
       _user = response.user;
       _status = AuthStatus.success;
       _errorMessage = '';
@@ -102,9 +112,11 @@ class AuthProvider extends ChangeNotifier {
         loginId: googleUser.id,
         fullName: googleUser.displayName ?? googleUser.email.split('@').first,
         photoUrl: googleUser.photoUrl,
+        type: _userType,
       );
 
       StorageManager.saveData(StoreKeys.token, response.accessToken);
+      StorageManager.saveData(StoreKeys.userType, _userType);
       _user = response.user;
       _status = AuthStatus.success;
       _errorMessage = '';
@@ -138,6 +150,7 @@ class AuthProvider extends ChangeNotifier {
     StorageManager.deleteData(StoreKeys.token);
     StorageManager.deleteData(StoreKeys.zipCode);
     StorageManager.deleteData(StoreKeys.syncedFcmToken);
+    StorageManager.deleteData(StoreKeys.userType);
     _user = null;
     _status = AuthStatus.initial;
     _errorMessage = '';

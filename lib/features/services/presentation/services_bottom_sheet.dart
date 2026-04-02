@@ -196,7 +196,7 @@ class _ServiceSheetTile extends StatelessWidget {
                     color: AppColor.darkGrey,
                     maxLines: 1,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       const Icon(Icons.access_time_rounded, size: 12, color: AppColor.grey),
@@ -229,7 +229,7 @@ class _ServiceSheetTile extends StatelessWidget {
                   fontWeight: FontWeights.bold,
                   color: AppColor.darkGrey,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColor.grey),
               ],
             ),

@@ -3,6 +3,8 @@ class RouteNames {
   static const initial = '/';
   static const test = '/test';
   static const mainScreen = '/mainscreen';
+  static const providerMainScreen = '/provider-main';
+  static const userType = '/user-type';
   static const welcome = '/welcome';
   static const storeView = '/store-view';
   static const createOrder = '/create-order';

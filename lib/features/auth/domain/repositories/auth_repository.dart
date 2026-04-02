@@ -4,6 +4,7 @@ abstract class AuthRepository {
   Future<AuthResponseModel> login({
     required String email,
     required String password,
+    required String type,
   });
 
   Future<AuthResponseModel> register({
@@ -12,6 +13,7 @@ abstract class AuthRepository {
     required String password,
     required String passwordConfirmation,
     required String mobile,
+    required String type,
   });
 
   /// Social login — calls customer/social-login with Google profile data.
@@ -20,6 +22,7 @@ abstract class AuthRepository {
     required String loginId,
     required String fullName,
     String? photoUrl,
+    required String type,
   });
 
   Future<void> logout();

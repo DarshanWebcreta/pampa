@@ -8,6 +8,7 @@ import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/auth/presentation/login/login_screen.dart';
 import 'package:pampa/features/auth/presentation/register/register_screen.dart';
 import 'package:pampa/features/auth/presentation/welcome/welcome_screen.dart';
+import 'package:pampa/features/auth/presentation/user_type/user_type_screen.dart';
 import 'package:pampa/features/categories/presentation/category_list_screen.dart';
 import 'package:pampa/features/home/presentation/home_screen.dart';
 import 'package:pampa/features/services/presentation/provider/service_provider.dart';
@@ -16,6 +17,7 @@ import 'package:pampa/features/booking/presentation/booking_screen.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
 import 'package:pampa/features/my_bookings/presentation/booking_detail_screen.dart';
 import 'package:pampa/features/chat/presentation/chat_screen.dart' show BookingChatScreen;
+import 'package:pampa/features/provider_home/presentation/provider_home_screen.dart';
 import 'package:provider/provider.dart';
 
 class AppRouter {
@@ -23,19 +25,24 @@ class AppRouter {
   // ── Auth-gate routes (require a token) ──────────────────────────────────────
   static const _protectedRoutes = {
     RouteNames.mainScreen,
+    RouteNames.providerMainScreen,
     RouteNames.services,
     RouteNames.bookingDetail,
   };
 
   // ── Auth-only routes (logged-in users must leave) ────────────────────────
   static const _publicRoutes = {
+    RouteNames.userType,
     RouteNames.welcome,
     RouteNames.login,
     RouteNames.register,
   };
 
   static String _afterLoginDestination() {
-    return RouteNames.mainScreen;
+    final savedType = StorageManager.readData(StoreKeys.userType) as String?;
+    return savedType == 'provider'
+        ? RouteNames.providerMainScreen
+        : RouteNames.mainScreen;
   }
 
   static GoRouter router = GoRouter(
@@ -47,12 +54,12 @@ class AppRouter {
 
       // ── Landing: resolve '/' based on auth state ──────────────────────────
       if (path == RouteNames.initial) {
-        return isLoggedIn ? _afterLoginDestination() : RouteNames.welcome;
+        return isLoggedIn ? _afterLoginDestination() : RouteNames.userType;
       }
 
-      // ── Not logged in trying to access protected route → welcome ─────────
+      // ── Not logged in trying to access protected route → user type ──────
       if (!isLoggedIn && _protectedRoutes.contains(path)) {
-        return RouteNames.welcome;
+        return RouteNames.userType;
       }
 
       // ── Already logged in trying to visit login/register → skip ahead ─────
@@ -68,6 +75,12 @@ class AppRouter {
         path: RouteNames.initial,
         name: RouteNames.initial,
         builder: (context, state) => const SizedBox.shrink(),
+      ),
+
+      GoRoute(
+        path: RouteNames.userType,
+        name: RouteNames.userType,
+        builder: (context, state) => const UserTypeScreen(),
       ),
 
       GoRoute(
@@ -92,6 +105,12 @@ class AppRouter {
         path: RouteNames.mainScreen,
         name: RouteNames.mainScreen,
         builder: (context, state) => const HomeScreen(),
+      ),
+
+      GoRoute(
+        path: RouteNames.providerMainScreen,
+        name: RouteNames.providerMainScreen,
+        builder: (context, state) => const ProviderHomeScreen(),
       ),
 
       GoRoute(

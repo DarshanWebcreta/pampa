@@ -195,7 +195,7 @@ class _ProfileTabState extends State<ProfileTab> {
     await context.read<AuthProvider>().logout();
     if (!context.mounted) return;
     setState(() => _isLoggingOut = false);
-    context.go(RouteNames.login);
+    context.go(RouteNames.userType);
   }
 }
 

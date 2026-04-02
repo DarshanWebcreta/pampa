@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/app_text_value.dart';
@@ -287,7 +288,27 @@ class _GallerySection extends StatelessWidget {
 
   const _GallerySection({required this.images});
 
-  Widget _img(String? url) {
+  void _openSlider(BuildContext context, int initialIndex) {
+    final urls = images
+        .map((e) => e.imageUrl ?? '')
+        .where((u) => u.isNotEmpty)
+        .toList();
+    if (urls.isEmpty) return;
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (_, __, ___) => _ImageSliderScreen(
+          urls: urls,
+          initialIndex: initialIndex.clamp(0, urls.length - 1),
+        ),
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
+      ),
+    );
+  }
+
+  Widget _thumb(String? url) {
     if (url == null || url.isEmpty) {
       return Container(color: AppColor.lightGrey);
     }
@@ -306,44 +327,309 @@ class _GallerySection extends StatelessWidget {
     }
 
     final urls = images.map((e) => e.imageUrl).toList();
+    final total = urls.length;
 
     return Column(
       children: [
-        // Large hero — always first image
-        SizedBox(
-          width: double.infinity,
-          height: 210,
-          child: _img(urls[0]),
+        // ── Hero (first image) ──────────────────────────────────────────
+        GestureDetector(
+          onTap: () => _openSlider(context, 0),
+          child: SizedBox(
+            width: double.infinity,
+            height: 220,
+            child: _thumb(urls[0]),
+          ),
         ),
 
-        // Remaining images in rows of 2
-        if (urls.length > 1)
-          ...() {
-            final rows = <Widget>[];
-            for (int i = 1; i < urls.length; i += 2) {
-              final left = urls[i];
-              final right = i + 1 < urls.length ? urls[i + 1] : null;
-              rows.add(
-                SizedBox(
-                  height: 130,
+        // ── Thumbnails row (2nd and 3rd images) ─────────────────────────
+        if (total > 1) ...[
+          const SizedBox(height: 2),
+          SizedBox(
+            height: 130,
+            child: Row(
+              children: [
+                // 2nd image
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _openSlider(context, 1),
+                    child: _thumb(urls[1]),
+                  ),
+                ),
+                // 3rd image slot
+                if (total >= 3) ...[
+                  const SizedBox(width: 2),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _openSlider(context, 2),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _thumb(urls[2]),
+                          // "+N" overlay when more than 3 images
+                          if (total > 3)
+                            Container(
+                              color: Colors.black.withValues(alpha: 0.52),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '+${total - 3}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 26,
+                                        fontWeight: FontWeight.w700,
+                                        height: 1,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'more',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.85),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  // No 3rd image — fill with empty
+                  const SizedBox(width: 2),
+                  Expanded(child: Container(color: AppColor.authBg)),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+// ─── Full-screen image slider ──────────────────────────────────────────────────
+
+class _ImageSliderScreen extends StatefulWidget {
+  final List<String> urls;
+  final int initialIndex;
+
+  const _ImageSliderScreen({required this.urls, required this.initialIndex});
+
+  @override
+  State<_ImageSliderScreen> createState() => _ImageSliderScreenState();
+}
+
+class _ImageSliderScreenState extends State<_ImageSliderScreen> {
+  late final PageController _pageController;
+  late int _current;
+
+  @override
+  void initState() {
+    super.initState();
+    _current = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = widget.urls.length;
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // ── PageView with pinch-zoom ──────────────────────────────────
+          PageView.builder(
+            controller: _pageController,
+            itemCount: total,
+            onPageChanged: (i) => setState(() => _current = i),
+            itemBuilder: (_, i) => InteractiveViewer(
+              minScale: 1,
+              maxScale: 4,
+              child: Center(
+                child: FunctionalComponent.cachedNetworkImage(
+                  widget.urls[i],
+                  fit: BoxFit.contain,
+                  radius: 0,
+                ),
+              ),
+            ),
+          ),
+
+          // ── Top bar ───────────────────────────────────────────────────
+          Positioned(
+            top: 0, left: 0, right: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.65),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: _img(left)),
-                      const SizedBox(width: 2),
-                      Expanded(
-                        child: right != null
-                            ? _img(right)
-                            : Container(color: AppColor.authBg),
+                      // Close button
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+
+                      // Counter pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Text(
+                          '${_current + 1} / $total',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              );
-              if (i + 2 < urls.length) rows.add(const SizedBox(height: 2));
-            }
-            return rows;
-          }(),
-      ],
+              ),
+            ),
+          ),
+
+          // ── Bottom dot indicators ─────────────────────────────────────
+          if (total > 1)
+            Positioned(
+              bottom: 0, left: 0, right: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.6),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(total > 8 ? 0 : total, (i) {
+                        final isActive = i == _current;
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          width: isActive ? 22 : 6,
+                          height: 6,
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Left / Right arrow hints on sides ─────────────────────────
+          if (_current > 0)
+            Positioned(
+              left: 12,
+              top: 0, bottom: 0,
+              child: Center(
+                child: GestureDetector(
+                  onTap: () => _pageController.previousPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  ),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.chevron_left_rounded,
+                        color: Colors.white, size: 22),
+                  ),
+                ),
+              ),
+            ),
+
+          if (_current < total - 1)
+            Positioned(
+              right: 12,
+              top: 0, bottom: 0,
+              child: Center(
+                child: GestureDetector(
+                  onTap: () => _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  ),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.chevron_right_rounded,
+                        color: Colors.white, size: 22),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -495,7 +781,7 @@ class _ServiceItem extends StatelessWidget {
               height: 22,
               decoration: BoxDecoration(
                 color: isSelected ? AppColor.authButton : Colors.transparent,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: isSelected ? AppColor.authButton : AppColor.mediumGrey,
                   width: 1.5,
