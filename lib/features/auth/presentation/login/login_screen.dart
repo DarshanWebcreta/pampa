@@ -4,12 +4,12 @@ import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
 import 'package:pampa/core/utils/functional_component.dart';
+import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/core/widgets/text_field_widget.dart';
 import 'package:pampa/core/widgets/custom_button.dart';
 import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
-import 'package:pampa/core/values/app_text_value.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,6 +31,33 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  bool _isAccountInactive(String message) {
+    final lower = message.toLowerCase();
+    return lower.contains('not active') ||
+        lower.contains('admin approval') ||
+        lower.contains('activate your account') ||
+        lower.contains('pending');
+  }
+
+  void _showAccountPendingDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: _AccountPendingDialog(
+          message: message,
+          onOk: () {
+            Navigator.of(context).pop();
+            context.go(RouteNames.userType);
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _onGoogleSignIn() async {
     final provider = context.read<AuthProvider>();
     final success = await provider.googleSignIn();
@@ -41,11 +68,15 @@ class _LoginScreenState extends State<LoginScreen> {
           : RouteNames.mainScreen;
       context.go(dest);
     } else if (provider.errorMessage.isNotEmpty) {
-      FunctionalComponent.showSnackBar(
-        context: context,
-        title: provider.errorMessage,
-        success: false,
-      );
+      if (_isAccountInactive(provider.errorMessage)) {
+        _showAccountPendingDialog(provider.errorMessage);
+      } else {
+        FunctionalComponent.showSnackBar(
+          context: context,
+          title: provider.errorMessage,
+          success: false,
+        );
+      }
       provider.resetState();
     }
   }
@@ -72,6 +103,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ? RouteNames.providerMainScreen
           : RouteNames.mainScreen;
       context.go(dest);
+    } else if (_isAccountInactive(provider.errorMessage)) {
+      _showAccountPendingDialog(provider.errorMessage);
     } else {
       FunctionalComponent.showSnackBar(
         context: context,
@@ -409,4 +442,172 @@ class _GoogleLogoPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─── Account Pending Dialog ────────────────────────────────────────────────────
+
+class _AccountPendingDialog extends StatefulWidget {
+  final String message;
+  final VoidCallback onOk;
+
+  const _AccountPendingDialog({required this.message, required this.onOk});
+
+  @override
+  State<_AccountPendingDialog> createState() => _AccountPendingDialogState();
+}
+
+class _AccountPendingDialogState extends State<_AccountPendingDialog>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scaleAnim;
+  late final Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _scaleAnim = CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut);
+    _fadeAnim = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: ScaleTransition(
+        scale: _scaleAnim,
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: AppColor.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Icon ─────────────────────────────────────────────────
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  shape: BoxShape.circle,
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    const Icon(Icons.lock_clock_outlined,
+                        size: 40, color: Color(0xFFF59E0B)),
+                    Positioned(
+                      bottom: 10,
+                      right: 10,
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColor.white, width: 2),
+                        ),
+                        child: const Icon(Icons.hourglass_top_rounded,
+                            size: 11, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // ── Title ─────────────────────────────────────────────────
+              AppText(
+                'Account Not Active',
+                fontSize: FontSizes.large,
+                fontWeight: FontWeights.bold,
+                color: AppColor.darkGrey,
+              ),
+
+              const SizedBox(height: 10),
+
+              // ── Badge ─────────────────────────────────────────────────
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.pending_outlined,
+                        size: 13, color: Color(0xFFF59E0B)),
+                    const SizedBox(width: 5),
+                    AppText(
+                      'Awaiting Admin Approval',
+                      fontSize: 12,
+                      fontWeight: FontWeights.semiBold,
+                      color: const Color(0xFFD97706),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // ── Message from API ──────────────────────────────────────
+              AppText(
+                widget.message,
+                fontSize: FontSizes.regular,
+                color: AppColor.grey,
+                maxLines: 5,
+              ),
+
+              const SizedBox(height: 24),
+
+              // ── Button ────────────────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColor.authButton,
+                    foregroundColor: AppColor.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: widget.onOk,
+                  child: AppText(
+                    'Back to Home',
+                    fontSize: FontSizes.regular,
+                    fontWeight: FontWeights.semiBold,
+                    color: AppColor.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

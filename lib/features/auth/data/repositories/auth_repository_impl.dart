@@ -61,10 +61,18 @@ class AuthRepositoryImpl implements AuthRepository {
       final map = response as Map<String, dynamic>;
 
       if (map['status'] == true) {
+        // Provider registration returns status:true but data:null (pending approval)
+        if (map['data'] == null) {
+          throw PendingApprovalException(
+            map['message'] as String? ?? 'Registration successful. Please wait for admin approval.',
+          );
+        }
         return AuthResponseModel.fromJson(map['data'] as Map<String, dynamic>);
       }
 
       throw Exception(map['message'] ?? 'Registration failed. Please try again.');
+    } on PendingApprovalException {
+      rethrow;
     } on DioException catch (e) {
       final serverMessage = _extractServerMessage(e);
       throw Exception(serverMessage ?? HandleExeption.handleError(e));

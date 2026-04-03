@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart'
     show GoogleSignIn, GoogleSignInException, GoogleSignInExceptionCode;
+import 'package:pampa/core/error/exception.dart';
 import 'package:pampa/core/storage/storage.dart';
 import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/core/values/urls.dart';
 import 'package:pampa/features/auth/data/models/auth_response_model.dart';
 import 'package:pampa/features/auth/domain/repositories/auth_repository.dart';
 
-enum AuthStatus { initial, loading, success, error }
+enum AuthStatus { initial, loading, success, pendingApproval, error }
 
 class AuthProvider extends ChangeNotifier {
   final AuthRepository _authRepository;
@@ -16,13 +17,16 @@ class AuthProvider extends ChangeNotifier {
 
   AuthStatus _status = AuthStatus.initial;
   String _errorMessage = '';
+  String _pendingApprovalMessage = '';
   UserModel? _user;
   String _userType = StorageManager.readData(StoreKeys.userType) as String? ?? 'customer';
 
   AuthStatus get status => _status;
   String get errorMessage => _errorMessage;
+  String get pendingApprovalMessage => _pendingApprovalMessage;
   UserModel? get user => _user;
   bool get isLoading => _status == AuthStatus.loading;
+  bool get isPendingApproval => _status == AuthStatus.pendingApproval;
   String get userType => _userType;
 
   void setUserType(String type) {
@@ -87,6 +91,12 @@ class AuthProvider extends ChangeNotifier {
       _errorMessage = '';
       notifyListeners();
       return true;
+    } on PendingApprovalException catch (e) {
+      _pendingApprovalMessage = e.message;
+      _status = AuthStatus.pendingApproval;
+      _errorMessage = '';
+      notifyListeners();
+      return false;
     } catch (e) {
       _errorMessage = _cleanMessage(e.toString());
       _status = AuthStatus.error;
@@ -160,6 +170,7 @@ class AuthProvider extends ChangeNotifier {
   void resetState() {
     _status = AuthStatus.initial;
     _errorMessage = '';
+    _pendingApprovalMessage = '';
     notifyListeners();
   }
 

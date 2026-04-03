@@ -88,7 +88,10 @@ class MessageModel {
     required this.createdAt,
   });
 
-  bool get isFromMe => senderType == 'customer';
+  String get normalizedSenderType => senderType.trim().toLowerCase();
+  bool get isFromCustomer => normalizedSenderType == 'customer';
+  bool get isFromProvider => normalizedSenderType == 'provider';
+  bool get isFromMe => isFromCustomer;
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     return MessageModel(

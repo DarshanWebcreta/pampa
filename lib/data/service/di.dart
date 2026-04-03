@@ -33,6 +33,9 @@ import 'package:pampa/features/explore/data/repositories/explore_repository_impl
 import 'package:pampa/features/explore/domain/repositories/explore_repository.dart';
 import 'package:pampa/features/explore/presentation/provider/explore_provider.dart';
 import 'package:pampa/features/favorites/presentation/provider/favorites_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_dashboard_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_messaging_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_bookings_provider.dart';
 
 final getIt = GetIt.instance;
 
@@ -118,6 +121,9 @@ void setup() {
   getIt.registerLazySingleton<MessagingProvider>(
     () => MessagingProvider(getIt<MessagingRepository>()),
   );
+  getIt.registerLazySingleton<ProviderMessagingProvider>(
+    () => ProviderMessagingProvider(getIt<MessagingRepository>()),
+  );
 
   // Explore
   getIt.registerLazySingleton<ExploreRepository>(
@@ -130,5 +136,15 @@ void setup() {
   // Favorites
   getIt.registerLazySingleton<FavoritesProvider>(
     () => FavoritesProvider(getIt<ApiService>()),
+  );
+
+  // Provider Dashboard
+  getIt.registerLazySingleton<ProviderDashboardProvider>(
+    () => ProviderDashboardProvider(getIt<ApiService>()),
+  );
+
+  // Provider Bookings
+  getIt.registerLazySingleton<ProviderBookingsProvider>(
+    () => ProviderBookingsProvider(getIt<ApiService>()),
   );
 }

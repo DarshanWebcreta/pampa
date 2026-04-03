@@ -130,6 +130,32 @@ abstract class ApiService {
   @GET(ApiPath.paymentHistory)
   Future<dynamic> paymentHistory();
 
+  /// PROVIDER DASHBOARD
+
+  @GET(ApiPath.providerDashboard)
+  Future<dynamic> getProviderDashboard();
+
+  @POST(ApiPath.providerToggleOnline)
+  Future<dynamic> providerToggleOnline();
+
+  @GET(ApiPath.providerBookings)
+  Future<dynamic> getProviderBookings({
+    @Query("status") String? status,
+    @Query("date") String? date,
+  });
+
+  @GET("provider/bookings/{id}")
+  Future<dynamic> getProviderBookingDetail(@Path("id") int id);
+
+  @POST("provider/bookings/{id}/status")
+  Future<dynamic> updateProviderBookingStatus(
+    @Path("id") int id,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST("provider/bookings/{id}/cancel")
+  Future<dynamic> cancelProviderBooking(@Path("id") int id);
+
   /// PROVIDER WALLET
 
   @GET(ApiPath.providerWallet)
@@ -152,11 +178,27 @@ abstract class ApiService {
   @POST(ApiPath.conversations)
   Future<dynamic> createOrGetConversation(@Body() Map<String, dynamic> body);
 
+  @GET(ApiPath.providerConversations)
+  Future<dynamic> getProviderConversations();
+
+  @POST(ApiPath.providerConversations)
+  Future<dynamic> createOrGetProviderConversation(
+      @Body() Map<String, dynamic> body);
+
   @GET("messages/conversations/{id}")
   Future<dynamic> getConversationMessages(@Path("id") int id);
 
+  @GET("${ApiPath.providerMessagesConversations}/{id}")
+  Future<dynamic> getProviderConversationMessages(@Path("id") int id);
+
   @POST("messages/conversations/{id}")
   Future<dynamic> sendMessage(
+    @Path("id") int id,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST("${ApiPath.providerConversations}/{id}")
+  Future<dynamic> sendProviderMessage(
     @Path("id") int id,
     @Body() Map<String, dynamic> body,
   );

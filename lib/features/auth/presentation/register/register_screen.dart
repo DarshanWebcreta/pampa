@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:pampa/core/routes/routes.dart';
 import 'package:pampa/core/storage/storage.dart';
 import 'package:pampa/core/utils/functional_component.dart';
+import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
@@ -56,6 +57,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (!mounted) return;
 
+    if (provider.isPendingApproval) {
+      _showPendingApprovalDialog(context, provider.pendingApprovalMessage);
+      return;
+    }
+
     if (success) {
       FunctionalComponent.showSnackBar(
         context: context,
@@ -73,6 +79,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
         success: false,
       );
     }
+  }
+
+  void _showPendingApprovalDialog(BuildContext ctx, String message) {
+    showDialog(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: _PendingApprovalDialog(
+          message: message,
+          onOk: () {
+            Navigator.of(ctx).pop();
+            ctx.go(RouteNames.userType);
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -382,6 +407,183 @@ class _RegisterScreenState extends State<RegisterScreen> {
       fontSize: 13,
       fontWeight: FontWeight.w600,
       color: AppColor.darkGrey,
+    );
+  }
+}
+
+// ─── Pending Approval Dialog ───────────────────────────────────────────────────
+
+class _PendingApprovalDialog extends StatefulWidget {
+  final String message;
+  final VoidCallback onOk;
+
+  const _PendingApprovalDialog({required this.message, required this.onOk});
+
+  @override
+  State<_PendingApprovalDialog> createState() => _PendingApprovalDialogState();
+}
+
+class _PendingApprovalDialogState extends State<_PendingApprovalDialog>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scaleAnim;
+  late final Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _scaleAnim = CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut);
+    _fadeAnim = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: ScaleTransition(
+        scale: _scaleAnim,
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: AppColor.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Icon ────────────────────────────────────────────────────
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColor.authButton.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(Icons.check_circle_outline_rounded,
+                        size: 48, color: AppColor.authButton),
+                    Positioned(
+                      bottom: 10,
+                      right: 10,
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColor.white, width: 2),
+                        ),
+                        child: const Icon(Icons.access_time_rounded,
+                            size: 12, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // ── Title ────────────────────────────────────────────────────
+              AppText(
+                'Registration Successful!',
+                fontSize: FontSizes.large,
+                fontWeight: FontWeights.bold,
+                color: AppColor.darkGrey,
+              ),
+
+              const SizedBox(height: 10),
+
+              // ── Pill badge ───────────────────────────────────────────────
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.hourglass_top_rounded,
+                        size: 13, color: Color(0xFFF59E0B)),
+                    const SizedBox(width: 5),
+                    AppText(
+                      'Pending Admin Approval',
+                      fontSize: 12,
+                      fontWeight: FontWeights.semiBold,
+                      color: const Color(0xFFD97706),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // ── Message ──────────────────────────────────────────────────
+              AppText(
+                widget.message,
+                fontSize: FontSizes.regular,
+                color: AppColor.grey,
+                maxLines: 5,
+              ),
+
+              const SizedBox(height: 6),
+
+              AppText(
+                'You will be notified once your account has been reviewed and approved by the admin.',
+                fontSize: 13,
+                color: AppColor.grey,
+                maxLines: 4,
+              ),
+
+              const SizedBox(height: 24),
+
+              // ── Button ───────────────────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColor.authButton,
+                    foregroundColor: AppColor.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: widget.onOk,
+                  child: AppText(
+                    'Back to Home',
+                    fontSize: FontSizes.regular,
+                    fontWeight: FontWeights.semiBold,
+                    color: AppColor.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,5 +1,10 @@
 import 'package:dio/dio.dart';
 
+class PendingApprovalException implements Exception {
+  final String message;
+  const PendingApprovalException(this.message);
+}
+
 class HandleExeption {
   HandleExeption._();
 

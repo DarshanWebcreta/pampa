@@ -82,6 +82,17 @@ class ApiPath {
   static const String paymentHistory = "payments/history";
 
   /// ==============================
+  /// PROVIDER DASHBOARD
+  /// ==============================
+
+  static const String providerDashboard = "providerss/dashboard";
+  static const String providerToggleOnline = "providers/toggle-online";
+  static const String providerBookings = "provider/bookings";
+  static String providerBookingDetail(int id) => "provider/bookings/$id";
+  static String providerBookingStatus(int id) => "provider/bookings/$id/status";
+  static String providerCancelBooking(int id) => "provider/bookings/$id/cancel";
+
+  /// ==============================
   /// PROVIDER WALLET
   /// ==============================
 
@@ -96,6 +107,9 @@ class ApiPath {
   /// ==============================
 
   static const String conversations = "messages/conversations";
+  static const String providerConversations = "messages/provider/conversations";
+  static const String providerMessagesConversations =
+      "messages/provider/conversations";
 
   /// ==============================
   /// FAVORITES
