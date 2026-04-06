@@ -36,6 +36,8 @@ import 'package:pampa/features/favorites/presentation/provider/favorites_provide
 import 'package:pampa/features/provider_home/presentation/provider/provider_dashboard_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_messaging_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_bookings_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_earnings_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_profile_provider.dart';
 
 final getIt = GetIt.instance;
 
@@ -146,5 +148,15 @@ void setup() {
   // Provider Bookings
   getIt.registerLazySingleton<ProviderBookingsProvider>(
     () => ProviderBookingsProvider(getIt<ApiService>()),
+  );
+
+  // Provider Earnings
+  getIt.registerLazySingleton<ProviderEarningsProvider>(
+    () => ProviderEarningsProvider(getIt<ApiService>()),
+  );
+
+  // Provider Profile
+  getIt.registerLazySingleton<ProviderProfileProvider>(
+    () => ProviderProfileProvider(getIt<ApiService>()),
   );
 }

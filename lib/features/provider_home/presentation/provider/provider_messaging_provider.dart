@@ -50,12 +50,12 @@ class ProviderMessagingProvider extends ChangeNotifier {
 
   Future<void> openConversation(int conversationId) async {
     _msgStatus = MessagesFetchStatus.loading;
-    _messages = [];
     _msgError = '';
     notifyListeners();
 
     try {
       final result = await _repository.getProviderMessages(conversationId);
+      if (_msgStatus == MessagesFetchStatus.initial) return;
       _activeConversation = result.conversation;
       _messages = result.messages;
       _msgStatus = MessagesFetchStatus.success;

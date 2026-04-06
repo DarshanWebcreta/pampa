@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -116,97 +117,107 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
       ),
       body: Consumer<ProviderMessagingProvider>(
         builder: (context, provider, _) {
-          if (provider.msgStatus == MessagesFetchStatus.loading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColor.authButton),
-            );
-          }
-          if (provider.msgStatus == MessagesFetchStatus.error) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.wifi_off_rounded,
-                        color: AppColor.authButton, size: 40),
-                    const SizedBox(height: 12),
-                    AppText(provider.msgError,
-                        fontSize: FontSizes.small,
-                        color: AppColor.grey,
-                        align: TextAlign.center,
-                        maxLines: 3),
-                    const SizedBox(height: 16),
-                    GestureDetector(
-                      onTap: () => provider.openConversation(
-                        widget.conversation.id,
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        decoration: BoxDecoration(
-                            color: AppColor.authButton,
-                            borderRadius: BorderRadius.circular(10)),
-                        child: AppText('Retry',
-                            fontSize: FontSizes.small,
-                            fontWeight: FontWeights.semiBold,
-                            color: AppColor.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
+          final isLoading = provider.msgStatus == MessagesFetchStatus.loading;
+          final isError = provider.msgStatus == MessagesFetchStatus.error;
           final msgs = provider.messages;
-          if (msgs.isNotEmpty) {
+
+          final showTypingLoader = isLoading || provider.isSending;
+
+          if (msgs.isNotEmpty || showTypingLoader) {
             WidgetsBinding.instance
                 .addPostFrameCallback((_) => _scrollToBottom());
           }
 
           return Column(
             children: [
+              // ── Messages area ────────────────────────────────────────
               Expanded(
-                child: msgs.isEmpty
+                child: isError
                     ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.chat_bubble_outline_rounded,
-                                color: AppColor.authButton, size: 40),
-                            const SizedBox(height: 12),
-                            AppText('No messages yet',
-                                fontSize: FontSizes.regular,
-                                color: AppColor.grey),
-                            const SizedBox(height: 4),
-                            AppText('Say hi to $customerName!',
-                                fontSize: FontSizes.small,
-                                color: AppColor.mediumGrey),
-                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.wifi_off_rounded,
+                                  color: AppColor.authButton, size: 40),
+                              const SizedBox(height: 12),
+                              AppText(provider.msgError,
+                                  fontSize: FontSizes.small,
+                                  color: AppColor.grey,
+                                  align: TextAlign.center,
+                                  maxLines: 3),
+                              const SizedBox(height: 16),
+                              GestureDetector(
+                                onTap: () => provider.openConversation(
+                                    widget.conversation.id),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24, vertical: 12),
+                                  decoration: BoxDecoration(
+                                      color: AppColor.authButton,
+                                      borderRadius:
+                                          BorderRadius.circular(10)),
+                                  child: AppText('Retry',
+                                      fontSize: FontSizes.small,
+                                      fontWeight: FontWeights.semiBold,
+                                      color: AppColor.white),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )
-                    : ListView.builder(
-                        controller: _scrollCtrl,
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        itemCount: msgs.length,
-                        itemBuilder: (_, i) {
-                          final msg = msgs[i];
-                          final showDate = i == 0 ||
-                              !_isSameDay(msgs[i - 1].createdAt, msg.createdAt);
-                          return Column(
-                            children: [
-                              if (showDate) _DateDivider(date: msg.createdAt),
-                              _MessageBubble(message: msg),
-                            ],
-                          );
-                        },
-                      ),
+                    : msgs.isEmpty && !showTypingLoader
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                    Icons.chat_bubble_outline_rounded,
+                                    color: AppColor.authButton,
+                                    size: 40),
+                                const SizedBox(height: 12),
+                                AppText('No messages yet',
+                                    fontSize: FontSizes.regular,
+                                    color: AppColor.grey),
+                                const SizedBox(height: 4),
+                                AppText('Say hi to $customerName!',
+                                    fontSize: FontSizes.small,
+                                    color: AppColor.mediumGrey),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            controller: _scrollCtrl,
+                            padding:
+                                const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                            itemCount:
+                                msgs.length + (showTypingLoader ? 1 : 0),
+                            itemBuilder: (_, i) {
+                              if (i == msgs.length) {
+                                return const _TypingLoader();
+                              }
+                              final msg = msgs[i];
+                              final showDate = i == 0 ||
+                                  !_isSameDay(
+                                      msgs[i - 1].createdAt, msg.createdAt);
+                              return Column(
+                                children: [
+                                  if (showDate)
+                                    _DateDivider(date: msg.createdAt),
+                                  _MessageBubble(message: msg),
+                                ],
+                              );
+                            },
+                          ),
               ),
+
+              // ── Input bar always visible ─────────────────────────────
               _InputBar(
                 controller: _msgCtrl,
                 isSending: provider.isSending,
-                onSend: _send,
+                onSend: isLoading ? null : _send,
               ),
             ],
           );
@@ -342,7 +353,7 @@ class _DateDivider extends StatelessWidget {
 class _InputBar extends StatefulWidget {
   final TextEditingController controller;
   final bool isSending;
-  final VoidCallback onSend;
+  final VoidCallback? onSend;
 
   const _InputBar({
     required this.controller,
@@ -466,6 +477,90 @@ class _MiniAvatar extends StatelessWidget {
         fontSize: size * 0.3,
         fontWeight: FontWeights.bold,
         color: AppColor.authButton,
+      ),
+    );
+  }
+}
+
+// ─── Typing Loader ────────────────────────────────────────────────────────────
+
+class _TypingLoader extends StatefulWidget {
+  const _TypingLoader();
+
+  @override
+  State<_TypingLoader> createState() => _TypingLoaderState();
+}
+
+class _TypingLoaderState extends State<_TypingLoader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 12),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(18),
+              topRight: Radius.circular(18),
+              bottomRight: Radius.circular(18),
+              bottomLeft: Radius.circular(4),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(3, (i) {
+              return AnimatedBuilder(
+                animation: _ctrl,
+                builder: (_, __) {
+                  final delay = i * 0.28;
+                  final t = (((_ctrl.value - delay) % 1.0 + 1.0) % 1.0);
+                  final y = math.sin(t * math.pi) * 3.5;
+                  return Transform.translate(
+                    offset: Offset(0, -y),
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      margin: EdgeInsets.only(right: i < 2 ? 4 : 0),
+                      decoration: BoxDecoration(
+                        color: AppColor.authButton
+                            .withValues(alpha: 0.4 + 0.6 * math.sin(t * math.pi).clamp(0, 1)),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  );
+                },
+              );
+            }),
+          ),
+        ),
       ),
     );
   }

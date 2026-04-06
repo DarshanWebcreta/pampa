@@ -135,6 +135,23 @@ abstract class ApiService {
   @GET(ApiPath.providerDashboard)
   Future<dynamic> getProviderDashboard();
 
+  @GET(ApiPath.providerProfile)
+  Future<dynamic> getProviderProfile();
+
+  @PUT(ApiPath.providerProfileUpdate)
+  @MultiPart()
+  Future<dynamic> updateProviderProfile(@Body() FormData body);
+
+  @POST(ApiPath.providerGallery)
+  @MultiPart()
+  Future<dynamic> uploadProviderGallery(@Body() FormData body);
+
+  @DELETE("providers/gallery/{id}")
+  Future<dynamic> deleteProviderGalleryImage(@Path("id") int id);
+
+  @GET(ApiPath.providerEarnings)
+  Future<dynamic> getProviderEarnings();
+
   @POST(ApiPath.providerToggleOnline)
   Future<dynamic> providerToggleOnline();
 
@@ -213,6 +230,7 @@ abstract class ApiService {
 
   @POST(ApiPath.notificationToken)
   Future<dynamic> submitNotificationToken(@Body() Map<String, dynamic> body);
+
 
   @GET(ApiPath.beautyPreferences)
   Future<dynamic> getBeautyPreferences();

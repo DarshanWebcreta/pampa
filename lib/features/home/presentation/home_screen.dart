@@ -216,6 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Scaffold(
         backgroundColor: AppColor.authBg,
         body: IndexedStack(
+          
           index: currentIndex,
           children: [
             const _HomeTab(),
@@ -677,7 +678,7 @@ class _EmptyView extends StatelessWidget {
 
 // ─── Address picker sheet ─────────────────────────────────────────────────────
 class AddressPickerSheet extends StatefulWidget {
-  const AddressPickerSheet();
+  const AddressPickerSheet({super.key});
 
   @override
   State<AddressPickerSheet> createState() => AddressPickerSheetState();
@@ -732,7 +733,7 @@ class _AddressList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<AddressProvider>(
-      builder: (_, provider, __) {
+      builder: (_, provider, _) {
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -823,7 +824,7 @@ class _AddressList extends StatelessWidget {
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: provider.addresses.length,
-                  separatorBuilder: (_, __) =>
+                  separatorBuilder: (_, _) =>
                       const Divider(height: 1, color: Color(0xFFF0F0F0)),
                   itemBuilder: (_, i) {
                     final addr = provider.addresses[i];
@@ -1183,7 +1184,7 @@ class _AddAddressFormState extends State<_AddAddressForm> {
         ),
         const SizedBox(height: 20),
         Consumer<AddressProvider>(
-          builder: (_, provider, __) {
+          builder: (_, provider, _) {
             return SizedBox(
               width: double.infinity,
               height: 50,
@@ -1586,6 +1587,7 @@ class _HomeTab extends StatelessWidget {
         color: AppColor.authButton,
         onRefresh: () => context.read<MyBookingsProvider>().fetchBookings(),
         child: CustomScrollView(
+          
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(child: _HomeHeader()),
@@ -1607,7 +1609,7 @@ class _HomeHeader extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
         child: Row(
           children: [
             Expanded(
@@ -1705,7 +1707,7 @@ class _UpcomingSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<MyBookingsProvider>(
-      builder: (_, provider, __) {
+      builder: (_, provider, _) {
         final upcoming = provider.bookings
             .where((b) => b.isPending || b.isConfirmed)
             .toList();
@@ -1799,7 +1801,7 @@ class _PastServicesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<MyBookingsProvider>(
-      builder: (_, provider, __) {
+      builder: (_, provider, _) {
         final past = provider.bookings.where((b) => b.isCompleted).toList();
 
         return Padding(
@@ -1978,7 +1980,7 @@ class _UpcomingBookingCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: AppText(
-                        booking.service?.serviceName??'',
+                        booking.service.serviceName,
                         fontSize: FontSizes.regular,
                         fontWeight: FontWeights.semiBold,
                         color: AppColor.darkGrey,
@@ -1992,7 +1994,7 @@ class _UpcomingBookingCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: AppText(
-                        '\$${booking.price?.toStringAsFixed(0)}',
+                        '\$${booking.price.toStringAsFixed(0)}',
                         fontSize: FontSizes.small,
                         fontWeight: FontWeights.bold,
                         color: AppColor.authButton,
@@ -2016,7 +2018,7 @@ class _UpcomingBookingCard extends StatelessWidget {
                     const SizedBox(width: 12),
                     const Icon(Icons.access_time_rounded, size: 12, color: AppColor.grey),
                     const SizedBox(width: 4),
-                    AppText(booking.appointmentTime??'', fontSize: FontSizes.mini, color: AppColor.grey),
+                    AppText(booking.appointmentTime, fontSize: FontSizes.mini, color: AppColor.grey),
                   ],
                 ),
                 if ([location??[]].isNotEmpty && location != 'Location not set') ...[
@@ -2046,9 +2048,9 @@ class _PastBookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = booking.service?.image.trim();
-    final hasImage = imageUrl?.isNotEmpty;
-    final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate??DateTime.now());
+    final imageUrl = booking.service.image.trim();
+    final hasImage = imageUrl.isNotEmpty;
+    final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate);
     final rating = booking.provider?.rating;
 
     return GestureDetector(
@@ -2071,8 +2073,8 @@ class _PastBookingCard extends StatelessWidget {
                 child: SizedBox(
                   width: 52,
                   height: 52,
-                  child: hasImage??false
-                      ? FunctionalComponent.cachedNetworkImage(imageUrl??'', radius: 12, fit: BoxFit.cover)
+                  child: hasImage
+                      ? FunctionalComponent.cachedNetworkImage(imageUrl, radius: 12, fit: BoxFit.cover)
                       : Container(
                           color: AppColor.authBg,
                           child: const Icon(Icons.spa_rounded, color: AppColor.authButton, size: 24),
@@ -2089,7 +2091,7 @@ class _PastBookingCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: AppText(
-                            booking.service?.serviceName??'',
+                            booking.service.serviceName,
                             fontSize: FontSizes.regular,
                             fontWeight: FontWeights.semiBold,
                             color: AppColor.darkGrey,
@@ -2117,7 +2119,7 @@ class _PastBookingCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         const Text('•', style: TextStyle(color: AppColor.grey, fontSize: 10)),
                         const SizedBox(width: 8),
-                        AppText(booking.appointmentTime??'', fontSize: FontSizes.mini, color: AppColor.grey),
+                        AppText(booking.appointmentTime, fontSize: FontSizes.mini, color: AppColor.grey),
                       ],
                     ),
                   ],
@@ -2204,20 +2206,25 @@ class _HomeBookingShimmer extends StatelessWidget {
 }
 
 // ─── Placeholder tabs ──────────────────────────────────────────────────────────
-class _PlaceholderTab extends StatelessWidget {
+class _PlaceholderTab extends StatefulWidget {
   final IconData icon;
   final String label;
   const _PlaceholderTab({required this.icon, required this.label});
 
+  @override
+  State<_PlaceholderTab> createState() => _PlaceholderTabState();
+}
+
+class _PlaceholderTabState extends State<_PlaceholderTab> {
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 48, color: AppColor.authBg),
+          Icon(widget.icon, size: 48, color: AppColor.authBg),
           const SizedBox(height: 12),
-          AppText(label, fontSize: FontSizes.medium, color: AppColor.grey),
+          AppText(widget.label, fontSize: FontSizes.medium, color: AppColor.grey),
         ],
       ),
     );

@@ -7,6 +7,7 @@ import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/core/services/push_notification_service.dart';
 import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
 import 'package:pampa/features/provider_home/data/models/provider_dashboard_model.dart';
@@ -16,6 +17,10 @@ import 'package:pampa/features/provider_home/presentation/provider/provider_mess
 import 'package:pampa/features/provider_home/presentation/provider_booking_detail_screen.dart';
 import 'package:pampa/features/provider_home/presentation/provider_bookings_tab.dart';
 import 'package:pampa/features/provider_home/presentation/provider_conversations_tab.dart';
+import 'package:pampa/features/provider_home/presentation/provider_earnings_tab.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_earnings_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider_profile_tab.dart';
+import 'package:pampa/features/provider_home/presentation/provider_settings_screen.dart';
 
 class ProviderHomeScreen extends StatefulWidget {
   const ProviderHomeScreen({super.key});
@@ -26,6 +31,14 @@ class ProviderHomeScreen extends StatefulWidget {
 
 class _ProviderHomeScreenState extends State<ProviderHomeScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getIt<PushNotificationService>().syncTokenWithBackend();
+    });
+  }
 
   static const _navItems = [
     _NavItem(icon: Icons.grid_view_rounded, label: 'Home'),
@@ -42,6 +55,7 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> {
         ChangeNotifierProvider.value(value: getIt<ProviderDashboardProvider>()),
         ChangeNotifierProvider.value(value: getIt<ProviderBookingsProvider>()),
         ChangeNotifierProvider.value(value: getIt<ProviderMessagingProvider>()),
+        ChangeNotifierProvider.value(value: getIt<ProviderEarningsProvider>()),
       ],
       child: Scaffold(
         backgroundColor: const Color(0xFFF5F5F7),
@@ -50,9 +64,9 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> {
           children: [
             const _DashboardTab(),
             const ProviderBookingsTab(),
-            _ComingSoonTab(icon: Icons.account_balance_wallet_rounded, label: 'Earnings'),
+            const ProviderEarningsTab(),
             const ProviderConversationsTab(),
-            _ComingSoonTab(icon: Icons.person_rounded, label: 'Profile'),
+            const ProviderProfileTab(),
           ],
         ),
         bottomNavigationBar: _ProviderBottomNav(
@@ -61,6 +75,9 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> {
           onTap: (i) {
             if (i == 1) {
               getIt<ProviderBookingsProvider>().resetAndFetch();
+            }
+            if (i == 2) {
+              getIt<ProviderEarningsProvider>().fetchEarnings();
             }
             if (i == 3) {
               getIt<ProviderMessagingProvider>().refreshConversations();
@@ -191,6 +208,18 @@ class _DashboardTabState extends State<_DashboardTab> {
                 color: AppColor.darkGrey,
               ),
               actions: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.settings_outlined,
+                    color: AppColor.darkGrey,
+                    size: 22,
+                  ),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ProviderSettingsScreen(),
+                    ),
+                  ),
+                ),
                 IconButton(
                   icon: const Icon(Icons.notifications_none_rounded,
                       color: AppColor.darkGrey, size: 24),
@@ -368,7 +397,7 @@ class _OnlineToggleCard extends StatelessWidget {
               : Switch(
                   value: isOnline,
                   onChanged: (_) => onToggle(),
-                  activeColor: const Color(0xFF4CAF50),
+                  activeThumbColor: const Color(0xFF4CAF50),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
         ],
@@ -382,14 +411,10 @@ class _OnlineToggleCard extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final int? badge;
-  final String? actionLabel;
-  final VoidCallback? onAction;
 
   const _SectionHeader({
     required this.title,
     this.badge,
-    this.actionLabel,
-    this.onAction,
   });
 
   @override
@@ -421,16 +446,6 @@ class _SectionHeader extends StatelessWidget {
           ),
         ],
         const Spacer(),
-        if (actionLabel != null)
-          GestureDetector(
-            onTap: onAction,
-            child: AppText(
-              actionLabel!,
-              fontSize: 12,
-              fontWeight: FontWeights.semiBold,
-              color: AppColor.authButton,
-            ),
-          ),
       ],
     );
   }
@@ -910,48 +925,6 @@ class _ErrorView extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ─── Coming Soon Tab ───────────────────────────────────────────────────────────
-
-class _ComingSoonTab extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _ComingSoonTab({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: AppColor.authButton.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 36, color: AppColor.authButton),
-          ),
-          const SizedBox(height: 20),
-          AppText(
-            label,
-            fontSize: 20,
-            fontWeight: FontWeights.bold,
-            color: AppColor.darkGrey,
-          ),
-          const SizedBox(height: 8),
-          AppText(
-            'Coming soon',
-            fontSize: FontSizes.regular,
-            color: AppColor.grey,
-          ),
-        ],
       ),
     );
   }

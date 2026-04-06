@@ -7,14 +7,30 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:pampa/core/common_models/device_info.dart';
+import 'package:flutter/material.dart';
+import 'package:pampa/core/routes/pages.dart';
 import 'package:pampa/core/storage/storage.dart';
 import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/data/service/apiservice.dart';
+import 'package:pampa/data/service/di.dart';
+import 'package:pampa/features/messaging/data/models/conversation_model.dart';
+import 'package:pampa/features/messaging/presentation/chat_screen.dart';
+import 'package:pampa/features/messaging/presentation/provider/messaging_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_messaging_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider_chat_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
+  debugPrint('──────────────────────────────────────────');
+  debugPrint('🔔 FCM [BACKGROUND]');
+  debugPrint('   messageId  : ${message.messageId}');
+  debugPrint('   title      : ${message.notification?.title}');
+  debugPrint('   body       : ${message.notification?.body}');
+  debugPrint('   data       : ${message.data}');
+  debugPrint('──────────────────────────────────────────');
 }
 
 class PushNotificationService {
@@ -49,11 +65,22 @@ class PushNotificationService {
       _persistFcmToken(token);
     });
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      // App was in background — give the navigator a frame to settle
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleNotificationTap(message);
+      });
+    });
 
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      _handleNotificationTap(initialMessage);
+      _printPayload('LAUNCH', initialMessage);
+      // App was killed — wait until the widget tree is fully built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _handleNotificationTap(initialMessage);
+        });
+      });
     }
   }
 
@@ -144,26 +171,113 @@ class PushNotificationService {
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
+    _printPayload('FOREGROUND', message);
+    _handleMessageType(message, navigate: false);
     await showRemoteMessage(message);
   }
 
   void _handleNotificationTap(RemoteMessage message) {
-    if (kDebugMode) {
-      debugPrint('Notification tapped with data: ${message.data}');
+    _printPayload('TAP', message);
+    _handleMessageType(message, navigate: true);
+  }
+
+  void _handleMessageType(RemoteMessage message, {required bool navigate}) {
+    final type = message.data['type'] as String?;
+    if (type != 'message') return;
+
+    final conversationId = int.tryParse(message.data['id']?.toString() ?? '');
+    if (conversationId == null) return;
+
+    final userType = StorageManager.readData(StoreKeys.userType) as String?;
+    final isProvider = userType == 'provider';
+
+    // ── Refresh conversations list + specific conversation messages ────────
+    if (isProvider) {
+      final prov = getIt<ProviderMessagingProvider>();
+      prov.refreshConversations();
+      // If this conversation is currently open, refresh its messages too
+      if (prov.activeConversation?.id == conversationId) {
+        prov.openConversation(conversationId);
+      }
+    } else {
+      try {
+        final ctx = AppRouter.navigatorKey.currentContext;
+        if (ctx != null) {
+          final prov = ctx.read<MessagingProvider>();
+          prov.refreshConversations();
+          if (prov.activeConversation?.id == conversationId) {
+            prov.openConversation(conversationId);
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (!navigate) return;
+
+    // ── Navigate to chat ─────────────────────────────────────────────────────
+    final navContext = AppRouter.navigatorKey.currentContext;
+    if (navContext == null) return;
+
+    final stub = ConversationModel(
+      id: conversationId,
+      otherUser: ConversationOtherUser(id: 0, name: ''),
+      lastMessage: null,
+      unreadCount: 0,
+      lastMessageAt: DateTime.now(),
+      createdAt: DateTime.now(),
+    );
+
+    if (isProvider) {
+      Navigator.of(navContext).push(MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: getIt<ProviderMessagingProvider>(),
+          child: ProviderChatScreen(conversation: stub),
+        ),
+      ));
+    } else {
+      try {
+        final msgProvider = navContext.read<MessagingProvider>();
+        Navigator.of(navContext).push(MaterialPageRoute(
+          builder: (_) => ChangeNotifierProvider.value(
+            value: msgProvider,
+            child: ChatScreen(conversation: stub),
+          ),
+        ));
+      } catch (_) {}
     }
   }
 
+  void _printPayload(String source, RemoteMessage message) {
+    debugPrint('──────────────────────────────────────────');
+    debugPrint('🔔 FCM [$source]');
+    debugPrint('   messageId  : ${message.messageId}');
+    debugPrint('   title      : ${message.notification?.title}');
+    debugPrint('   body       : ${message.notification?.body}');
+    debugPrint('   data       : ${message.data}');
+    debugPrint('──────────────────────────────────────────');
+  }
+
   void _onNotificationResponse(NotificationResponse response) {
-    if (kDebugMode) {
-      debugPrint('Local notification tapped: ${response.payload}');
-    }
+    debugPrint('🔔 LOCAL TAP payload: ${response.payload}');
+    _handleLocalPayload(response.payload);
   }
 
   @pragma('vm:entry-point')
   static void _onBackgroundNotificationResponse(NotificationResponse response) {
-    if (kDebugMode) {
-      debugPrint('Background local notification tapped: ${response.payload}');
-    }
+    debugPrint('🔔 LOCAL BG TAP payload: ${response.payload}');
+    // Background static handler — cannot access instance members;
+    // onMessageOpenedApp will fire instead for FCM background taps.
+  }
+
+  void _handleLocalPayload(String? payload) {
+    if (payload == null || payload.isEmpty) return;
+    try {
+      final data = jsonDecode(payload) as Map<String, dynamic>;
+      final fakeMessage = RemoteMessage(data: data.map(
+        (k, v) => MapEntry(k, v?.toString() ?? ''),
+      ));
+      _handleMessageType(fakeMessage, navigate: true);
+    } catch (_) {}
   }
 
   Future<void> showRemoteMessage(RemoteMessage message) async {
