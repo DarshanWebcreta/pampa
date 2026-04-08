@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pampa/core/utils/functional_component.dart';
-import 'package:pampa/core/values/strings.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
@@ -13,6 +12,7 @@ import 'package:pampa/features/home/presentation/home_screen.dart';
 import 'package:pampa/features/my_bookings/data/models/my_booking_model.dart';
 import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
 import 'package:pampa/features/chat/presentation/chat_screen.dart';
+import 'package:pampa/features/webview/webview.dart';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,7 +44,6 @@ Widget _providerAvatar(String? photoUrl, String displayName, double size) {
         photoUrl,
         radius: size / 2,
         fit: BoxFit.cover,
-
       ),
     );
   }
@@ -150,14 +149,11 @@ class _MyBookingsTabState extends State<MyBookingsTab> {
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           itemCount: 4,
-          itemBuilder: (_, __) => const _BookingCardShimmer(),
+          itemBuilder: (_, unusedIndex) => const _BookingCardShimmer(),
         );
 
       case MyBookingsFetchStatus.error:
-        return _ErrorState(
-          message: provider.error,
-          onRetry: provider.refresh,
-        );
+        return _ErrorState(message: provider.error, onRetry: provider.refresh);
 
       case MyBookingsFetchStatus.empty:
       case MyBookingsFetchStatus.initial:
@@ -245,7 +241,6 @@ class _TabItem extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-
           duration: const Duration(milliseconds: 0),
           decoration: BoxDecoration(
             color: active ? AppColor.white : Colors.transparent,
@@ -264,8 +259,7 @@ class _TabItem extends StatelessWidget {
           child: AppText(
             label,
             fontSize: 13,
-            fontWeight:
-                active ? FontWeights.semiBold : FontWeights.regular,
+            fontWeight: active ? FontWeights.semiBold : FontWeights.regular,
             color: active ? AppColor.darkGrey : AppColor.grey,
           ),
         ),
@@ -282,10 +276,60 @@ class _AppointmentCard extends StatelessWidget {
 
   const _AppointmentCard({required this.booking, this.showBookAgain = false});
 
+  bool get _showRetryPayment =>
+      booking.paymentStatus.toLowerCase() == 'pending_payment' &&
+      (booking.paymentId ?? 0) > 0;
+
+  Future<void> _handleRetryPayment(BuildContext context) async {
+    final paymentId = booking.paymentId;
+    if (paymentId == null || paymentId <= 0) return;
+
+    final provider = context.read<MyBookingsProvider>();
+    final url = await provider.retryPayment(paymentId);
+    if (!context.mounted) return;
+
+    if (url == null || url.isEmpty) {
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: provider.payError,
+        success: false,
+      );
+      provider.resetPayStatus();
+      return;
+    }
+
+    final paid = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => CustomWebView(checkoutUrl: url, title: 'Retry Payment'),
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    if (paid == true) {
+      await provider.fetchBookings();
+      if (!context.mounted) return;
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: 'Payment successful!',
+        success: true,
+      );
+    } else {
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: 'Payment cancelled. Your booking is still pending.',
+        success: false,
+      );
+    }
+
+    provider.resetPayStatus();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final formattedDate =
-        DateFormat('MMM d, yyyy').format(booking.appointmentDate);
+    final formattedDate = DateFormat(
+      'MMM d, yyyy',
+    ).format(booking.appointmentDate);
     final formattedTime = _formatTime(booking.appointmentTime);
     final price = booking.price % 1 == 0
         ? '\$${booking.price.toInt()}'
@@ -347,7 +391,9 @@ class _AppointmentCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColor.authBg,
                       borderRadius: BorderRadius.circular(8),
@@ -363,31 +409,70 @@ class _AppointmentCard extends StatelessWidget {
               ),
 
               const SizedBox(height: 12),
-              Divider(
-                  height: 1, color: Colors.black.withValues(alpha: 0.06)),
+              Divider(height: 1, color: Colors.black.withValues(alpha: 0.06)),
               const SizedBox(height: 12),
 
               // ── Bottom row ─────────────────────────────────────────────
               Row(
                 children: [
-                  const Icon(Icons.calendar_today_outlined,
-                      size: 13, color: AppColor.grey),
-                  const SizedBox(width: 5),
-                  AppText(
-                    formattedDate,
-                    fontSize: 12,
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 13,
                     color: AppColor.grey,
                   ),
+                  const SizedBox(width: 5),
+                  AppText(formattedDate, fontSize: 12, color: AppColor.grey),
                   const SizedBox(width: 12),
-                  const Icon(Icons.access_time_rounded,
-                      size: 13, color: AppColor.grey),
-                  const SizedBox(width: 5),
-                  AppText(
-                    formattedTime,
-                    fontSize: 12,
+                  const Icon(
+                    Icons.access_time_rounded,
+                    size: 13,
                     color: AppColor.grey,
                   ),
+                  const SizedBox(width: 5),
+                  AppText(formattedTime, fontSize: 12, color: AppColor.grey),
                   const Spacer(),
+                  if (_showRetryPayment)
+                    Consumer<MyBookingsProvider>(
+                      builder: (context, provider, _) {
+                        final isLoading =
+                            provider.payStatus == BookingActionStatus.loading &&
+                            provider.activePayTargetId == booking.paymentId;
+
+                        return GestureDetector(
+                          onTap: isLoading
+                              ? null
+                              : () => _handleRetryPayment(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColor.authButton,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppColor.white,
+                                      ),
+                                    ),
+                                  )
+                                : AppText(
+                                    'Retry Payment',
+                                    fontSize: 12,
+                                    fontWeight: FontWeights.semiBold,
+                                    color: AppColor.white,
+                                  ),
+                          ),
+                        );
+                      },
+                    ),
+                  if (_showRetryPayment) const SizedBox(width: 8),
                   if (booking.isConfirmed && booking.providerId != null)
                     GestureDetector(
                       onTap: () => Navigator.of(context).push(
@@ -402,7 +487,9 @@ class _AppointmentCard extends StatelessWidget {
                       ),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFe8fff3),
                           borderRadius: BorderRadius.circular(8),
@@ -470,8 +557,10 @@ class _BookingCardShimmerState extends State<_BookingCardShimmer>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0.4, end: 1.0)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _animation = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -484,7 +573,7 @@ class _BookingCardShimmerState extends State<_BookingCardShimmer>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _animation,
-      builder: (_, __) => Opacity(
+      builder: (_, unusedChild) => Opacity(
         opacity: _animation.value,
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -532,13 +621,13 @@ class _BookingCardShimmerState extends State<_BookingCardShimmer>
   }
 
   Widget _box(double w, double h, {double radius = 6}) => Container(
-        width: w,
-        height: h,
-        decoration: BoxDecoration(
-          color: AppColor.lightGrey,
-          borderRadius: BorderRadius.circular(radius),
-        ),
-      );
+    width: w,
+    height: h,
+    decoration: BoxDecoration(
+      color: AppColor.lightGrey,
+      borderRadius: BorderRadius.circular(radius),
+    ),
+  );
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
@@ -562,8 +651,11 @@ class _EmptyState extends StatelessWidget {
                 color: AppColor.authBg,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.calendar_today_outlined,
-                  size: 34, color: AppColor.authButton),
+              child: const Icon(
+                Icons.calendar_today_outlined,
+                size: 34,
+                color: AppColor.authButton,
+              ),
             ),
             const SizedBox(height: 20),
             AppText(
@@ -609,8 +701,11 @@ class _ErrorState extends StatelessWidget {
                 color: AppColor.authBg,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.wifi_off_rounded,
-                  size: 36, color: AppColor.authButton),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                size: 36,
+                color: AppColor.authButton,
+              ),
             ),
             const SizedBox(height: 20),
             AppText(
@@ -632,8 +727,10 @@ class _ErrorState extends StatelessWidget {
             GestureDetector(
               onTap: onRetry,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: AppColor.authButton,
                   borderRadius: BorderRadius.circular(12),

@@ -5,4 +5,5 @@ abstract class MyBookingsRepository {
   Future<MyBookingModel> getBookingDetail(int id);
   Future<String> cancelBooking(int id);
   Future<String> payBalance(int bookingId);
+  Future<String> retryPayment(int paymentId);
 }

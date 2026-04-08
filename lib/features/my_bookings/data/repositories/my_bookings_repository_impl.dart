@@ -26,7 +26,6 @@ class MyBookingsRepositoryImpl implements MyBookingsRepository {
     } on Exception {
       rethrow;
     } catch (e) {
-
       throw Exception('Something went wrong. Please try again.');
     }
   }
@@ -71,6 +70,29 @@ class MyBookingsRepositoryImpl implements MyBookingsRepository {
   Future<String> payBalance(int bookingId) async {
     try {
       final response = await _apiService.payBalance(bookingId);
+      final map = response as Map<String, dynamic>;
+      if (map['status'] == true) {
+        final data = map['data'];
+        if (data is Map<String, dynamic>) {
+          final url = data['url']?.toString();
+          if (url != null && url.isNotEmpty) return url;
+        }
+        throw Exception('Invalid payment session response.');
+      }
+      throw Exception(map['message'] ?? 'Failed to create payment session.');
+    } on DioException catch (e) {
+      throw Exception(HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (_) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  @override
+  Future<String> retryPayment(int paymentId) async {
+    try {
+      final response = await _apiService.retryPayment(paymentId);
       final map = response as Map<String, dynamic>;
       if (map['status'] == true) {
         final data = map['data'];

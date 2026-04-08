@@ -39,6 +39,7 @@ class MyBookingModel {
   final int? serviceId;
   final int? providerId;
   final int? addressId;
+  final int? paymentId;
   final DateTime appointmentDate;
   final String appointmentTime;
   final double price;
@@ -57,6 +58,7 @@ class MyBookingModel {
     this.serviceId,
     this.providerId,
     this.addressId,
+    this.paymentId,
     required this.appointmentDate,
     required this.appointmentTime,
     required this.price,
@@ -82,6 +84,7 @@ class MyBookingModel {
       serviceId: json['service_id'] as int?,
       providerId: json['provider_id'] as int?,
       addressId: json['address_id'] as int?,
+      paymentId: json['payment_id'] as int?,
       tipAmount: json['tip_amount']?.toString(),
       appointmentDate: json['appointment_date'] != null
           ? DateTime.tryParse(json['appointment_date']) ?? DateTime.now()

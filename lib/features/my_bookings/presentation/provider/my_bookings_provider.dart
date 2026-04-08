@@ -75,6 +75,7 @@ class MyBookingsProvider extends ChangeNotifier {
 
   BookingActionStatus _payStatus = BookingActionStatus.idle;
   String _payError = '';
+  int? _activePayTargetId;
 
   BookingDetailStatus get detailStatus => _detailStatus;
   MyBookingModel? get detailBooking => _detailBooking;
@@ -83,6 +84,7 @@ class MyBookingsProvider extends ChangeNotifier {
   String get cancelError => _cancelError;
   BookingActionStatus get payStatus => _payStatus;
   String get payError => _payError;
+  int? get activePayTargetId => _activePayTargetId;
 
   Future<void> fetchBookingDetail(int id) async {
     _detailStatus = BookingDetailStatus.loading;
@@ -122,10 +124,30 @@ class MyBookingsProvider extends ChangeNotifier {
   Future<String?> payBalance(int bookingId) async {
     _payStatus = BookingActionStatus.loading;
     _payError = '';
+    _activePayTargetId = bookingId;
     notifyListeners();
 
     try {
       final url = await _repository.payBalance(bookingId);
+      _payStatus = BookingActionStatus.done;
+      notifyListeners();
+      return url;
+    } catch (e) {
+      _payError = e.toString().replaceFirst('Exception: ', '');
+      _payStatus = BookingActionStatus.failed;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<String?> retryPayment(int paymentId) async {
+    _payStatus = BookingActionStatus.loading;
+    _payError = '';
+    _activePayTargetId = paymentId;
+    notifyListeners();
+
+    try {
+      final url = await _repository.retryPayment(paymentId);
       _payStatus = BookingActionStatus.done;
       notifyListeners();
       return url;
@@ -152,6 +174,7 @@ class MyBookingsProvider extends ChangeNotifier {
   void resetPayStatus() {
     _payStatus = BookingActionStatus.idle;
     _payError = '';
+    _activePayTargetId = null;
     notifyListeners();
   }
 }
