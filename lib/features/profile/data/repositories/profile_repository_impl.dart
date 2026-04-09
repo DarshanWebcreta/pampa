@@ -32,5 +32,28 @@ class ProfileRepositoryImpl implements ProfileRepository {
       throw Exception('Something went wrong. Please try again.');
     }
   }
-}
 
+  @override
+  Future<CustomerProfileModel> updateProfile(FormData formData) async {
+    try {
+      final response = await _apiService.updateCustomerProfile(formData);
+      final map = response as Map<String, dynamic>;
+
+      if (map['status'] == true) {
+        final data = map['data'];
+        if (data is Map<String, dynamic>) {
+          return CustomerProfileModel.fromJson(data);
+        }
+        throw Exception('Invalid profile data.');
+      }
+
+      throw Exception(map['message'] ?? 'Failed to update profile.');
+    } on DioException catch (e) {
+      throw Exception(HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (_) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+}

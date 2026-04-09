@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
+import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
@@ -212,6 +213,7 @@ class _HeaderCard extends StatelessWidget {
     final email = profile?.email.trim() ?? '';
     final mobile = profile?.mobile.trim() ?? '';
     final initials = _initials(name);
+    final photoUrl = profile?.photoUrl;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -228,13 +230,20 @@ class _HeaderCard extends StatelessWidget {
               color: AppColor.authButton.withValues(alpha: 0.18),
               shape: BoxShape.circle,
             ),
+            clipBehavior: Clip.antiAlias,
             alignment: Alignment.center,
-            child: AppText(
-              initials,
-              fontSize: 20,
-              fontWeight: FontWeights.bold,
-              color: AppColor.authButton,
-            ),
+            child: photoUrl != null && photoUrl.isNotEmpty
+                ? FunctionalComponent.cachedNetworkImage(
+                    photoUrl,
+                    radius: 26,
+                    fit: BoxFit.cover,
+                  )
+                : AppText(
+                    initials,
+                    fontSize: 20,
+                    fontWeight: FontWeights.bold,
+                    color: AppColor.authButton,
+                  ),
           ),
           const SizedBox(width: 14),
           Expanded(

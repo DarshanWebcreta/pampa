@@ -38,6 +38,7 @@ import 'package:pampa/features/provider_home/presentation/provider/provider_mess
 import 'package:pampa/features/provider_home/presentation/provider/provider_bookings_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_earnings_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_profile_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_availability_provider.dart';
 
 final getIt = GetIt.instance;
 
@@ -158,5 +159,10 @@ void setup() {
   // Provider Profile
   getIt.registerLazySingleton<ProviderProfileProvider>(
     () => ProviderProfileProvider(getIt<ApiService>()),
+  );
+
+  // Provider Availability
+  getIt.registerLazySingleton<ProviderAvailabilityProvider>(
+    () => ProviderAvailabilityProvider(getIt<ApiService>()),
   );
 }

@@ -32,6 +32,7 @@ class ApiPath {
   static const String login = "customer/login";
   static const String googleLogin = "customer/social-login";
   static const String me = "customer/me";
+  static const String customerProfile = "customer/profile";
   static const String logout = "customer/logout";
 
   /// ==============================
@@ -100,6 +101,9 @@ class ApiPath {
   /// ==============================
   /// PROVIDER WALLET
   /// ==============================
+
+  static const String providerSettings = "provider/settings";
+  static const String providerSettingsAvailability = "provider/settings/availability";
 
   static const String providerWallet = "provider/wallet";
   static const String walletTransactions = "provider/wallet/transactions";

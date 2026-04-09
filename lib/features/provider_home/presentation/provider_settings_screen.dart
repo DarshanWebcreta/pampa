@@ -7,8 +7,11 @@ import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
 import 'package:pampa/features/profile/presentation/notifications_screen.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_availability_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider_availability_screen.dart';
 
 class ProviderSettingsScreen extends StatelessWidget {
   const ProviderSettingsScreen({super.key});
@@ -39,10 +42,14 @@ class ProviderSettingsScreen extends StatelessWidget {
               _SettingsItemData(
                 icon: Icons.calendar_today_outlined,
                 label: 'Availability',
-                onTap: () => _showComingSoon(
-                      context,
-                      'Availability settings will be added here.',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: getIt<ProviderAvailabilityProvider>(),
+                      child: const ProviderAvailabilityScreen(),
                     ),
+                  ),
+                ),
               ),
               _SettingsItemData(
                 icon: Icons.attach_money_rounded,

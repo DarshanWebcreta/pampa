@@ -38,6 +38,10 @@ abstract class ApiService {
   @GET(ApiPath.me)
   Future<dynamic> getUser();
 
+  @POST(ApiPath.customerProfile)
+  @MultiPart()
+  Future<dynamic> updateCustomerProfile(@Body() FormData body);
+
   @POST(ApiPath.logout)
   Future<dynamic> logout();
 
@@ -151,6 +155,12 @@ abstract class ApiService {
 
   @GET(ApiPath.providerEarnings)
   Future<dynamic> getProviderEarnings();
+
+  @GET(ApiPath.providerSettings)
+  Future<dynamic> getProviderSettings();
+
+  @POST(ApiPath.providerSettingsAvailability)
+  Future<dynamic> updateProviderAvailability(@Body() Map<String, dynamic> body);
 
   @POST(ApiPath.providerToggleOnline)
   Future<dynamic> providerToggleOnline();
