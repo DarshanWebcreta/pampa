@@ -184,6 +184,35 @@ class MessagingRepositoryImpl implements MessagingRepository {
       throw Exception(map['message'] ?? 'Failed to send message.');
     } on DioException catch (e) {
       throw Exception(HandleExeption.handleError(e));
+    } catch (_) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  @override
+  Future<({ConversationModel conversation, List<MessageModel> messages})>
+      getAdminChat() async {
+    try {
+      final response = await _apiService.getAdminChat();
+      final map = response as Map<String, dynamic>;
+      if (map['status'] == true) {
+        final data = Map<String, dynamic>.from(map['data'] as Map<String, dynamic>);
+        // Ensure other_user info is present for Admin Chat
+        if (data['other_user'] == null) {
+          data['other_user'] = {
+            'id': 0,
+            'name': 'Super Admin',
+          };
+        }
+        final conversation = ConversationModel.fromJson(data);
+        final msgs = (data['messages'] as List<dynamic>? ?? [])
+            .map((e) => MessageModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+        return (conversation: conversation, messages: msgs);
+      }
+      throw Exception(map['message'] ?? 'Failed to load admin chat.');
+    } on DioException catch (e) {
+      throw Exception(HandleExeption.handleError(e));
     } on Exception {
       rethrow;
     } catch (_) {

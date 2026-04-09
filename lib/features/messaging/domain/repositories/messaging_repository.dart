@@ -23,4 +23,5 @@ abstract class MessagingRepository {
     required int conversationId,
     required String body,
   });
+  Future<({ConversationModel conversation, List<MessageModel> messages})> getAdminChat();
 }

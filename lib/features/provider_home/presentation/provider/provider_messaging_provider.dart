@@ -186,6 +186,24 @@ class ProviderMessagingProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> openAdminChat() async {
+    _msgStatus = MessagesFetchStatus.loading;
+    _msgError = '';
+    notifyListeners();
+
+    try {
+      final result = await _repository.getAdminChat();
+      _activeConversation = result.conversation;
+      _messages = result.messages;
+      _pendingConversationId = result.conversation.id;
+      _msgStatus = MessagesFetchStatus.success;
+    } catch (e) {
+      _msgError = e.toString().replaceFirst('Exception: ', '');
+      _msgStatus = MessagesFetchStatus.error;
+    }
+    notifyListeners();
+  }
+
   void clearActiveConversation() {
     _pendingConversationId = null;
     _activeConversation = null;

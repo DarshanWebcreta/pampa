@@ -7,6 +7,7 @@ import 'package:loader_overlay/loader_overlay.dart';
 import 'package:pampa/core/services/push_notification_service.dart';
 import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/colors.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_messaging_provider.dart';
 
 import 'package:toastification/toastification.dart';
 
@@ -52,6 +53,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => getIt<ProfileProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<MessagingProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<ExploreProvider>()),
+        ChangeNotifierProvider(create: (_) => getIt<ProviderMessagingProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<FavoritesProvider>()),
     ],
     child:Container(

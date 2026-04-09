@@ -22,6 +22,9 @@ import 'package:pampa/features/provider_home/presentation/provider_credentials_s
 import 'package:pampa/features/provider_home/presentation/provider_payout_method_screen.dart';
 import 'package:pampa/features/provider_home/presentation/provider_pricing_screen.dart';
 import 'package:pampa/features/provider_home/presentation/provider_service_management_screen.dart';
+import 'package:loader_overlay/loader_overlay.dart';
+import 'package:pampa/features/provider_home/presentation/provider_chat_screen.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_messaging_provider.dart';
 
 class ProviderSettingsScreen extends StatelessWidget {
   const ProviderSettingsScreen({super.key});
@@ -147,10 +150,7 @@ class ProviderSettingsScreen extends StatelessWidget {
               _SettingsItemData(
                 icon: Icons.help_outline_rounded,
                 label: 'Help Center',
-                onTap: () => _showComingSoon(
-                  context,
-                  'Help center content will be added here.',
-                ),
+                onTap: () => _openSupportChat(context),
               ),
             ],
           ),
@@ -190,12 +190,40 @@ class ProviderSettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showComingSoon(BuildContext context, String message) {
-    FunctionalComponent.showSnackBar(
-      context: context,
-      title: message,
-      success: true,
-    );
+  Future<void> _openSupportChat(BuildContext context) async {
+    context.loaderOverlay.show();
+    try {
+      final msgProvider = getIt<ProviderMessagingProvider>();
+      await msgProvider.openAdminChat();
+      if (!context.mounted) return;
+      
+      if (msgProvider.activeConversation != null) {
+        context.loaderOverlay.hide();
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ProviderChatScreen(
+              conversation: msgProvider.activeConversation!,
+            ),
+          ),
+        );
+      } else {
+        context.loaderOverlay.hide();
+        FunctionalComponent.showSnackBar(
+          context: context,
+          title: 'Failed to open support chat. Please try again.',
+          success: false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        context.loaderOverlay.hide();
+        FunctionalComponent.showSnackBar(
+          context: context,
+          title: 'Error opening chat: $e',
+          success: false,
+        );
+      }
+    }
   }
 
   Future<void> _showPauseDialog(BuildContext context) async {

@@ -266,6 +266,9 @@ abstract class ApiService {
     @Body() Map<String, dynamic> body,
   );
 
+  @POST("messages/provider/admin-chat")
+  Future<dynamic> getAdminChat();
+
   /// NOTIFICATION PREFERENCES
 
   @GET(ApiPath.notificationPreferences)
