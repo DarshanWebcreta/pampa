@@ -1,3 +1,4 @@
+import 'package:pampa/core/values/urls.dart';
 import 'package:pampa/features/categories/data/models/category_model.dart';
 
 class ServiceModel {
@@ -38,8 +39,10 @@ class ServiceModel {
       id: json['id'] ?? 0,
       categoryId: json['category_id'] ?? 0,
       serviceName: json['service_name'] ?? '',
-      price: json['price'] ?? '0.00',
-      image: json['image_url'] ?? '',
+      price: (json['price'] ?? '0.00').toString(),
+      image: _resolveImageUrl(
+        json['image_url']?.toString() ?? json['image']?.toString() ?? '',
+      ),
       duration: json['duration'] ?? 0,
       deposit: _toDouble(json['deposit']),
       priorityFee: _toDouble(json['priority_fee']),
@@ -70,9 +73,55 @@ class ServiceModel {
   /// Returns duration as "60 min" string.
   String get formattedDuration => '$duration min';
 
+  ServiceModel copyWith({
+    int? id,
+    int? categoryId,
+    String? serviceName,
+    String? price,
+    String? image,
+    int? duration,
+    double? deposit,
+    double? priorityFee,
+    String? description,
+    double? serviceCommission,
+    String? status,
+    String? createdAt,
+    String? updatedAt,
+    CategoryModel? category,
+  }) {
+    return ServiceModel(
+      id: id ?? this.id,
+      categoryId: categoryId ?? this.categoryId,
+      serviceName: serviceName ?? this.serviceName,
+      price: price ?? this.price,
+      image: image ?? this.image,
+      duration: duration ?? this.duration,
+      deposit: deposit ?? this.deposit,
+      priorityFee: priorityFee ?? this.priorityFee,
+      description: description ?? this.description,
+      serviceCommission: serviceCommission ?? this.serviceCommission,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      category: category ?? this.category,
+    );
+  }
+
   static double _toDouble(dynamic val) {
     if (val == null) return 0.0;
     if (val is num) return val.toDouble();
     return double.tryParse(val.toString()) ?? 0.0;
+  }
+
+  static String _resolveImageUrl(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return '';
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('/')) {
+      return '${ApiStrings.imageUrl}$trimmed';
+    }
+    return '${ApiStrings.imageUrl}/$trimmed';
   }
 }

@@ -53,8 +53,7 @@ class _ProviderAvailabilityScreenState
   Widget build(BuildContext context) {
     return Consumer<ProviderAvailabilityProvider>(
       builder: (context, provider, _) {
-        final isSaving =
-            provider.saveStatus == AvailabilitySaveStatus.loading;
+        final isSaving = provider.saveStatus == AvailabilitySaveStatus.loading;
 
         return Scaffold(
           backgroundColor: Colors.white,
@@ -65,8 +64,11 @@ class _ProviderAvailabilityScreenState
             scrolledUnderElevation: 0,
             leading: IconButton(
               onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 18, color: AppColor.darkGrey),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 18,
+                color: AppColor.darkGrey,
+              ),
             ),
             title: AppText(
               'Availability',
@@ -78,98 +80,97 @@ class _ProviderAvailabilityScreenState
           ),
           body: provider.status == AvailabilityStatus.loading
               ? const Center(
-                  child: CircularProgressIndicator(color: AppColor.authButton))
+                  child: CircularProgressIndicator(color: AppColor.authButton),
+                )
               : provider.status == AvailabilityStatus.error
-                  ? _ErrorBody(
-                      message: provider.error,
-                      onRetry: provider.fetchSettings,
-                    )
-                  : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── Header ─────────────────────────────────────────
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppText(
-                                'Set your availability',
-                                fontSize: 20,
-                                fontWeight: FontWeights.bold,
-                                color: AppColor.darkGrey,
-                              ),
-                              const SizedBox(height: 4),
-                              AppText(
-                                'Clients can only book during open hours.',
-                                fontSize: FontSizes.small,
-                                color: AppColor.grey,
-                              ),
-                             
-                            ],
+              ? _ErrorBody(
+                  message: provider.error,
+                  onRetry: () => provider.fetchSettings(forceRefresh: true),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Header ─────────────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppText(
+                            'Set your availability',
+                            fontSize: 20,
+                            fontWeight: FontWeights.bold,
+                            color: AppColor.darkGrey,
                           ),
-                        ),
-
-                        // ── Day list ───────────────────────────────────────
-                        Expanded(
-                          child: ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
-                            itemCount: provider.availability.length,
-                            separatorBuilder: (_, __) => const Divider(
-                              height: 1,
-                              thickness: 1,
-                              color: Color(0xFFF4EBEE),
-                              indent: 20,
-                              endIndent: 20,
-                            ),
-                            itemBuilder: (context, i) => _DayTile(
-                              dayIndex: i,
-                              provider: provider,
-                            ),
+                          const SizedBox(height: 4),
+                          AppText(
+                            'Clients can only book during open hours.',
+                            fontSize: FontSizes.small,
+                            color: AppColor.grey,
                           ),
-                        ),
-
-                        // ── Save button ────────────────────────────────────
-                        SafeArea(
-                          top: false,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: 52,
-                              child: ElevatedButton(
-                                onPressed: isSaving ? null : _save,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColor.authButton,
-                                  disabledBackgroundColor:
-                                      AppColor.authButton.withValues(alpha: 0.6),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: isSaving
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation(
-                                              AppColor.white),
-                                        ),
-                                      )
-                                    : AppText(
-                                        'Save Availability',
-                                        fontSize: FontSizes.regular,
-                                        fontWeight: FontWeights.semiBold,
-                                        color: AppColor.white,
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+
+                    // ── Day list ───────────────────────────────────────
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
+                        itemCount: provider.availability.length,
+                        separatorBuilder: (context, index) => const Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Color(0xFFF4EBEE),
+                          indent: 20,
+                          endIndent: 20,
+                        ),
+                        itemBuilder: (context, i) =>
+                            _DayTile(dayIndex: i, provider: provider),
+                      ),
+                    ),
+
+                    // ── Save button ────────────────────────────────────
+                    SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: isSaving ? null : _save,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColor.authButton,
+                              disabledBackgroundColor: AppColor.authButton
+                                  .withValues(alpha: 0.6),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: isSaving
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation(
+                                        AppColor.white,
+                                      ),
+                                    ),
+                                  )
+                                : AppText(
+                                    'Save Availability',
+                                    fontSize: FontSizes.regular,
+                                    fontWeight: FontWeights.semiBold,
+                                    color: AppColor.white,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
         );
       },
     );
@@ -251,8 +252,11 @@ class _DayTile extends StatelessWidget {
                         color: AppColor.authButton.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.add_rounded,
-                          size: 14, color: AppColor.authButton),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        size: 14,
+                        color: AppColor.authButton,
+                      ),
                     ),
                     const SizedBox(width: 6),
                     AppText(
@@ -285,7 +289,8 @@ List<String> _allTimeOptions() {
   for (int h = 0; h < 24; h++) {
     for (final m in [0, 30]) {
       list.add(
-          '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}');
+        '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}',
+      );
     }
   }
   return list;
@@ -422,8 +427,11 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
                       color: const Color(0xFFF4EBEE),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close_rounded,
-                        size: 16, color: AppColor.grey),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: AppColor.grey,
+                    ),
                   ),
                 ),
               ],
@@ -467,8 +475,7 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
                         perspective: 0.003,
                         diameterRatio: 1.5,
                         physics: const FixedExtentScrollPhysics(),
-                        onSelectedItemChanged: (i) =>
-                            setState(() => _hour = i),
+                        onSelectedItemChanged: (i) => setState(() => _hour = i),
                         childDelegate: ListWheelChildBuilderDelegate(
                           childCount: 24,
                           builder: (ctx, i) {
@@ -483,8 +490,8 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
                                       : FontWeight.w400,
                                   color: isCenter
                                       ? (disabled
-                                          ? const Color(0xFFFF3B5C)
-                                          : AppColor.authButton)
+                                            ? const Color(0xFFFF3B5C)
+                                            : AppColor.authButton)
                                       : AppColor.grey.withValues(alpha: 0.5),
                                 ),
                               ),
@@ -534,8 +541,8 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
                                       : FontWeight.w400,
                                   color: isCenter
                                       ? (disabled
-                                          ? const Color(0xFFFF3B5C)
-                                          : AppColor.authButton)
+                                            ? const Color(0xFFFF3B5C)
+                                            : AppColor.authButton)
                                       : AppColor.grey.withValues(alpha: 0.5),
                                 ),
                               ),
@@ -556,13 +563,18 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
             child: error.isNotEmpty
                 ? Padding(
                     key: const ValueKey('err'),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 6,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.info_outline_rounded,
-                            size: 14, color: Color(0xFFFF3B5C)),
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          size: 14,
+                          color: Color(0xFFFF3B5C),
+                        ),
                         const SizedBox(width: 5),
                         Text(
                           error,
@@ -586,14 +598,15 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed:
-                      disabled ? null : () => Navigator.of(context).pop(_selectedTime),
+                  onPressed: disabled
+                      ? null
+                      : () => Navigator.of(context).pop(_selectedTime),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColor.authButton,
-                    disabledBackgroundColor:
-                        const Color(0xFFCCBBC1),
+                    disabledBackgroundColor: const Color(0xFFCCBBC1),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     elevation: 0,
                   ),
                   child: Text(
@@ -691,7 +704,10 @@ class _SlotRow extends StatelessWidget {
     final err = provider.updateSlotStart(dayIndex, slotIndex, picked);
     if (err != null && context.mounted) {
       FunctionalComponent.showSnackBar(
-          context: context, title: err, success: false);
+        context: context,
+        title: err,
+        success: false,
+      );
     }
   }
 
@@ -706,7 +722,10 @@ class _SlotRow extends StatelessWidget {
     final err = provider.updateSlotEnd(dayIndex, slotIndex, picked);
     if (err != null && context.mounted) {
       FunctionalComponent.showSnackBar(
-          context: context, title: err, success: false);
+        context: context,
+        title: err,
+        success: false,
+      );
     }
   }
 
@@ -728,8 +747,10 @@ class _SlotRow extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => _pickStart(context),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -739,8 +760,11 @@ class _SlotRow extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.access_time_rounded,
-                          size: 12, color: AppColor.authButton),
+                      const Icon(
+                        Icons.access_time_rounded,
+                        size: 12,
+                        color: AppColor.authButton,
+                      ),
                       const SizedBox(width: 4),
                       AppText(
                         slot.start,
@@ -764,8 +788,10 @@ class _SlotRow extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => _pickEnd(context),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -775,8 +801,11 @@ class _SlotRow extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.access_time_rounded,
-                          size: 12, color: AppColor.authButton),
+                      const Icon(
+                        Icons.access_time_rounded,
+                        size: 12,
+                        color: AppColor.authButton,
+                      ),
                       const SizedBox(width: 4),
                       AppText(
                         slot.end,
@@ -803,8 +832,11 @@ class _SlotRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0xFFF0E4E8)),
                 ),
-                child: const Icon(Icons.close_rounded,
-                    size: 16, color: Color(0xFFFF3B5C)),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 16,
+                  color: Color(0xFFFF3B5C),
+                ),
               ),
             ),
           ],
@@ -830,8 +862,11 @@ class _ErrorBody extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off_rounded,
-                size: 48, color: AppColor.authButton),
+            const Icon(
+              Icons.wifi_off_rounded,
+              size: 48,
+              color: AppColor.authButton,
+            ),
             const SizedBox(height: 16),
             AppText(
               message.isNotEmpty ? message : 'Failed to load availability.',
@@ -846,7 +881,8 @@ class _ErrorBody extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColor.authButton,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 elevation: 0,
               ),
               child: AppText(

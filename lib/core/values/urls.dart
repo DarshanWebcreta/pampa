@@ -1,12 +1,14 @@
 class ApiStrings {
   ApiStrings._();
 
-  static const String host = 'https://springgreen-goat-999550.hostingersite.com';
+  static const String host =
+      'https://springgreen-goat-999550.hostingersite.com';
 
   /// Web client ID from Firebase Console → Authentication → Sign-in method → Google
   /// → Web SDK configuration → Web client ID.
   /// Also found in google-services.json under oauth_client[].client_id where client_type == 3.
-  static const String googleServerClientId = '843557523861-t5ugqha6bm2qfdtilc49mh5rh8mdo4ae.apps.googleusercontent.com';
+  static const String googleServerClientId =
+      '843557523861-t5ugqha6bm2qfdtilc49mh5rh8mdo4ae.apps.googleusercontent.com';
   static const String baseUrl = '$host/api/';
   static const String imageUrl = '$host/public';
 
@@ -70,15 +72,15 @@ class ApiPath {
   /// ==============================
 
   static const String stripeConfig = "payments/config";
-  static const String createCheckoutSession = "payments/create-checkout-session";
+  static const String createCheckoutSession =
+      "payments/create-checkout-session";
   static const String pendingPayments = "payments/pending";
   static const String paymentsRetry = "payments/retry";
   static const String paymentOfBalance = "payments/pay-balance";
 
   static String retryPayment(int id) => "payments/retry/$id";
 
-  static String payBalance(int bookingId) =>
-      "payments/pay-balance/$bookingId";
+  static String payBalance(int bookingId) => "payments/pay-balance/$bookingId";
 
   static const String paymentHistory = "payments/history";
 
@@ -103,13 +105,18 @@ class ApiPath {
   /// ==============================
 
   static const String providerSettings = "provider/settings";
-  static const String providerSettingsAvailability = "provider/settings/availability";
+  static const String providerSettingsAvailability =
+      "provider/settings/availability";
+  static const String providerSettingsPricing = "provider/settings/pricing";
+  static const String providerSettingsCredentials =
+      "provider/settings/credentials";
 
   static const String providerWallet = "provider/wallet";
   static const String walletTransactions = "provider/wallet/transactions";
 
   static const String providerBankDetails = "provider/bank-details";
   static const String payoutRequests = "provider/payout-requests";
+  static const String payoutRequest = "provider/payout-request";
 
   /// ==============================
   /// MESSAGING
@@ -124,7 +131,8 @@ class ApiPath {
   /// ==============================
 
   static const String favoriteProviders = "customer/favorites/providers";
-  static const String notificationPreferences = "customer/preferences/notification";
+  static const String notificationPreferences =
+      "customer/preferences/notification";
   static const String beautyPreferences = "customer/preferences/beauty";
   static const String notificationToken = "customer/notification-token";
 

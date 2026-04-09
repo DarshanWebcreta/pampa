@@ -30,10 +30,10 @@ class DayAvailability {
   });
 
   Map<String, dynamic> toJson() => {
-        'day': day,
-        'is_open': isOpen,
-        'slots': slots.map((s) => s.toJson()).toList(),
-      };
+    'day': day,
+    'is_open': isOpen,
+    'slots': slots.map((s) => s.toJson()).toList(),
+  };
 }
 
 enum AvailabilityStatus { initial, loading, success, error }
@@ -71,8 +71,9 @@ class ProviderAvailabilityProvider extends ChangeNotifier {
   String get saveError => _saveError;
   List<DayAvailability> get availability => _availability;
 
-  Future<void> fetchSettings() async {
+  Future<void> fetchSettings({bool forceRefresh = false}) async {
     if (_status == AvailabilityStatus.loading) return;
+    if (!forceRefresh && _status == AvailabilityStatus.success) return;
     _status = AvailabilityStatus.loading;
     _error = '';
     notifyListeners();
@@ -116,10 +117,12 @@ class ProviderAvailabilityProvider extends ChangeNotifier {
       final rawSlots = dayData['slots'] as List<dynamic>? ?? [];
       final slots = rawSlots
           .whereType<Map<String, dynamic>>()
-          .map((s) => TimeSlot(
-                start: s['start']?.toString() ?? '09:00',
-                end: s['end']?.toString() ?? '17:00',
-              ))
+          .map(
+            (s) => TimeSlot(
+              start: s['start']?.toString() ?? '09:00',
+              end: s['end']?.toString() ?? '17:00',
+            ),
+          )
           .toList();
       return DayAvailability(day: day, isOpen: isOpen, slots: slots);
     }).toList();

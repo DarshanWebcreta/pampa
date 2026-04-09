@@ -39,6 +39,11 @@ import 'package:pampa/features/provider_home/presentation/provider/provider_book
 import 'package:pampa/features/provider_home/presentation/provider/provider_earnings_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_profile_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_availability_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_category_management_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_credentials_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_payout_method_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_pricing_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_service_management_provider.dart';
 
 final getIt = GetIt.instance;
 
@@ -59,7 +64,9 @@ void setup() {
     ),
   );
 
-  getIt.registerLazySingleton<DummyProvider>(() => DummyProvider(apiService: getIt()));
+  getIt.registerLazySingleton<DummyProvider>(
+    () => DummyProvider(apiService: getIt()),
+  );
 
   // Auth
   getIt.registerLazySingleton<AuthRepository>(
@@ -164,5 +171,30 @@ void setup() {
   // Provider Availability
   getIt.registerLazySingleton<ProviderAvailabilityProvider>(
     () => ProviderAvailabilityProvider(getIt<ApiService>()),
+  );
+
+  // Provider Categories
+  getIt.registerLazySingleton<ProviderCategoryManagementProvider>(
+    () => ProviderCategoryManagementProvider(getIt<ApiService>()),
+  );
+
+  // Provider Services
+  getIt.registerLazySingleton<ProviderServiceManagementProvider>(
+    () => ProviderServiceManagementProvider(getIt<ApiService>()),
+  );
+
+  // Provider Pricing
+  getIt.registerLazySingleton<ProviderPricingProvider>(
+    () => ProviderPricingProvider(getIt<ApiService>()),
+  );
+
+  // Provider Credentials
+  getIt.registerLazySingleton<ProviderCredentialsProvider>(
+    () => ProviderCredentialsProvider(getIt<ApiService>()),
+  );
+
+  // Provider Payout Method
+  getIt.registerLazySingleton<ProviderPayoutMethodProvider>(
+    () => ProviderPayoutMethodProvider(getIt<ApiService>()),
   );
 }

@@ -10,8 +10,18 @@ import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
 import 'package:pampa/features/profile/presentation/notifications_screen.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_category_management_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_credentials_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_payout_method_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_pricing_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_service_management_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_availability_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider_availability_screen.dart';
+import 'package:pampa/features/provider_home/presentation/provider_category_management_screen.dart';
+import 'package:pampa/features/provider_home/presentation/provider_credentials_screen.dart';
+import 'package:pampa/features/provider_home/presentation/provider_payout_method_screen.dart';
+import 'package:pampa/features/provider_home/presentation/provider_pricing_screen.dart';
+import 'package:pampa/features/provider_home/presentation/provider_service_management_screen.dart';
 
 class ProviderSettingsScreen extends StatelessWidget {
   const ProviderSettingsScreen({super.key});
@@ -40,6 +50,30 @@ class ProviderSettingsScreen extends StatelessWidget {
           _SettingsGroup(
             items: [
               _SettingsItemData(
+                icon: Icons.category_outlined,
+                label: 'Category',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: getIt<ProviderCategoryManagementProvider>(),
+                      child: const ProviderCategoryManagementScreen(),
+                    ),
+                  ),
+                ),
+              ),
+              _SettingsItemData(
+                icon: Icons.design_services_outlined,
+                label: 'Service',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: getIt<ProviderServiceManagementProvider>(),
+                      child: const ProviderServiceManagementScreen(),
+                    ),
+                  ),
+                ),
+              ),
+              _SettingsItemData(
                 icon: Icons.calendar_today_outlined,
                 label: 'Availability',
                 onTap: () => Navigator.of(context).push(
@@ -54,26 +88,38 @@ class ProviderSettingsScreen extends StatelessWidget {
               _SettingsItemData(
                 icon: Icons.attach_money_rounded,
                 label: 'Pricing',
-                onTap: () => _showComingSoon(
-                      context,
-                      'Pricing settings will be added here.',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: getIt<ProviderPricingProvider>(),
+                      child: const ProviderPricingScreen(),
                     ),
+                  ),
+                ),
               ),
               _SettingsItemData(
                 icon: Icons.verified_user_outlined,
                 label: 'Credentials',
-                onTap: () => _showComingSoon(
-                      context,
-                      'Credential management will be added here.',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: getIt<ProviderCredentialsProvider>(),
+                      child: const ProviderCredentialsScreen(),
                     ),
+                  ),
+                ),
               ),
               _SettingsItemData(
                 icon: Icons.account_balance_wallet_outlined,
                 label: 'Payout Method',
-                onTap: () => _showComingSoon(
-                      context,
-                      'Payout method settings will be added here.',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: getIt<ProviderPayoutMethodProvider>(),
+                      child: const ProviderPayoutMethodScreen(),
                     ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -102,9 +148,9 @@ class ProviderSettingsScreen extends StatelessWidget {
                 icon: Icons.help_outline_rounded,
                 label: 'Help Center',
                 onTap: () => _showComingSoon(
-                      context,
-                      'Help center content will be added here.',
-                    ),
+                  context,
+                  'Help center content will be added here.',
+                ),
               ),
             ],
           ),
@@ -137,11 +183,7 @@ class ProviderSettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Center(
-            child: AppText(
-              '© 2026 Pampa',
-              fontSize: 11,
-              color: AppColor.grey,
-            ),
+            child: AppText('© 2026 Pampa', fontSize: 11, color: AppColor.grey),
           ),
         ],
       ),
@@ -249,7 +291,11 @@ class _SettingsGroup extends StatelessWidget {
             children: [
               _SettingsTile(item: item),
               if (index != items.length - 1)
-                const Divider(height: 1, thickness: 1, color: Color(0xFFF4EBEE)),
+                const Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Color(0xFFF4EBEE),
+                ),
             ],
           );
         }),
@@ -265,7 +311,9 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = item.isDestructive ? const Color(0xFFFF3B5C) : AppColor.authButton;
+    final color = item.isDestructive
+        ? const Color(0xFFFF3B5C)
+        : AppColor.authButton;
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: item.onTap,

@@ -14,14 +14,18 @@ abstract class ApiService {
   factory ApiService(Dio dio) {
     final interceptor = DefaultInterceptor();
     dio.interceptors.add(interceptor);
-    if(AppStrings.log) {
-      dio.interceptors.add(PrettyDioLogger(requestHeader: true,
+    if (AppStrings.log) {
+      dio.interceptors.add(
+        PrettyDioLogger(
+          requestHeader: true,
           requestBody: true,
           responseBody: true,
           responseHeader: false,
           error: true,
           compact: true,
-          maxWidth: 90));
+          maxWidth: 90,
+        ),
+      );
     }
     return _ApiService(dio);
   }
@@ -51,14 +55,30 @@ abstract class ApiService {
   Future<dynamic> getCategories();
 
   @GET(ApiPath.services)
-  Future<dynamic> getServices(
-      @Query("category_id") int categoryId,
-      );
+  Future<dynamic> getServices(@Query("category_id") int? categoryId);
+
+  @POST(ApiPath.categories)
+  Future<dynamic> createCategory(@Body() Map<String, dynamic> body);
+
+  @PUT("${ApiPath.categories}/{id}")
+  Future<dynamic> updateCategory(
+    @Path("id") int id,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST(ApiPath.services)
+  @MultiPart()
+  Future<dynamic> createService(@Body() FormData body);
+
+  @POST("${ApiPath.services}/{id}")
+  @MultiPart()
+  Future<dynamic> updateService(@Path("id") int id, @Body() FormData body);
+
+  @DELETE("${ApiPath.services}/{id}")
+  Future<dynamic> deleteService(@Path("id") int id);
 
   @GET("services/{id}")
-  Future<dynamic> serviceDetails(
-      @Path("id") int id,
-      );
+  Future<dynamic> serviceDetails(@Path("id") int id);
 
   /// BOOKINGS
 
@@ -162,6 +182,13 @@ abstract class ApiService {
   @POST(ApiPath.providerSettingsAvailability)
   Future<dynamic> updateProviderAvailability(@Body() Map<String, dynamic> body);
 
+  @POST(ApiPath.providerSettingsPricing)
+  Future<dynamic> updateProviderPricing(@Body() Map<String, dynamic> body);
+
+  @POST(ApiPath.providerSettingsCredentials)
+  @MultiPart()
+  Future<dynamic> updateProviderCredentials(@Body() FormData body);
+
   @POST(ApiPath.providerToggleOnline)
   Future<dynamic> providerToggleOnline();
 
@@ -194,8 +221,17 @@ abstract class ApiService {
   @GET(ApiPath.providerBankDetails)
   Future<dynamic> bankDetails();
 
+  @GET(ApiPath.payoutRequests)
+  Future<dynamic> getPayoutRequests({
+    @Query("per_page") int? perPage,
+    @Query("page") int? page,
+  });
+
   @POST(ApiPath.payoutRequests)
   Future<dynamic> requestPayout(@Body() Map<String, dynamic> body);
+
+  @POST(ApiPath.payoutRequest)
+  Future<dynamic> createPayoutRequest(@Body() Map<String, dynamic> body);
 
   /// MESSAGING
 
@@ -210,7 +246,8 @@ abstract class ApiService {
 
   @POST(ApiPath.providerConversations)
   Future<dynamic> createOrGetProviderConversation(
-      @Body() Map<String, dynamic> body);
+    @Body() Map<String, dynamic> body,
+  );
 
   @GET("messages/conversations/{id}")
   Future<dynamic> getConversationMessages(@Path("id") int id);
@@ -236,11 +273,12 @@ abstract class ApiService {
   Future<dynamic> getNotificationPreferences();
 
   @POST(ApiPath.notificationPreferences)
-  Future<dynamic> updateNotificationPreferences(@Body() Map<String, dynamic> body);
+  Future<dynamic> updateNotificationPreferences(
+    @Body() Map<String, dynamic> body,
+  );
 
   @POST(ApiPath.notificationToken)
   Future<dynamic> submitNotificationToken(@Body() Map<String, dynamic> body);
-
 
   @GET(ApiPath.beautyPreferences)
   Future<dynamic> getBeautyPreferences();

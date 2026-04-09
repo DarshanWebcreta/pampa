@@ -221,7 +221,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                   providerPhoto: provider.photoUrl,
                   date: bookingProvider.selectedDate,
                   time: bookingProvider.selectedTime ?? '',
-                  duration: duration,
+                  duration: int.parse(duration.toString()),
                 ),
                 const SizedBox(height: 18),
                 _SectionLabel('Service Address'),

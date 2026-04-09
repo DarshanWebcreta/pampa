@@ -107,7 +107,7 @@ class EarningsTransaction {
         serviceName: map['service_name'] as String? ?? '',
         serviceCategory: map['service_category'] as String?,
         amount: (map['amount'] as num?)?.toDouble() ?? 0,
-        status: map['status'] as String? ?? '',
+        status: map['type'] as String? ?? '',
         date: map['date'] as String? ?? '',
       );
 }

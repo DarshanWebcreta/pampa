@@ -32,6 +32,24 @@ class CategoryModel {
 
   bool get isActive => status.toLowerCase() == 'active';
 
+  CategoryModel copyWith({
+    int? id,
+    String? categoryName,
+    String? icon,
+    String? status,
+    String? createdAt,
+    String? updatedAt,
+  }) {
+    return CategoryModel(
+      id: id ?? this.id,
+      categoryName: categoryName ?? this.categoryName,
+      icon: icon ?? this.icon,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
   static String? _resolveIconUrl(String? icon) {
     if (icon == null) return null;
 

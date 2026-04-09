@@ -8,6 +8,8 @@ import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/provider_home/data/models/provider_earnings_model.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_earnings_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_payout_method_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider_payout_method_screen.dart';
 
 class ProviderEarningsTab extends StatefulWidget {
   const ProviderEarningsTab({super.key});
@@ -35,59 +37,58 @@ class _ProviderEarningsTabState extends State<ProviderEarningsTab> {
             color: const Color(0xFFF5F5F7),
             child: Column(
               children: [
-              // ── Header ────────────────────────────────────────────────
-              Container(
-                color: AppColor.white,
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + 8,
-                  left: 20,
-                  right: 16,
-                  bottom: 12,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: AppText(
-                        'Earnings',
-                        fontSize: 20,
-                        fontWeight: FontWeights.bold,
-                        color: AppColor.darkGrey,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {},
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: AppColor.authBg,
-                          borderRadius: BorderRadius.circular(10),
+                // ── Header ────────────────────────────────────────────────
+                Container(
+                  color: AppColor.white,
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 8,
+                    left: 20,
+                    right: 16,
+                    bottom: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: AppText(
+                          'Earnings',
+                          fontSize: 20,
+                          fontWeight: FontWeights.bold,
+                          color: AppColor.darkGrey,
                         ),
-                        child: const Icon(Icons.download_rounded,
-                            size: 18, color: AppColor.darkGrey),
                       ),
-                    ),
-                  ],
+                      // GestureDetector(
+                      //   onTap: () {},
+                      //   child: Container(
+                      //     width: 36,
+                      //     height: 36,
+                      //     decoration: BoxDecoration(
+                      //       color: AppColor.authBg,
+                      //       borderRadius: BorderRadius.circular(10),
+                      //     ),
+                      //     child: const Icon(Icons.download_rounded,
+                      //         size: 18, color: AppColor.darkGrey),
+                      //   ),
+                      // ),
+                    ],
+                  ),
                 ),
-              ),
-              // ── Body ──────────────────────────────────────────────────
-              Expanded(
-                child: prov.loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : prov.error.isNotEmpty && prov.earnings == null
-                        ? _ErrorView(
-                            message: prov.error,
-                            onRetry: () => prov.fetchEarnings(),
-                          )
-                        : prov.earnings != null
-                            ? RefreshIndicator(
-                                onRefresh: prov.fetchEarnings,
-                                child:
-                                    _EarningsBody(earnings: prov.earnings!),
-                              )
-                            : const SizedBox.shrink(),
-              ),
-            ],
+                // ── Body ──────────────────────────────────────────────────
+                Expanded(
+                  child: prov.loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : prov.error.isNotEmpty && prov.earnings == null
+                      ? _ErrorView(
+                          message: prov.error,
+                          onRetry: () => prov.fetchEarnings(),
+                        )
+                      : prov.earnings != null
+                      ? RefreshIndicator(
+                          onRefresh: prov.fetchEarnings,
+                          child: _EarningsBody(earnings: prov.earnings!),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
             ),
           );
         },
@@ -111,10 +112,7 @@ class _EarningsBody extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
         // ── Available for Payout (dark card) ─────────────────────────────
-        _PayoutCard(
-          available: earnings.wallet.availableForPayout,
-          fmt: _fmt,
-        ),
+        _PayoutCard(available: earnings.wallet.availableForPayout, fmt: _fmt),
         const SizedBox(height: 12),
 
         // ── Pending card ─────────────────────────────────────────────────
@@ -133,11 +131,13 @@ class _EarningsBody extends StatelessWidget {
 
         // ── Recent Transactions ──────────────────────────────────────────
         _RecentTransactionsCard(
-            transactions: earnings.recentTransactions, fmt: _fmt),
+          transactions: earnings.recentTransactions,
+          fmt: _fmt,
+        ),
         const SizedBox(height: 16),
 
         // ── Payment Structure ────────────────────────────────────────────
-        _PaymentStructureCard(structure: earnings.paymentStructure, fmt: _fmt),
+        // _PaymentStructureCard(structure: earnings.paymentStructure, fmt: _fmt),
       ],
     );
   }
@@ -182,13 +182,23 @@ class _PayoutCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: getIt<ProviderPayoutMethodProvider>(),
+                      child: const ProviderPayoutMethodScreen(),
+                    ),
+                  ),
+                );
+              },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: const Text(
                 'Transfer to Bank',
@@ -222,7 +232,9 @@ class _PendingCard extends StatelessWidget {
         color: const Color(0xFFF9EDF4),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-            color: AppColor.authButton.withValues(alpha: 0.15), width: 1),
+          color: AppColor.authButton.withValues(alpha: 0.15),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,8 +249,7 @@ class _PendingCard extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColor.authButton.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
@@ -284,10 +295,10 @@ class _ThisWeekCard extends StatelessWidget {
     final growthBg = isPositive
         ? const Color(0xFFE8F5E9)
         : const Color(0xFFFFEBEE);
-    final growthIcon =
-        isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded;
-    final growthStr =
-        '${isPositive ? '+' : ''}${growth.toInt()}%';
+    final growthIcon = isPositive
+        ? Icons.trending_up_rounded
+        : Icons.trending_down_rounded;
+    final growthStr = '${isPositive ? '+' : ''}${growth.toInt()}%';
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -315,8 +326,7 @@ class _ThisWeekCard extends StatelessWidget {
                 color: AppColor.darkGrey,
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: growthBg,
                   borderRadius: BorderRadius.circular(8),
@@ -422,7 +432,9 @@ class _BarChart extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: isActive
                                     ? AppColor.authButton
-                                    : AppColor.authButton.withValues(alpha: 0.15),
+                                    : AppColor.authButton.withValues(
+                                        alpha: 0.15,
+                                      ),
                                 borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(7),
                                 ),
@@ -522,7 +534,10 @@ class _ServiceBreakdownCard extends StatelessWidget {
                   Container(
                     width: 10,
                     height: 10,
-                    decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: dot,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -568,8 +583,10 @@ class _RecentTransactionsCard extends StatelessWidget {
   final List<EarningsTransaction> transactions;
   final String Function(double) fmt;
 
-  const _RecentTransactionsCard(
-      {required this.transactions, required this.fmt});
+  const _RecentTransactionsCard({
+    required this.transactions,
+    required this.fmt,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -613,10 +630,7 @@ class _RecentTransactionsCard extends StatelessWidget {
               return Column(
                 children: [
                   if (i > 0)
-                    Divider(
-                        height: 1,
-                        color: AppColor.lightGrey,
-                        thickness: 1),
+                    Divider(height: 1, color: AppColor.lightGrey, thickness: 1),
                   if (i > 0) const SizedBox(height: 12),
                   _TransactionRow(tx: tx, fmt: fmt),
                   if (i < transactions.length - 1) const SizedBox(height: 12),
@@ -636,13 +650,11 @@ class _TransactionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = tx.status.toLowerCase() == 'completed';
-    final statusColor = isCompleted
-        ? const Color(0xFF2E7D32)
-        : const Color(0xFFE65100);
+    final isCompleted = tx.status.toLowerCase() == 'credit';
+    final statusColor = isCompleted ? Colors.green : Colors.red;
     final statusBg = isCompleted
-        ? const Color(0xFFE8F5E9)
-        : const Color(0xFFFFF3E0);
+        ? Colors.lightGreen.withValues(alpha: 0.1)
+        : Colors.red.withValues(alpha: 0.1);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -657,9 +669,7 @@ class _TransactionRow extends StatelessWidget {
           ),
           alignment: Alignment.center,
           child: Text(
-            tx.customerName.isNotEmpty
-                ? tx.customerName[0].toUpperCase()
-                : '?',
+            tx.customerName.isNotEmpty ? tx.customerName[0].toUpperCase() : '?',
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -692,7 +702,9 @@ class _TransactionRow extends StatelessWidget {
                     Container(
                       margin: const EdgeInsets.only(left: 6),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColor.authButton.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(5),
@@ -738,8 +750,7 @@ class _TransactionRow extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
                 color: statusBg,
                 borderRadius: BorderRadius.circular(5),
@@ -766,8 +777,7 @@ class _PaymentStructureCard extends StatelessWidget {
   final EarningsPaymentStructure structure;
   final String Function(double) fmt;
 
-  const _PaymentStructureCard(
-      {required this.structure, required this.fmt});
+  const _PaymentStructureCard({required this.structure, required this.fmt});
 
   @override
   Widget build(BuildContext context) {
@@ -865,7 +875,8 @@ class _ErrorView extends StatelessWidget {
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: onRetry,
               child: const Text('Retry'),
