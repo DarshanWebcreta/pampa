@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/messaging/data/models/conversation_model.dart';
 import 'package:pampa/features/messaging/presentation/provider/messaging_provider.dart';
 
@@ -77,9 +78,7 @@ class _BookingChatScreenState extends State<BookingChatScreen> {
   void dispose() {
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
-    if (_conversation != null) {
-      context.read<MessagingProvider>().clearActiveConversation();
-    }
+    Future.microtask(() => getIt<MessagingProvider>().clearActiveConversation());
     super.dispose();
   }
 

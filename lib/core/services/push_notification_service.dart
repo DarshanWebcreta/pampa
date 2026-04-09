@@ -123,7 +123,7 @@ class PushNotificationService {
 
   Future<void> _configureForegroundPresentation() async {
     await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-      alert: true,
+      alert: false, // Turned off so we can manually control via local_notifications
       badge: true,
       sound: true,
     );
@@ -172,8 +172,38 @@ class PushNotificationService {
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     _printPayload('FOREGROUND', message);
+
+    bool skipNotification = false;
+    final type = message.data['type'] as String?;
+    if (type == 'message') {
+      final conversationId = int.tryParse(message.data['id']?.toString() ?? '');
+      if (conversationId != null) {
+        final userType = StorageManager.readData(StoreKeys.userType) as String?;
+        final isProvider = userType == 'provider';
+        if (isProvider) {
+          final prov = getIt<ProviderMessagingProvider>();
+          if (prov.activeConversation?.id == conversationId) {
+            skipNotification = true;
+          }
+        } else {
+          try {
+            final ctx = AppRouter.navigatorKey.currentContext;
+            if (ctx != null) {
+              final prov = ctx.read<MessagingProvider>();
+              if (prov.activeConversation?.id == conversationId) {
+                skipNotification = true;
+              }
+            }
+          } catch (_) {}
+        }
+      }
+    }
+
     _handleMessageType(message, navigate: false);
-    await showRemoteMessage(message);
+    
+    if (!skipNotification) {
+      await showRemoteMessage(message);
+    }
   }
 
   void _handleNotificationTap(RemoteMessage message) {
@@ -194,19 +224,19 @@ class PushNotificationService {
     // ── Refresh conversations list + specific conversation messages ────────
     if (isProvider) {
       final prov = getIt<ProviderMessagingProvider>();
-      prov.refreshConversations();
+      prov.silentRefreshConversations();
       // If this conversation is currently open, refresh its messages too
       if (prov.activeConversation?.id == conversationId) {
-        prov.openConversation(conversationId);
+        prov.refreshActiveConversation(conversationId);
       }
     } else {
       try {
         final ctx = AppRouter.navigatorKey.currentContext;
         if (ctx != null) {
           final prov = ctx.read<MessagingProvider>();
-          prov.refreshConversations();
+          prov.silentRefreshConversations();
           if (prov.activeConversation?.id == conversationId) {
-            prov.openConversation(conversationId);
+            prov.refreshActiveConversation(conversationId);
           }
         }
       } catch (_) {}

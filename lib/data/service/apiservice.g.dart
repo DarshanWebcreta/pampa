@@ -803,18 +803,14 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> updateProviderProfile(FormData body) async {
+  Future<dynamic> updateProviderProfile(Map<String, dynamic> body) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = body;
+    final _data = <String, dynamic>{};
+    _data.addAll(body);
     final _options = _setStreamType<dynamic>(
-      Options(
-            method: 'PUT',
-            headers: _headers,
-            extra: _extra,
-            contentType: 'multipart/form-data',
-          )
+      Options(method: 'PUT', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
             'providers/profile',

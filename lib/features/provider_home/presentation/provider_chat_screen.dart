@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pampa/data/service/di.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/values/app_text_value.dart';
@@ -44,7 +45,7 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
   void dispose() {
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
-    context.read<ProviderMessagingProvider>().clearActiveConversation();
+    Future.microtask(() => getIt<ProviderMessagingProvider>().clearActiveConversation());
     super.dispose();
   }
 
@@ -120,9 +121,8 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
           final isError = provider.msgStatus == MessagesFetchStatus.error;
           final msgs = provider.messages;
 
-          // Show typing dots only for receiver-side wait after sending,
-          // not while the whole conversation is being fetched.
-          final showTypingLoader = provider.isSending;
+          // Show the 3-dot typing loader explicitly when receiving a push notification for this chat
+          final showTypingLoader = provider.isReceivingNewMessage;
 
           if (msgs.isNotEmpty || showTypingLoader) {
             WidgetsBinding.instance.addPostFrameCallback(

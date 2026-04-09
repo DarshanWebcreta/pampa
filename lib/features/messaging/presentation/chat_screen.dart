@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/messaging/data/models/conversation_model.dart';
 import 'package:pampa/features/messaging/presentation/provider/messaging_provider.dart';
 
@@ -33,7 +35,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
-    context.read<MessagingProvider>().clearActiveConversation();
+    Future.microtask(() => getIt<MessagingProvider>().clearActiveConversation());
     super.dispose();
   }
 
@@ -146,7 +148,9 @@ class _ChatScreenState extends State<ChatScreen> {
           }
 
           final msgs = provider.messages;
-          if (msgs.isNotEmpty) {
+          final showTypingLoader = provider.isReceivingNewMessage;
+
+          if (msgs.isNotEmpty || showTypingLoader) {
             WidgetsBinding.instance
                 .addPostFrameCallback((_) => _scrollToBottom());
           }
@@ -154,7 +158,7 @@ class _ChatScreenState extends State<ChatScreen> {
           return Column(
             children: [
               Expanded(
-                child: msgs.isEmpty
+                child: msgs.isEmpty && !showTypingLoader
                     ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -175,8 +179,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     : ListView.builder(
                         controller: _scrollCtrl,
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        itemCount: msgs.length,
+                        itemCount: msgs.length + (showTypingLoader ? 1 : 0),
                         itemBuilder: (_, i) {
+                          if (i == msgs.length) {
+                            return const _TypingLoader();
+                          }
                           final msg = msgs[i];
                           final showDate = i == 0 ||
                               !_isSameDay(
@@ -460,6 +467,91 @@ class _MiniAvatar extends StatelessWidget {
         fontSize: size * 0.3,
         fontWeight: FontWeights.bold,
         color: AppColor.authButton,
+      ),
+    );
+  }
+}
+
+// ─── Typing Loader ────────────────────────────────────────────────────────────
+
+class _TypingLoader extends StatefulWidget {
+  const _TypingLoader();
+
+  @override
+  State<_TypingLoader> createState() => _TypingLoaderState();
+}
+
+class _TypingLoaderState extends State<_TypingLoader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 12),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(18),
+              topRight: Radius.circular(18),
+              bottomRight: Radius.circular(18),
+              bottomLeft: Radius.circular(4),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(3, (i) {
+              return AnimatedBuilder(
+                animation: _ctrl,
+                builder: (context, child) {
+                  final delay = i * 0.28;
+                  final t = (((_ctrl.value - delay) % 1.0 + 1.0) % 1.0);
+                  final y = math.sin(t * math.pi) * 3.5;
+                  return Transform.translate(
+                    offset: Offset(0, -y),
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      margin: EdgeInsets.only(right: i < 2 ? 4 : 0),
+                      decoration: BoxDecoration(
+                        color: AppColor.authButton.withValues(
+                          alpha: 0.4 + 0.6 * math.sin(t * math.pi).clamp(0, 1),
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  );
+                },
+              );
+            }),
+          ),
+        ),
       ),
     );
   }

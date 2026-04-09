@@ -59,7 +59,7 @@ class ProviderProfileProvider extends ChangeNotifier {
     _saving = true;
     notifyListeners();
     try {
-      final formData = FormData.fromMap({
+      final body = {
         'bio': bio,
         'certification': certification,
         'licensed': licensed,
@@ -71,9 +71,9 @@ class ProviderProfileProvider extends ChangeNotifier {
         'max_service_distance': maxServiceDistance,
         'per_km_charge': perKmCharge,
         'service_zip_codes': serviceZipCodes,
-      });
+      };
 
-      final res = await _api.updateProviderProfile(formData);
+      final res = await _api.updateProviderProfile(body);
       final map = res as Map<String, dynamic>;
       if (map['status'] == true) {
         // refresh

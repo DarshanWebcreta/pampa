@@ -20,6 +20,7 @@ class ProviderMessagingProvider extends ChangeNotifier {
   List<MessageModel> _messages = [];
   String _msgError = '';
   bool _isSending = false;
+  bool _isReceivingNewMessage = false;
   int? _pendingConversationId;
 
   MessagesFetchStatus get msgStatus => _msgStatus;
@@ -27,6 +28,7 @@ class ProviderMessagingProvider extends ChangeNotifier {
   List<MessageModel> get messages => _messages;
   String get msgError => _msgError;
   bool get isSending => _isSending;
+  bool get isReceivingNewMessage => _isReceivingNewMessage;
 
   Future<void> fetchConversations() async {
     if (_convStatus == ConversationsFetchStatus.loading) return;
@@ -47,6 +49,18 @@ class ProviderMessagingProvider extends ChangeNotifier {
   Future<void> refreshConversations() async {
     _convStatus = ConversationsFetchStatus.initial;
     await fetchConversations();
+  }
+
+  Future<void> silentRefreshConversations() async {
+    try {
+      _conversations = await _repository.getProviderConversations();
+      if (_convStatus != ConversationsFetchStatus.success) {
+        _convStatus = ConversationsFetchStatus.success;
+      }
+      notifyListeners();
+    } catch (_) {
+      // Ignore background refresh errors
+    }
   }
 
   Future<void> openConversation(int conversationId) async {
@@ -81,6 +95,25 @@ class ProviderMessagingProvider extends ChangeNotifier {
       _msgError = e.toString().replaceFirst('Exception: ', '');
       _msgStatus = MessagesFetchStatus.error;
     }
+    notifyListeners();
+  }
+
+  Future<void> refreshActiveConversation(int conversationId) async {
+    if (_pendingConversationId != conversationId) return;
+    _isReceivingNewMessage = true;
+    notifyListeners();
+    
+    // Artificial delay to make the typing indicator visible for a moment
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    try {
+      final result = await _repository.getProviderMessages(conversationId);
+      if (_pendingConversationId == conversationId) {
+        _messages = result.messages;
+      }
+    } catch (_) {}
+    
+    _isReceivingNewMessage = false;
     notifyListeners();
   }
 

@@ -163,8 +163,7 @@ abstract class ApiService {
   Future<dynamic> getProviderProfile();
 
   @PUT(ApiPath.providerProfileUpdate)
-  @MultiPart()
-  Future<dynamic> updateProviderProfile(@Body() FormData body);
+  Future<dynamic> updateProviderProfile(@Body() Map<String, dynamic> body);
 
   @POST(ApiPath.providerGallery)
   @MultiPart()
