@@ -33,7 +33,6 @@ class GradiantScaffold extends StatelessWidget {
         children: [
           CustomHeader(
             title: title,
-            height: 62,
             homeBack: homeBack,
             horiZontalWidget: horiZontalWidget,
             verticalWidget: verticalWidget,

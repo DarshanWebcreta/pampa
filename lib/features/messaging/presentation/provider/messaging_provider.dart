@@ -3,6 +3,7 @@ import 'package:pampa/features/messaging/data/models/conversation_model.dart';
 import 'package:pampa/features/messaging/domain/repositories/messaging_repository.dart';
 
 enum ConversationsFetchStatus { initial, loading, success, error }
+
 enum MessagesFetchStatus { initial, loading, success, error }
 
 class MessagingProvider extends ChangeNotifier {
@@ -24,6 +25,7 @@ class MessagingProvider extends ChangeNotifier {
   List<MessageModel> _messages = [];
   String _msgError = '';
   bool _isSending = false;
+  int? _pendingConversationId;
 
   MessagesFetchStatus get msgStatus => _msgStatus;
   ConversationModel? get activeConversation => _activeConversation;
@@ -55,13 +57,19 @@ class MessagingProvider extends ChangeNotifier {
 
   // ── Open conversation (load messages) ─────────────────────────────────────
   Future<void> openConversation(int conversationId) async {
+    _pendingConversationId = conversationId;
+    _activeConversation = null;
+    _messages = [];
     _msgStatus = MessagesFetchStatus.loading;
     _msgError = '';
     notifyListeners();
 
     try {
       final result = await _repository.getMessages(conversationId);
-      if (_msgStatus == MessagesFetchStatus.initial) return;
+      if (_pendingConversationId != conversationId ||
+          _msgStatus == MessagesFetchStatus.initial) {
+        return;
+      }
       _activeConversation = result.conversation;
       _messages = result.messages;
       _msgStatus = MessagesFetchStatus.success;
@@ -158,6 +166,7 @@ class MessagingProvider extends ChangeNotifier {
   }
 
   void clearActiveConversation() {
+    _pendingConversationId = null;
     _activeConversation = null;
     _messages = [];
     _msgStatus = MessagesFetchStatus.initial;

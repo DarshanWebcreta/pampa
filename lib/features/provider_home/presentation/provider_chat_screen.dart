@@ -35,8 +35,8 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProviderMessagingProvider>().openConversation(
-            widget.conversation.id,
-          );
+        widget.conversation.id,
+      );
     });
   }
 
@@ -53,9 +53,9 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
     if (text.isEmpty) return;
     _msgCtrl.clear();
     await context.read<ProviderMessagingProvider>().sendMessage(
-          conversationId: widget.conversation.id,
-          body: text,
-        );
+      conversationId: widget.conversation.id,
+      body: text,
+    );
     _scrollToBottom();
   }
 
@@ -86,8 +86,11 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
         scrolledUnderElevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColor.darkGrey, size: 18),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColor.darkGrey,
+            size: 18,
+          ),
         ),
         title: Row(
           children: [
@@ -104,11 +107,7 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
                     color: AppColor.darkGrey,
                     maxLines: 1,
                   ),
-                  AppText(
-                    'Customer',
-                    fontSize: 11,
-                    color: AppColor.grey,
-                  ),
+                  AppText('Customer', fontSize: 11, color: AppColor.grey),
                 ],
               ),
             ),
@@ -121,11 +120,14 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
           final isError = provider.msgStatus == MessagesFetchStatus.error;
           final msgs = provider.messages;
 
-          final showTypingLoader = isLoading || provider.isSending;
+          // Show typing dots only for receiver-side wait after sending,
+          // not while the whole conversation is being fetched.
+          final showTypingLoader = provider.isSending;
 
           if (msgs.isNotEmpty || showTypingLoader) {
-            WidgetsBinding.instance
-                .addPostFrameCallback((_) => _scrollToBottom());
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) => _scrollToBottom(),
+            );
           }
 
           return Column(
@@ -139,78 +141,92 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.wifi_off_rounded,
-                                  color: AppColor.authButton, size: 40),
+                              const Icon(
+                                Icons.wifi_off_rounded,
+                                color: AppColor.authButton,
+                                size: 40,
+                              ),
                               const SizedBox(height: 12),
-                              AppText(provider.msgError,
-                                  fontSize: FontSizes.small,
-                                  color: AppColor.grey,
-                                  align: TextAlign.center,
-                                  maxLines: 3),
+                              AppText(
+                                provider.msgError,
+                                fontSize: FontSizes.small,
+                                color: AppColor.grey,
+                                align: TextAlign.center,
+                                maxLines: 3,
+                              ),
                               const SizedBox(height: 16),
                               GestureDetector(
                                 onTap: () => provider.openConversation(
-                                    widget.conversation.id),
+                                  widget.conversation.id,
+                                ),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 24, vertical: 12),
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
                                   decoration: BoxDecoration(
-                                      color: AppColor.authButton,
-                                      borderRadius:
-                                          BorderRadius.circular(10)),
-                                  child: AppText('Retry',
-                                      fontSize: FontSizes.small,
-                                      fontWeight: FontWeights.semiBold,
-                                      color: AppColor.white),
+                                    color: AppColor.authButton,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: AppText(
+                                    'Retry',
+                                    fontSize: FontSizes.small,
+                                    fontWeight: FontWeights.semiBold,
+                                    color: AppColor.white,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       )
+                    : isLoading
+                    ? const _ChatLoadingShimmer()
                     : msgs.isEmpty && !showTypingLoader
-                        ? Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                    Icons.chat_bubble_outline_rounded,
-                                    color: AppColor.authButton,
-                                    size: 40),
-                                const SizedBox(height: 12),
-                                AppText('No messages yet',
-                                    fontSize: FontSizes.regular,
-                                    color: AppColor.grey),
-                                const SizedBox(height: 4),
-                                AppText('Say hi to $customerName!',
-                                    fontSize: FontSizes.small,
-                                    color: AppColor.mediumGrey),
-                              ],
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              color: AppColor.authButton,
+                              size: 40,
                             ),
-                          )
-                        : ListView.builder(
-                            controller: _scrollCtrl,
-                            padding:
-                                const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                            itemCount:
-                                msgs.length + (showTypingLoader ? 1 : 0),
-                            itemBuilder: (_, i) {
-                              if (i == msgs.length) {
-                                return const _TypingLoader();
-                              }
-                              final msg = msgs[i];
-                              final showDate = i == 0 ||
-                                  !_isSameDay(
-                                      msgs[i - 1].createdAt, msg.createdAt);
-                              return Column(
-                                children: [
-                                  if (showDate)
-                                    _DateDivider(date: msg.createdAt),
-                                  _MessageBubble(message: msg),
-                                ],
-                              );
-                            },
-                          ),
+                            const SizedBox(height: 12),
+                            AppText(
+                              'No messages yet',
+                              fontSize: FontSizes.regular,
+                              color: AppColor.grey,
+                            ),
+                            const SizedBox(height: 4),
+                            AppText(
+                              'Say hi to $customerName!',
+                              fontSize: FontSizes.small,
+                              color: AppColor.mediumGrey,
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: _scrollCtrl,
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        itemCount: msgs.length + (showTypingLoader ? 1 : 0),
+                        itemBuilder: (context, i) {
+                          if (i == msgs.length) {
+                            return const _TypingLoader();
+                          }
+                          final msg = msgs[i];
+                          final showDate =
+                              i == 0 ||
+                              !_isSameDay(msgs[i - 1].createdAt, msg.createdAt);
+                          return Column(
+                            children: [
+                              if (showDate) _DateDivider(date: msg.createdAt),
+                              _MessageBubble(message: msg),
+                            ],
+                          );
+                        },
+                      ),
               ),
 
               // ── Input bar always visible ─────────────────────────────
@@ -245,8 +261,9 @@ class _MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
-        mainAxisAlignment:
-            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
@@ -255,15 +272,18 @@ class _MessageBubble extends StatelessWidget {
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment:
-                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: isMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
                 Container(
                   constraints: BoxConstraints(
                     maxWidth: MediaQuery.of(context).size.width * 0.68,
                   ),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 10),
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: isMe ? AppColor.authButton : AppColor.white,
                     borderRadius: BorderRadius.only(
@@ -294,8 +314,11 @@ class _MessageBubble extends StatelessWidget {
                     AppText(timeStr, fontSize: 10, color: AppColor.grey),
                     if (isMe && message.readAt != null) ...[
                       const SizedBox(width: 4),
-                      const Icon(Icons.done_all_rounded,
-                          size: 12, color: AppColor.authButton),
+                      const Icon(
+                        Icons.done_all_rounded,
+                        size: 12,
+                        color: AppColor.authButton,
+                      ),
                     ],
                   ],
                 ),
@@ -322,26 +345,28 @@ class _DateDivider extends StatelessWidget {
     final label = diff == 0
         ? 'Today'
         : diff == 1
-            ? 'Yesterday'
-            : DateFormat('MMM d, yyyy').format(date);
+        ? 'Yesterday'
+        : DateFormat('MMM d, yyyy').format(date);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
           Expanded(
-              child: Divider(
-                  color: AppColor.mediumGrey.withValues(alpha: 0.5))),
+            child: Divider(color: AppColor.mediumGrey.withValues(alpha: 0.5)),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: AppText(label,
-                fontSize: 11,
-                color: AppColor.grey,
-                fontWeight: FontWeights.medium),
+            child: AppText(
+              label,
+              fontSize: 11,
+              color: AppColor.grey,
+              fontWeight: FontWeights.medium,
+            ),
           ),
           Expanded(
-              child: Divider(
-                  color: AppColor.mediumGrey.withValues(alpha: 0.5))),
+            child: Divider(color: AppColor.mediumGrey.withValues(alpha: 0.5)),
+          ),
         ],
       ),
     );
@@ -372,14 +397,19 @@ class _InputBarState extends State<_InputBar> {
   void initState() {
     super.initState();
     widget.controller.addListener(
-        () => setState(() => _hasText = widget.controller.text.trim().isNotEmpty));
+      () => setState(() => _hasText = widget.controller.text.trim().isNotEmpty),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-          16, 10, 16, MediaQuery.of(context).padding.bottom + 10),
+        16,
+        10,
+        16,
+        MediaQuery.of(context).padding.bottom + 10,
+      ),
       decoration: BoxDecoration(
         color: AppColor.white,
         boxShadow: [
@@ -405,14 +435,15 @@ class _InputBarState extends State<_InputBar> {
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
                 textCapitalization: TextCapitalization.sentences,
-                style:
-                    const TextStyle(fontSize: 14, color: AppColor.darkGrey),
+                style: const TextStyle(fontSize: 14, color: AppColor.darkGrey),
                 decoration: const InputDecoration(
                   hintText: 'Type a message...',
                   hintStyle: TextStyle(fontSize: 14, color: AppColor.grey),
                   border: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                 ),
               ),
             ),
@@ -434,10 +465,15 @@ class _InputBarState extends State<_InputBar> {
                   ? const Padding(
                       padding: EdgeInsets.all(12),
                       child: CircularProgressIndicator(
-                          color: AppColor.white, strokeWidth: 2),
+                        color: AppColor.white,
+                        strokeWidth: 2,
+                      ),
                     )
-                  : const Icon(Icons.send_rounded,
-                      color: AppColor.white, size: 20),
+                  : const Icon(
+                      Icons.send_rounded,
+                      color: AppColor.white,
+                      size: 20,
+                    ),
             ),
           ),
         ],
@@ -539,7 +575,7 @@ class _TypingLoaderState extends State<_TypingLoader>
             children: List.generate(3, (i) {
               return AnimatedBuilder(
                 animation: _ctrl,
-                builder: (_, __) {
+                builder: (context, child) {
                   final delay = i * 0.28;
                   final t = (((_ctrl.value - delay) % 1.0 + 1.0) % 1.0);
                   final y = math.sin(t * math.pi) * 3.5;
@@ -550,8 +586,9 @@ class _TypingLoaderState extends State<_TypingLoader>
                       height: 6,
                       margin: EdgeInsets.only(right: i < 2 ? 4 : 0),
                       decoration: BoxDecoration(
-                        color: AppColor.authButton
-                            .withValues(alpha: 0.4 + 0.6 * math.sin(t * math.pi).clamp(0, 1)),
+                        color: AppColor.authButton.withValues(
+                          alpha: 0.4 + 0.6 * math.sin(t * math.pi).clamp(0, 1),
+                        ),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -561,6 +598,108 @@ class _TypingLoaderState extends State<_TypingLoader>
             }),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ChatLoadingShimmer extends StatefulWidget {
+  const _ChatLoadingShimmer();
+
+  @override
+  State<_ChatLoadingShimmer> createState() => _ChatLoadingShimmerState();
+}
+
+class _ChatLoadingShimmerState extends State<_ChatLoadingShimmer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final pulse = 0.45 + (0.25 * _controller.value);
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          children: [
+            _ShimmerBubble(alignRight: false, widthFactor: 0.56, alpha: pulse),
+            _ShimmerBubble(
+              alignRight: true,
+              widthFactor: 0.42,
+              alpha: pulse - 0.08,
+            ),
+            _ShimmerBubble(alignRight: false, widthFactor: 0.66, alpha: pulse),
+            _ShimmerBubble(
+              alignRight: true,
+              widthFactor: 0.34,
+              alpha: pulse - 0.1,
+            ),
+            _ShimmerBubble(
+              alignRight: false,
+              widthFactor: 0.5,
+              alpha: pulse - 0.03,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ShimmerBubble extends StatelessWidget {
+  const _ShimmerBubble({
+    required this.alignRight,
+    required this.widthFactor,
+    required this.alpha,
+  });
+
+  final bool alignRight;
+  final double widthFactor;
+  final double alpha;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxWidth = MediaQuery.of(context).size.width * 0.68;
+    final bubbleWidth = maxWidth * widthFactor;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        mainAxisAlignment: alignRight
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        children: [
+          Container(
+            width: bubbleWidth,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColor.mediumGrey.withValues(
+                alpha: alpha.clamp(0.2, 0.9),
+              ),
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(18),
+                topRight: const Radius.circular(18),
+                bottomLeft: Radius.circular(alignRight ? 18 : 4),
+                bottomRight: Radius.circular(alignRight ? 4 : 18),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

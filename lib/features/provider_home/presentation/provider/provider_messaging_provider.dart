@@ -20,6 +20,7 @@ class ProviderMessagingProvider extends ChangeNotifier {
   List<MessageModel> _messages = [];
   String _msgError = '';
   bool _isSending = false;
+  int? _pendingConversationId;
 
   MessagesFetchStatus get msgStatus => _msgStatus;
   ConversationModel? get activeConversation => _activeConversation;
@@ -49,13 +50,19 @@ class ProviderMessagingProvider extends ChangeNotifier {
   }
 
   Future<void> openConversation(int conversationId) async {
+    _pendingConversationId = conversationId;
+    _activeConversation = null;
+    _messages = [];
     _msgStatus = MessagesFetchStatus.loading;
     _msgError = '';
     notifyListeners();
 
     try {
       final result = await _repository.getProviderMessages(conversationId);
-      if (_msgStatus == MessagesFetchStatus.initial) return;
+      if (_pendingConversationId != conversationId ||
+          _msgStatus == MessagesFetchStatus.initial) {
+        return;
+      }
       _activeConversation = result.conversation;
       _messages = result.messages;
       _msgStatus = MessagesFetchStatus.success;
@@ -147,6 +154,7 @@ class ProviderMessagingProvider extends ChangeNotifier {
   }
 
   void clearActiveConversation() {
+    _pendingConversationId = null;
     _activeConversation = null;
     _messages = [];
     _msgStatus = MessagesFetchStatus.initial;
