@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pampa/core/storage/storage.dart';
+import 'package:pampa/core/storage/storage_keys.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/values/app_text_value.dart';
@@ -25,9 +27,11 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BookingProvider>().fetchAvailableProviders(
-            zipCode: widget.address.zipCode,
-          );
+      final bookingProvider = context.read<BookingProvider>();
+      bookingProvider.clearPendingBooking();
+      bookingProvider.fetchAvailableProviders(
+        zipCode: widget.address.zipCode,
+      );
     });
   }
 

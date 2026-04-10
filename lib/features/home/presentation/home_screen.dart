@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pampa/core/routes/pages.dart';
 import 'package:pampa/core/services/push_notification_service.dart';
 import 'package:pampa/core/values/urls.dart';
 import 'package:provider/provider.dart';
@@ -69,21 +70,33 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with RouteAware {
   @override
   void initState() {
     super.initState();
     homeSuccessMessageNotifier.addListener(_onSuccessMessage);
+    homeTabNotifier.addListener(_onTabChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CategoryProvider>().fetchCategories();
-      context.read<AddressProvider>().fetchAddresses();
-      final profileProvider = context.read<ProfileProvider>();
-      if (profileProvider.status == ProfileStatus.initial) {
-        profileProvider.fetchProfile();
-      }
-      context.read<MyBookingsProvider>().fetchBookings();
+      _refreshDashboardData();
       getIt<PushNotificationService>().syncTokenWithBackend();
     });
+  }
+
+  void _onTabChanged() {
+    if (homeTabNotifier.value == 0 || homeTabNotifier.value == 2) {
+      _refreshDashboardData();
+    }
+  }
+
+  void _refreshDashboardData() {
+    if (!mounted) return;
+    context.read<CategoryProvider>().fetchCategories();
+    context.read<AddressProvider>().fetchAddresses();
+    final profileProvider = context.read<ProfileProvider>();
+    if (profileProvider.status == ProfileStatus.initial || profileProvider.profile == null) {
+      profileProvider.fetchProfile();
+    }
+    context.read<MyBookingsProvider>().fetchBookings();
   }
 
   void _onSuccessMessage() {
@@ -92,6 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _showPaymentSuccessDialog(message);
+      _refreshDashboardData(); // Refresh on booking success
     });
     homeSuccessMessageNotifier.value = null;
   }
@@ -192,8 +206,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final modalRoute = ModalRoute.of(context);
+    if (modalRoute is PageRoute) {
+      AppRouter.routeObserver.subscribe(this, modalRoute);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    _refreshDashboardData();
+  }
+
+  @override
   void dispose() {
+    AppRouter.routeObserver.unsubscribe(this);
     homeSuccessMessageNotifier.removeListener(_onSuccessMessage);
+    homeTabNotifier.removeListener(_onTabChanged);
     super.dispose();
   }
 
@@ -439,11 +469,16 @@ class _CategoryCard extends StatelessWidget {
     final hasIcon = iconUrl != null && iconUrl.isNotEmpty;
 
     return GestureDetector(
-      onTap: () {
-        context.push(
+      onTap: () async {
+        await context.push(
           RouteNames.services,
           extra: {'categoryId': category.id, 'categoryName': category.categoryName},
         );
+        // Refresh when coming back from services/booking screens
+        if (context.mounted) {
+          final parentState = context.findAncestorStateOfType<_HomeScreenState>();
+          parentState?._refreshDashboardData();
+        }
       },
       child: Container(
         decoration: BoxDecoration(

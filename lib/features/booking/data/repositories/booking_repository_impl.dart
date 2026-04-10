@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:pampa/core/error/exception.dart';
 import 'package:pampa/data/service/apiservice.dart';
+import 'package:pampa/features/booking/data/models/available_slots_response.dart';
 import 'package:pampa/features/booking/data/models/provider_model.dart';
-import 'package:pampa/features/booking/data/models/time_slot_model.dart';
+import 'package:pampa/features/booking/data/models/slot_model.dart';
 import 'package:pampa/features/booking/domain/repositories/booking_repository.dart';
 import 'package:pampa/features/services/data/models/service_model.dart';
 
@@ -10,6 +11,32 @@ class BookingRepositoryImpl implements BookingRepository {
   final ApiService _apiService;
 
   BookingRepositoryImpl(this._apiService);
+
+  @override
+  Future<List<SlotModel>> getAvailableSlots({
+    required int providerId,
+    required String date,
+    required int serviceId,
+  }) async {
+    try {
+      final response = await _apiService.getAvailableSlots(
+        providerId,
+        date,
+        serviceId,
+      );
+
+      final result = AvailableSlotsResponse.fromJson(response);
+      
+      // If result is successful, return the slots. 
+      // We can also filter for 'available' here if the UI only wants available ones,
+      // but the UI might want to show unavailable ones as disabled.
+      return result.slots;
+    } on DioException catch (e) {
+      throw Exception(_extractServerMessage(e) ?? HandleExeption.handleError(e));
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
 
   @override
   Future<ServiceModel> getServiceDetail(int id) async {
@@ -83,38 +110,9 @@ class BookingRepositoryImpl implements BookingRepository {
     }
   }
 
-  @override
-  Future<List<TimeSlotModel>> getAvailableSlots({
-    required int providerId,
-    required String date,
-    required int serviceId,
-  }) async {
-    try {
-      final response =
-          await _apiService.getAvailableSlots(providerId, date, serviceId);
-      final map = response as Map<String, dynamic>;
-      if (map['status'] == true) {
-        final data = map['data'] as Map<String, dynamic>? ?? {};
-        // Prefer available_slots (already filtered), fall back to slots
-        final rawSlots = data['available_slots'] as List<dynamic>? ??
-            data['slots'] as List<dynamic>? ??
-            [];
-        return rawSlots
-            .map((e) => TimeSlotModel.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
-      throw Exception(map['message'] ?? 'Failed to load time slots.');
-    } on DioException catch (e) {
-      throw Exception(HandleExeption.handleError(e));
-    } on Exception {
-      rethrow;
-    } catch (_) {
-      throw Exception('Something went wrong. Please try again.');
-    }
-  }
 
   @override
-  Future<({String message, String? paymentLink})> createBooking({
+  Future<({int? bookingId, String message, String? paymentLink})> createBooking({
     required List<int> serviceIds,
     required int providerId,
     int? addressId,
@@ -169,12 +167,14 @@ class BookingRepositoryImpl implements BookingRepository {
         final message =
             response['message'] as String? ?? 'Booking successful';
         final data = response['data'];
+        int? bookingId;
         String? paymentLink;
         if (data is Map<String, dynamic>) {
+          bookingId = data['id'] as int?;
           final link = data['payment_link']?.toString();
           if (link != null && link.isNotEmpty) paymentLink = link;
         }
-        return (message: message, paymentLink: paymentLink);
+        return (bookingId: bookingId, message: message, paymentLink: paymentLink);
       }
       final msg = response['message'];
       if (msg is Map || msg is List) {

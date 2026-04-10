@@ -122,7 +122,7 @@ abstract class ApiService {
   Future<dynamic> getAvailableSlots(
     @Path("id") int providerId,
     @Query("date") String date,
-    @Query("service_id") int serviceId,
+    @Query("service_ids[]") int serviceId,
   );
 
   @GET(ApiPath.bookings)
@@ -219,6 +219,9 @@ abstract class ApiService {
 
   @GET(ApiPath.providerBankDetails)
   Future<dynamic> bankDetails();
+
+  @POST(ApiPath.providerBankDetails)
+  Future<dynamic> saveBankDetails(@Body() Map<String, dynamic> body);
 
   @GET(ApiPath.payoutRequests)
   Future<dynamic> getPayoutRequests({

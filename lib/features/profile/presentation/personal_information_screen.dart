@@ -213,56 +213,56 @@ class _PersonalInformationScreenState
                   keyboardType: TextInputType.phone,
                 ),
 
-                const SizedBox(height: 24),
-                _sectionLabel('Address'),
-                const SizedBox(height: 10),
-
-                _FieldCard(
-                  icon: Icons.location_on_outlined,
-                  label: 'Street Address',
-                  controller: _streetCtrl,
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _FieldCard(
-                        icon: Icons.markunread_mailbox_outlined,
-                        label: 'Zip Code',
-                        controller: _zipCtrl,
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _FieldCard(
-                        icon: Icons.location_city_outlined,
-                        label: 'City',
-                        controller: _cityCtrl,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _FieldCard(
-                        icon: Icons.map_outlined,
-                        label: 'State',
-                        controller: _stateCtrl,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _FieldCard(
-                        icon: Icons.public_outlined,
-                        label: 'Country',
-                        controller: _countryCtrl,
-                      ),
-                    ),
-                  ],
-                ),
+                // const SizedBox(height: 24),
+                // _sectionLabel('Address'),
+                // const SizedBox(height: 10),
+                //
+                // _FieldCard(
+                //   icon: Icons.location_on_outlined,
+                //   label: 'Street Address',
+                //   controller: _streetCtrl,
+                // ),
+                // const SizedBox(height: 10),
+                // Row(
+                //   children: [
+                //     Expanded(
+                //       child: _FieldCard(
+                //         icon: Icons.markunread_mailbox_outlined,
+                //         label: 'Zip Code',
+                //         controller: _zipCtrl,
+                //         keyboardType: TextInputType.number,
+                //       ),
+                //     ),
+                //     const SizedBox(width: 10),
+                //     Expanded(
+                //       child: _FieldCard(
+                //         icon: Icons.location_city_outlined,
+                //         label: 'City',
+                //         controller: _cityCtrl,
+                //       ),
+                //     ),
+                //   ],
+                // ),
+                // const SizedBox(height: 10),
+                // Row(
+                //   children: [
+                //     Expanded(
+                //       child: _FieldCard(
+                //         icon: Icons.map_outlined,
+                //         label: 'State',
+                //         controller: _stateCtrl,
+                //       ),
+                //     ),
+                //     const SizedBox(width: 10),
+                //     Expanded(
+                //       child: _FieldCard(
+                //         icon: Icons.public_outlined,
+                //         label: 'Country',
+                //         controller: _countryCtrl,
+                //       ),
+                //     ),
+                //   ],
+                // ),
               ],
             ),
           ),

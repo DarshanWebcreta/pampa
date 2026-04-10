@@ -123,7 +123,8 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
           title: 'Payment cancelled. Your booking is pending.',
           success: false,
         );
-        bookingProvider.resetSubmit();
+        // We NO LONGER call bookingProvider.resetSubmit() here
+        // so that the payment link is preserved for retry.
         return;
       }
     }
@@ -293,7 +294,28 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                     ),
                     onPressed: bookingProvider.isSubmitting
                         ? null
-                        : () => _submit(context),
+                        : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
+                                bookingProvider.paymentLink != null)
+                            ? () async {
+                                final paid = await Navigator.of(context).push<bool>(
+                                  MaterialPageRoute(
+                                    builder: (_) => CustomWebView(
+                                      checkoutUrl: bookingProvider.paymentLink!,
+                                      title: 'Complete Payment',
+                                    ),
+                                  ),
+                                );
+                                if (paid == true && context.mounted) {
+                                  // Success path: refresh bookings and navigate
+                                  await context.read<MyBookingsProvider>().fetchBookings();
+                                  if (!context.mounted) return;
+                                  bookingProvider.clearPendingBooking();
+                                  homeTabNotifier.value = 2;
+                                  homeSuccessMessageNotifier.value = 'Booking created successfully!';
+                                  Navigator.of(context).popUntil((route) => route.isFirst);
+                                }
+                              }
+                            : () => _submit(context),
                     child: bookingProvider.isSubmitting
                         ? const SizedBox(
                             width: 22,
@@ -304,7 +326,10 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                             ),
                           )
                         : AppText(
-                            'Submit Booking',
+                            (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
+                                    bookingProvider.paymentLink != null)
+                                ? 'Retry Payment'
+                                : 'Submit Booking',
                             color: AppColor.white,
                             fontWeight: FontWeights.semiBold,
                             fontSize: FontSizes.regular,

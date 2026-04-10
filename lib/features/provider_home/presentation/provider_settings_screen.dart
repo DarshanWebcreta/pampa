@@ -25,6 +25,8 @@ import 'package:pampa/features/provider_home/presentation/provider_service_manag
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:pampa/features/provider_home/presentation/provider_chat_screen.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_messaging_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_bank_detail_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider_bank_detail_screen.dart';
 
 class ProviderSettingsScreen extends StatelessWidget {
   const ProviderSettingsScreen({super.key});
@@ -113,8 +115,20 @@ class ProviderSettingsScreen extends StatelessWidget {
                 ),
               ),
               _SettingsItemData(
+                icon: Icons.account_balance_rounded,
+                label: 'Bank Details',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: getIt<ProviderBankDetailProvider>(),
+                      child: const ProviderBankDetailScreen(),
+                    ),
+                  ),
+                ),
+              ),
+              _SettingsItemData(
                 icon: Icons.account_balance_wallet_outlined,
-                label: 'Payout Method',
+                label: 'Wallet',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => ChangeNotifierProvider.value(

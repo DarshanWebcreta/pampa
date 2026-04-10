@@ -3,8 +3,11 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pampa/features/booking/data/models/provider_model.dart';
+import 'package:pampa/features/booking/data/models/slot_model.dart';
 import 'package:pampa/features/booking/domain/repositories/booking_repository.dart';
 import 'package:pampa/features/services/data/models/service_model.dart';
+import 'package:pampa/core/storage/storage.dart';
+import 'package:pampa/core/storage/storage_keys.dart';
 
 enum BookingFetchStatus { initial, loading, success, error }
 
@@ -48,6 +51,13 @@ class BookingProvider extends ChangeNotifier {
   String? get selectedTime => _selectedTime;
   double get tipAmount => _tipAmount;
 
+  // ── Available Slots ────────────────────────────────────────────────────────
+  List<SlotModel> _availableSlots = [];
+  bool _slotsLoading = false;
+
+  List<SlotModel> get availableSlots => _availableSlots;
+  bool get slotsLoading => _slotsLoading;
+
   bool get canBook =>
       _selectedTime != null &&
       _selectedProvider != null &&
@@ -67,11 +77,13 @@ class BookingProvider extends ChangeNotifier {
   String _submitError = '';
   String _successMessage = '';
   String? _paymentLink;
+  int? _lastBookingId;
 
   BookingSubmitStatus get submitStatus => _submitStatus;
   String get submitError => _submitError;
   String get successMessage => _successMessage;
   String? get paymentLink => _paymentLink;
+  int? get lastBookingId => _lastBookingId;
   bool get isSubmitting => _submitStatus == BookingSubmitStatus.submitting;
 
   // ── Fetch service detail ───────────────────────────────────────────────────
@@ -159,6 +171,79 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Fetch Slots ───────────────────────────────────────────────────────────
+  Future<void> _fetchSlotsInternal(int providerId, int serviceId) async {
+    _slotsLoading = true;
+    _availableSlots = [];
+    _selectedTime = null;
+    notifyListeners();
+
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+      _availableSlots = await _repository.getAvailableSlots(
+        providerId: providerId,
+        date: dateStr,
+        serviceId: serviceId,
+      );
+    } catch (e) {
+      // In case of error, slots stay empty
+    } finally {
+      _slotsLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchAvailableSlots(int providerId, {required int serviceId}) async {
+    return _fetchSlotsInternal(providerId, serviceId);
+  }
+
+  void generateStaticSlots() {
+    _slotsLoading = true;
+    _availableSlots = [];
+    _selectedTime = null;
+    notifyListeners();
+
+    final service = _service;
+    if (service == null) {
+      _slotsLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    final now = DateTime.now();
+    final isToday = _selectedDate.year == now.year &&
+        _selectedDate.month == now.month &&
+        _selectedDate.day == now.day;
+    final nowMins = now.hour * 60 + now.minute;
+
+    final staticSlots = <SlotModel>[];
+    const int startMins = 9 * 60; // 9 AM
+    const int endMins = 22 * 60; // 10 PM
+
+    for (int mins = startMins; mins <= endMins; mins += 30) {
+      if (isToday && mins <= nowMins) continue;
+
+      final h = mins ~/ 60;
+      final m = mins % 60;
+      final startTimeStr = '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+      
+      final endTotalMins = mins + service.duration;
+      final eh = endTotalMins ~/ 60;
+      final em = endTotalMins % 60;
+      final endTimeStr = '${eh.toString().padLeft(2, '0')}:${em.toString().padLeft(2, '0')}';
+
+      staticSlots.add(SlotModel(
+        time: startTimeStr,
+        endTime: endTimeStr,
+        available: true,
+      ));
+    }
+
+    _availableSlots = staticSlots;
+    _slotsLoading = false;
+    notifyListeners();
+  }
+
   void selectTip(double amount) {
     _tipAmount = amount;
     notifyListeners();
@@ -210,6 +295,11 @@ class BookingProvider extends ChangeNotifier {
       );
       _successMessage = result.message;
       _paymentLink = result.paymentLink;
+      _lastBookingId = result.bookingId;
+
+      if (_paymentLink != null && _paymentLink!.isNotEmpty) {
+        persistPendingBooking();
+      }
 
       _submitStatus = BookingSubmitStatus.submitted;
       notifyListeners();
@@ -262,6 +352,39 @@ class BookingProvider extends ChangeNotifier {
     _submitStatus = BookingSubmitStatus.idle;
     _submitError = '';
     _paymentLink = null;
+    _lastBookingId = null;
+    clearPendingBooking();
+    notifyListeners();
+  }
+
+  // ── Persistence ─────────────────────────────────────────────────────────────
+  void persistPendingBooking() {
+    if (_lastBookingId != null) {
+      StorageManager.saveData(AppStorageKeys.pendingBookingId, _lastBookingId);
+    }
+    if (_paymentLink != null) {
+      StorageManager.saveData(
+          AppStorageKeys.pendingPaymentLink, _paymentLink);
+    }
+  }
+
+  void loadPendingBooking() {
+    _lastBookingId = StorageManager.readData(AppStorageKeys.pendingBookingId);
+    _paymentLink = StorageManager.readData(AppStorageKeys.pendingPaymentLink);
+    if (_lastBookingId != null || _paymentLink != null) {
+      _submitStatus = BookingSubmitStatus.submitted;
+      notifyListeners();
+    }
+  }
+
+  void clearPendingBooking() {
+    _lastBookingId = null;
+    _paymentLink = null;
+    if (_submitStatus == BookingSubmitStatus.submitted) {
+      _submitStatus = BookingSubmitStatus.idle;
+    }
+    StorageManager.deleteData(AppStorageKeys.pendingBookingId);
+    StorageManager.deleteData(AppStorageKeys.pendingPaymentLink);
     notifyListeners();
   }
 

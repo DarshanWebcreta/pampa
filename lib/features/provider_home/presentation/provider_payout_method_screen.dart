@@ -74,7 +74,7 @@ class _ProviderPayoutMethodScreenState
             surfaceTintColor: Colors.white,
             elevation: 0,
             title: AppText(
-              'Payout Method',
+              'Wallet',
               fontSize: 18,
               fontWeight: FontWeights.bold,
               color: AppColor.darkGrey,

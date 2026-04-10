@@ -79,7 +79,10 @@ class MessagingRepositoryImpl implements MessagingRepository {
     int? bookingId,
   }) async {
     try {
-      final body = <String, dynamic>{'customer_id': customerId};
+      final body = <String, dynamic>{
+        'customer_id': customerId,
+        'user_id': customerId,
+      };
       if (bookingId != null) body['booking_id'] = bookingId;
       final response = await _apiService.createOrGetProviderConversation(body);
       final map = response as Map<String, dynamic>;

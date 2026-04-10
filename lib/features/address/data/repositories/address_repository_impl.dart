@@ -87,10 +87,14 @@ class AddressRepositoryImpl implements AddressRepository {
       });
 
       final result = _parseResponse(raw);
-      if (!result.status) throw Exception(result.message.isNotEmpty ? result.message : 'Failed to update address.');
-      // if (result.address != null) return result.address!;
+      if (!result.status) {
+        throw Exception(result.message.isNotEmpty
+            ? result.message
+            : 'Failed to update address.');
+      }
+      if (result.address != null) return result.address!;
 
-      // Fallback: return updated values if API returns no body
+      // Fallback: return updated values if API returns no body or incomplete body
       return AddressModel(
         id: id,
         userId: 0,

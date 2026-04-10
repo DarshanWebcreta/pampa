@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pampa/features/booking/data/models/slot_model.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/storage/storage.dart';
@@ -43,17 +44,10 @@ class BookingScreen extends StatefulWidget {
 }
 
 class _BookingScreenState extends State<BookingScreen> {
-  static const int _slotStartMinutes = 9 * 60;
-  static const int _slotEndMinutes = 22 * 60;
-
   int _step = 0; // 0 = address, 1 = date & time
   AddressModel? _selectedAddress;
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
   String? _selectedTimeDisplay;
-
-  List<String> _timeSlots = [];    // display labels e.g. "9:00 AM"
-  List<String> _timeSlots24 = [];  // raw 24h values e.g. "09:00"
-  bool _slotsLoading = false;
 
   @override
   void initState() {
@@ -87,8 +81,6 @@ class _BookingScreenState extends State<BookingScreen> {
       setState(() {
         _step = 0;
         _selectedTimeDisplay = null;
-        _timeSlots = [];
-        _timeSlots24 = [];
       });
       context.read<BookingProvider>().selectTime('');
     } else {
@@ -97,85 +89,17 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Future<void> _loadSlots(DateTime date) async {
-    setState(() {
-      _slotsLoading = true;
-      _selectedTimeDisplay = null;
-      _timeSlots = [];
-      _timeSlots24 = [];
-    });
-    context.read<BookingProvider>().selectTime('');
-
+    setState(() => _selectedTimeDisplay = null);
+    
+    final bp = context.read<BookingProvider>();
     final provider = widget.preSelectedProvider;
+    
     if (provider != null) {
-      try {
-        final api = getIt<ApiService>();
-        final dateStr = DateFormat('yyyy-MM-dd').format(date);
-        final res = await api.getAvailableSlots(provider.id, dateStr, widget.serviceId);
-        final map = res as Map<String, dynamic>;
-        final rawSlots = <String>[];
-        if (map['data'] is List) {
-          for (final s in map['data'] as List) {
-            rawSlots.add(s.toString());
-          }
-        } else if (map['slots'] is List) {
-          for (final s in map['slots'] as List) {
-            rawSlots.add(s.toString());
-          }
-        }
-        if (rawSlots.isNotEmpty) {
-          _applySlots(rawSlots, date);
-          setState(() => _slotsLoading = false);
-          return;
-        }
-      } catch (_) {
-        // fall through to default slots
-      }
+      await bp.fetchAvailableSlots(provider.id, serviceId: widget.serviceId);
+    } else {
+      // If no provider yet, we show static slots based on service duration (9am-10pm)
+      bp.generateStaticSlots();
     }
-
-    // Default: 9 AM – 10 PM every 30 min, skip past times if today
-    _applySlots(_defaultSlots(date), date);
-    setState(() => _slotsLoading = false);
-  }
-
-  void _applySlots(List<String> slots24, DateTime date) {
-    final now = DateTime.now();
-    final isToday = date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
-    final nowMins = now.hour * 60 + now.minute;
-
-    final filtered24 = <String>[];
-    final filteredDisplay = <String>[];
-
-    for (final s in slots24) {
-      final parts = s.split(':');
-      if (parts.length < 2) continue;
-      final h = int.tryParse(parts[0]) ?? 0;
-      final m = int.tryParse(parts[1]) ?? 0;
-      final slotMinutes = h * 60 + m;
-      if (slotMinutes < _slotStartMinutes || slotMinutes > _slotEndMinutes) {
-        continue;
-      }
-      if (isToday && slotMinutes <= nowMins) continue;
-      final period = h < 12 ? 'AM' : 'PM';
-      final displayH = h % 12 == 0 ? 12 : h % 12;
-      final displayM = m.toString().padLeft(2, '0');
-      filtered24.add('${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}');
-      filteredDisplay.add('$displayH:$displayM $period');
-    }
-
-    _timeSlots24 = filtered24;
-    _timeSlots = filteredDisplay;
-  }
-
-  List<String> _defaultSlots(DateTime date) {
-    final slots = <String>[];
-    for (int h = 9; h <= 21; h++) {
-      slots.add('${h.toString().padLeft(2, '0')}:00');
-      slots.add('${h.toString().padLeft(2, '0')}:30');
-    }
-    slots.add('22:00');
-    return slots;
   }
 
   void _onConfirm() {
@@ -429,13 +353,13 @@ class _BookingScreenState extends State<BookingScreen> {
                     color: AppColor.darkGrey),
                 const SizedBox(height: 12),
                 _TimeSlotGrid(
-                  slots: _timeSlots,
-                  loading: _slotsLoading,
+                  slots: provider.availableSlots,
+                  loading: provider.slotsLoading,
                   selectedDisplay: _selectedTimeDisplay,
                   onSelect: (i) {
-                    final raw = _timeSlots24[i];
-                    provider.selectTime(raw);
-                    setState(() => _selectedTimeDisplay = _timeSlots[i]);
+                    final slot = provider.availableSlots[i];
+                    provider.selectTime(slot.time);
+                    setState(() => _selectedTimeDisplay = _formatDisplayTime(slot.time));
                   },
                 ),
               ],
@@ -455,9 +379,50 @@ class _BookingScreenState extends State<BookingScreen> {
       a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
+ String _formatDisplayTime(String time24) {
+  if (time24.isEmpty) return '';
+  try {
+    final parts = time24.split(':');
+    final h = int.parse(parts[0]);
+    final m = int.parse(parts[1]);
+    final period = h < 12 ? 'AM' : 'PM';
+    final displayH = h % 12 == 0 ? 12 : h % 12;
+    final displayM = m.toString().padLeft(2, '0');
+    return '$displayH:$displayM $period';
+  } catch (_) {
+    return time24;
+  }
+}
+
+String _formatTimeRange(String start24, String end24) {
+  if (start24.isEmpty) return '';
+  if (end24.isEmpty) return _formatDisplayTime(start24);
+  
+  try {
+    final startParts = start24.split(':');
+    final endParts = end24.split(':');
+    
+    final sh = int.parse(startParts[0]);
+    final sm = int.parse(startParts[1]);
+    final eh = int.parse(endParts[0]);
+    final em = int.parse(endParts[1]);
+    
+    final period = eh < 12 ? 'AM' : 'PM';
+    
+    final displaySH = sh % 12 == 0 ? 12 : sh % 12;
+    final displaySM = sm.toString().padLeft(2, '0');
+    final displayEH = eh % 12 == 0 ? 12 : eh % 12;
+    final displayEM = em.toString().padLeft(2, '0');
+    
+    return '$displaySH:$displaySM - $displayEH:$displayEM $period';
+  } catch (_) {
+    return _formatDisplayTime(start24);
+  }
+}
+
 // ─── Time slot grid ───────────────────────────────────────────────────────────
 class _TimeSlotGrid extends StatelessWidget {
-  final List<String> slots;
+  final List<SlotModel> slots;
   final bool loading;
   final String? selectedDisplay;
   final void Function(int index) onSelect;
@@ -511,29 +476,38 @@ class _TimeSlotGrid extends StatelessWidget {
       spacing: 10,
       runSpacing: 10,
       children: List.generate(slots.length, (i) {
-        final label = slots[i];
-        final isSelected = label == selectedDisplay;
+        final slot = slots[i];
+        final displayLabel = _formatTimeRange(slot.time, slot.endTime);
+        final isSelected = _formatDisplayTime(slot.time) == selectedDisplay;
+        final isAvailable = slot.available;
+
         return GestureDetector(
-          onTap: () => onSelect(i),
+          onTap: isAvailable ? () => onSelect(i) : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? AppColor.authButton : AppColor.white,
+              color: isSelected
+                  ? AppColor.authButton
+                  : (isAvailable ? AppColor.white : AppColor.lightGrey.withValues(alpha: 0.5)),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isSelected
                     ? AppColor.authButton
-                    : AppColor.authButton.withValues(alpha: 0.25),
+                    : (isAvailable
+                        ? AppColor.authButton.withValues(alpha: 0.25)
+                        : AppColor.lightGrey),
                 width: isSelected ? 1.5 : 1,
               ),
             ),
             child: AppText(
-              label,
+              displayLabel,
               fontSize: FontSizes.small,
               fontWeight:
                   isSelected ? FontWeights.semiBold : FontWeights.regular,
-              color: isSelected ? AppColor.white : AppColor.darkGrey,
+              color: isSelected
+                  ? AppColor.white
+                  : (isAvailable ? AppColor.darkGrey : AppColor.grey.withValues(alpha: 0.6)),
             ),
           ),
         );

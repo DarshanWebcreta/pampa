@@ -31,8 +31,15 @@ class AddressModel {
       city: json['city'] as String? ?? '',
       state: json['state'] as String?,
       country: json['country'] as String? ?? '',
-      isDefault: (json['is_default'] as int? ?? 0) == 1,
+      isDefault: _parseBool(json['is_default']),
     );
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) return value == '1' || value.toLowerCase() == 'true';
+    return false;
   }
 
   String get displayAddress {

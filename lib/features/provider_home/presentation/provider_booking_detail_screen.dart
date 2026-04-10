@@ -171,11 +171,11 @@ class _ProviderBookingDetailScreenState
           ),
         ),
       ));
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       FunctionalComponent.showSnackBar(
         context: context,
-        title: 'Could not open chat. Please try again.',
+        title: 'Could not open chat: ${e.toString().replaceFirst('Exception: ', '')}',
         success: false,
       );
     } finally {

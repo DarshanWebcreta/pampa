@@ -45,10 +45,12 @@ class AppRouter {
         : RouteNames.mainScreen;
   }
 
+  static final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
   static final navigatorKey = GlobalKey<NavigatorState>();
 
   static GoRouter router = GoRouter(
     navigatorKey: navigatorKey,
+    observers: [routeObserver],
     initialLocation: RouteNames.initial,
     redirect: (context, state) {
       final token = StorageManager.readData(StoreKeys.token) as String?;

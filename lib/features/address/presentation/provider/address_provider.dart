@@ -84,8 +84,9 @@ class AddressProvider extends ChangeNotifier {
         zipCode: zipCode,
         city: city,
       );
-      _addresses = [newAddress, ..._addresses];
-      _selectedAddressId = newAddress.id;
+      // Instead of manual patching, we fetch to ensure server consistency (sorting, IDs, etc.)
+      await fetchAddresses();
+      _selectedAddressId = _addresses.firstOrNull?.id;
       _saveStatus = AddressSaveStatus.saved;
       notifyListeners();
       return true;
@@ -124,7 +125,8 @@ class AddressProvider extends ChangeNotifier {
         city: city,
         isDefault: isDefault,
       );
-      _addresses = _addresses.map((a) => a.id == id ? updated : a).toList();
+      // Refreshing from server is safer to ensure all fields are correct
+      await fetchAddresses();
       _saveStatus = AddressSaveStatus.saved;
       notifyListeners();
       return true;
@@ -167,7 +169,7 @@ class AddressProvider extends ChangeNotifier {
 
     try {
       await _repository.deleteAddress(id);
-      _addresses = _addresses.where((a) => a.id != id).toList();
+      await fetchAddresses();
       if (_selectedAddressId == id) _selectedAddressId = null;
       _deleteStatus = AddressDeleteStatus.deleted;
       notifyListeners();

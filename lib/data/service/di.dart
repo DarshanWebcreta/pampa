@@ -44,6 +44,7 @@ import 'package:pampa/features/provider_home/presentation/provider/provider_cred
 import 'package:pampa/features/provider_home/presentation/provider/provider_payout_method_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_pricing_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_service_management_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_bank_detail_provider.dart';
 
 final getIt = GetIt.instance;
 
@@ -196,5 +197,10 @@ void setup() {
   // Provider Payout Method
   getIt.registerLazySingleton<ProviderPayoutMethodProvider>(
     () => ProviderPayoutMethodProvider(getIt<ApiService>()),
+  );
+
+  // Provider Bank Details
+  getIt.registerLazySingleton<ProviderBankDetailProvider>(
+    () => ProviderBankDetailProvider(getIt<ApiService>()),
   );
 }

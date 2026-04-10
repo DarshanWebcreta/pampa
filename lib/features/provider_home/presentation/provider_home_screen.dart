@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pampa/core/routes/pages.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
@@ -30,15 +31,45 @@ class ProviderHomeScreen extends StatefulWidget {
   State<ProviderHomeScreen> createState() => _ProviderHomeScreenState();
 }
 
-class _ProviderHomeScreenState extends State<ProviderHomeScreen> {
+class _ProviderHomeScreenState extends State<ProviderHomeScreen> with RouteAware {
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshAllData();
       getIt<PushNotificationService>().syncTokenWithBackend();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final modalRoute = ModalRoute.of(context);
+    if (modalRoute is PageRoute) {
+      AppRouter.routeObserver.subscribe(this, modalRoute);
+    }
+  }
+
+  @override
+  void dispose() {
+    AppRouter.routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    _refreshAllData();
+  }
+
+  void _refreshAllData() {
+    if (!mounted) return;
+    // Refresh the currently active tab's data
+    getIt<ProviderDashboardProvider>().fetchDashboard();
+    getIt<ProviderBookingsProvider>().fetch();
+    getIt<ProviderEarningsProvider>().fetchEarnings();
+    getIt<ProviderMessagingProvider>().refreshConversations();
   }
 
   Future<void> _showExitDialog() async {
