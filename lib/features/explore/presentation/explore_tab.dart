@@ -98,7 +98,7 @@ class _ExploreTabState extends State<ExploreTab> {
   Widget _buildHeader(ExploreProvider provider) {
     return Container(
       color: AppColor.authBg,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -550,7 +550,34 @@ class _TappableProviderCard extends StatelessWidget {
             builder: (context, favProvider, _) {
               final isFav = favProvider.isFavorite(provider.id);
               return GestureDetector(
-                onTap: () => favProvider.toggleFavorite(provider.id),
+                onTap: () async {
+                  if (isFav) {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        title: const Text('Unselect Provider'),
+                        content: const Text(
+                            'Do you really want to unselect provider?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: Text('Cancel',
+                                style: TextStyle(color: AppColor.grey)),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Unselect',
+                                style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm != true) return;
+                  }
+                  favProvider.toggleFavorite(provider.id);
+                },
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   child: Icon(

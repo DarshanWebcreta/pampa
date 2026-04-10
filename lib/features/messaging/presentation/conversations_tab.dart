@@ -57,7 +57,7 @@ class _ConversationsTabState extends State<ConversationsTab> {
           children: [
             // ── Header ────────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 40, 20, 0),
               child: AppText(
                 'Messages',
                 fontSize: 28,

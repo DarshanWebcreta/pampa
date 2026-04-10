@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -40,6 +41,30 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> {
     });
   }
 
+  Future<void> _showExitDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Exit App'),
+        content: const Text('Are you sure you want to exit?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('No', style: TextStyle(color: AppColor.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('Yes', style: TextStyle(color: AppColor.authButton)),
+          ),
+        ],
+      ),
+    );
+    if (shouldExit == true && mounted) {
+      SystemNavigator.pop();
+    }
+  }
+
   static const _navItems = [
     _NavItem(icon: Icons.grid_view_rounded, label: 'Home'),
     _NavItem(icon: Icons.calendar_month_rounded, label: 'Booking'),
@@ -57,33 +82,44 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> {
         ChangeNotifierProvider.value(value: getIt<ProviderMessagingProvider>()),
         ChangeNotifierProvider.value(value: getIt<ProviderEarningsProvider>()),
       ],
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF5F5F7),
-        body: IndexedStack(
-          index: _currentIndex,
-          children: [
-            const _DashboardTab(),
-            const ProviderBookingsTab(),
-            const ProviderEarningsTab(),
-            const ProviderConversationsTab(),
-            const ProviderProfileTab(),
-          ],
-        ),
-        bottomNavigationBar: _ProviderBottomNav(
-          currentIndex: _currentIndex,
-          items: _navItems,
-          onTap: (i) {
-            if (i == 1) {
-              getIt<ProviderBookingsProvider>().resetAndFetch();
-            }
-            if (i == 2) {
-              getIt<ProviderEarningsProvider>().fetchEarnings();
-            }
-            if (i == 3) {
-              getIt<ProviderMessagingProvider>().refreshConversations();
-            }
-            setState(() => _currentIndex = i);
-          },
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          if (_currentIndex != 0) {
+            setState(() => _currentIndex = 0);
+          } else {
+            _showExitDialog();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: const Color(0xFFF5F5F7),
+          body: IndexedStack(
+            index: _currentIndex,
+            children: [
+              const _DashboardTab(),
+              const ProviderBookingsTab(),
+              const ProviderEarningsTab(),
+              const ProviderConversationsTab(),
+              const ProviderProfileTab(),
+            ],
+          ),
+          bottomNavigationBar: _ProviderBottomNav(
+            currentIndex: _currentIndex,
+            items: _navItems,
+            onTap: (i) {
+              if (i == 1) {
+                getIt<ProviderBookingsProvider>().resetAndFetch();
+              }
+              if (i == 2) {
+                getIt<ProviderEarningsProvider>().fetchEarnings();
+              }
+              if (i == 3) {
+                getIt<ProviderMessagingProvider>().refreshConversations();
+              }
+              setState(() => _currentIndex = i);
+            },
+          ),
         ),
       ),
     );
@@ -220,13 +256,35 @@ class _DashboardTabState extends State<_DashboardTab> {
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.notifications_none_rounded,
-                      color: AppColor.darkGrey, size: 24),
-                  onPressed: () {},
-                ),
+                // IconButton(
+                //   icon: const Icon(Icons.notifications_none_rounded,
+                //       color: AppColor.darkGrey, size: 24),
+                //   onPressed: () {},
+                // ),
                 GestureDetector(
                   onTap: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        title: const Text('Sign Out'),
+                        content: const Text('Are you sure you want to sign out?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: Text('Cancel',
+                                style: TextStyle(color: AppColor.grey)),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Sign Out',
+                                style: TextStyle(color: AppColor.authButton)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm != true || !context.mounted) return;
                     await context.read<AuthProvider>().logout();
                     if (context.mounted) context.go(RouteNames.userType);
                   },

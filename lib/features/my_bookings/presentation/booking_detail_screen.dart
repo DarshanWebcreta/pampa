@@ -383,7 +383,7 @@ class _StatusBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 AppText(
-                  booking.status,
+                  booking.status.toUpperCase(),
                   fontSize: FontSizes.large,
                   fontWeight: FontWeights.bold,
                   color: color,

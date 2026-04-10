@@ -60,7 +60,8 @@ class MyApp extends StatelessWidget {
       color: Platform.isAndroid?AppColor.primaryColor:AppColor.transperent,
 
       child: SafeArea(
-        top:Platform.isAndroid,
+        top: false,
+        // top:Platform.isAndroid,
         bottom: false,
         child: ToastificationWrapper(
 

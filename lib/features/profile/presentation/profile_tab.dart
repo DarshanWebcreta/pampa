@@ -48,7 +48,7 @@ class _ProfileTabState extends State<ProfileTab> {
           onRefresh: () => provider.fetchProfile(),
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            padding: const EdgeInsets.fromLTRB(20, 40, 20, 32),
             children: [
               AppText(
                 'Profile',

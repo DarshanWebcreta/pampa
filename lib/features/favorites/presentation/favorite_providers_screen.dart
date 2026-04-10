@@ -18,11 +18,13 @@ class _FavoriteProviderModel {
   final double rating;
   final String? city;
   final String? state;
+  final String? bio;
 
   const _FavoriteProviderModel({
     required this.id,
     required this.name,
     this.photoUrl,
+    this.bio,
     required this.rating,
     this.city,
     this.state,
@@ -36,6 +38,7 @@ class _FavoriteProviderModel {
       photoUrl: json['photo_url'] as String?,
       rating: ((json['rating'] ?? 0) as num).toDouble(),
       city: json['city'] as String?,
+      bio: json['bio'] as String?,
       state: json['state'] as String?,
     );
   }
@@ -124,22 +127,26 @@ class _FavoriteProvidersScreenState extends State<FavoriteProvidersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       backgroundColor: AppColor.authBg,
       appBar: AppBar(
         backgroundColor: AppColor.authBg,
         elevation: 0,
+
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
               size: 18, color: AppColor.darkGrey),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: AppText(
+
           'Favorite Providers',
           fontSize: FontSizes.medium,
           fontWeight: FontWeights.bold,
           color: AppColor.darkGrey,
         ),
         centerTitle: false,
+
       ),
       body: _loading
           ? _buildShimmer()
@@ -151,7 +158,7 @@ class _FavoriteProvidersScreenState extends State<FavoriteProvidersScreen> {
                       color: AppColor.authButton,
                       onRefresh: _fetch,
                       child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                         itemCount: _providers.length,
                         itemBuilder: (_, i) => _ProviderCard(
                           provider: _providers[i],
@@ -355,15 +362,48 @@ class _ProviderCardState extends State<_ProviderCard> {
                           ],
                         ],
                       ),
+                      const SizedBox(height: 6),
+
+                      AppText(
+                        p.bio??'',
+                        fontSize: 12,
+                        color: AppColor.grey,
+                        maxLines: 4,
+                      ),
                     ],
                   ),
                 ),
+
                 // Heart button
                 Consumer<FavoritesProvider>(
                   builder: (context, favProvider, _) => GestureDetector(
-                    onTap: () {
-                      favProvider.toggleFavorite(p.id);
-                      widget.onUnfavorited();
+                    onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20)),
+                          title: const Text('Unselect Provider'),
+                          content: const Text(
+                              'Do you really want to unselect provider?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: Text('Cancel',
+                                  style: TextStyle(color: AppColor.grey)),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text('Unselect',
+                                  style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        favProvider.toggleFavorite(p.id);
+                        widget.onUnfavorited();
+                      }
                     },
                     child: Container(
                       width: 34,

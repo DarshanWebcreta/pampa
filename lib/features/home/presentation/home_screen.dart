@@ -1609,7 +1609,7 @@ class _HomeHeader extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
         child: Row(
           children: [
             Expanded(
