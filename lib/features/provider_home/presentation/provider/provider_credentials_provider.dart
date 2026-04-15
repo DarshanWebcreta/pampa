@@ -78,6 +78,10 @@ class ProviderCredentialsProvider extends ChangeNotifier {
 
   void setLicensed(String value) {
     _licensed = value;
+    if (value == 'No') {
+      _cosmetologyLicenseFile = null;
+      _specialtyCertificationFiles = [];
+    }
     notifyListeners();
   }
 

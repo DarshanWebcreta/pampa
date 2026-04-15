@@ -124,6 +124,7 @@ class ApiPath {
 
   static const String conversations = "messages/conversations";
   static const String providerConversations = "messages/conversations";
+  static const String adminChat = "messages/provider/admin-chat";
   static const String providerMessagesConversations = "messages/conversations";
 
   /// ==============================

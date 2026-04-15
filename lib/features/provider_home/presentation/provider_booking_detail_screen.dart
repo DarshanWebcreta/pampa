@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/app_text_value.dart';
@@ -11,6 +10,7 @@ import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/provider_home/data/models/provider_booking_model.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_messaging_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider_chat_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProviderBookingDetailScreen extends StatefulWidget {
   final int bookingId;
@@ -137,7 +137,7 @@ class _ProviderBookingDetailScreenState
 
   Future<void> _openChat() async {
     if (_chatLoading) return;
-    final customerId = _booking?.customer.id ?? 0;
+    final customerId = _booking?.providerId?? 0;
     if (customerId <= 0) {
       FunctionalComponent.showSnackBar(
         context: context,
@@ -180,31 +180,6 @@ class _ProviderBookingDetailScreenState
       );
     } finally {
       if (mounted) setState(() => _chatLoading = false);
-    }
-  }
-
-  Future<void> _callCustomer() async {
-    final phone = _booking?.customer.mobile?.trim() ?? '';
-    if (phone.isEmpty) {
-      FunctionalComponent.showSnackBar(
-        context: context,
-        title: 'Customer phone number is not available.',
-        success: false,
-      );
-      return;
-    }
-
-    final uri = Uri(scheme: 'tel', path: phone);
-    final launched = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
-    if (!launched && mounted) {
-      FunctionalComponent.showSnackBar(
-        context: context,
-        title: 'Could not open the phone app.',
-        success: false,
-      );
     }
   }
 
@@ -343,16 +318,11 @@ class _ProviderBookingDetailScreenState
         child: Column(
           children: [
             // ── Customer card ──────────────────────────────────────────
-            if (isPending)
-              _CustomerCardSimple(customer: booking.customer)
-            else
-              _CustomerCardWithActions(
-                customer: booking.customer,
-                onCall: _callCustomer,
-                onMessage: _openChat,
-                canCall: booking.customer.mobile?.trim().isNotEmpty == true,
-                chatLoading: _chatLoading,
-              ),
+            _CustomerCardWithActions(
+              customer: booking.customer,
+              onMessage: _openChat,
+              chatLoading: _chatLoading,
+            ),
 
             const SizedBox(height: 12),
 
@@ -525,71 +495,16 @@ class _ProviderBookingDetailScreenState
   }
 }
 
-// ─── Customer card (Pending) ───────────────────────────────────────────────────
-
-class _CustomerCardSimple extends StatelessWidget {
-  final ProviderBookingCustomer customer;
-  const _CustomerCardSimple({required this.customer});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          _Avatar(name: customer.displayName, photoUrl: customer.profileImage),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText(
-                  customer.displayName,
-                  fontSize: FontSizes.regular,
-                  fontWeight: FontWeights.semiBold,
-                  color: AppColor.darkGrey,
-                ),
-                const SizedBox(height: 2),
-                AppText(
-                  customer.email ?? customer.name,
-                  fontSize: 12,
-                  color: AppColor.grey,
-                  maxLines: 1,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Customer card (Confirmed) — with Call/Message ────────────────────────────
+// ─── Customer card — with Message action ───────────────────────────────────────
 
 class _CustomerCardWithActions extends StatelessWidget {
   final ProviderBookingCustomer customer;
-  final VoidCallback onCall;
   final VoidCallback onMessage;
-  final bool canCall;
   final bool chatLoading;
 
   const _CustomerCardWithActions({
     required this.customer,
-    required this.onCall,
     required this.onMessage,
-    this.canCall = true,
     this.chatLoading = false,
   });
 
@@ -649,74 +564,39 @@ class _CustomerCardWithActions extends StatelessWidget {
             ),
           ),
           const Divider(height: 1, color: Color(0xFFF3F4F6)),
-          Row(
-            children: [
-              Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: canCall ? onCall : null,
-                    child: Opacity(
-                      opacity: canCall ? 1 : 0.45,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.phone_rounded,
-                                size: 15, color: AppColor.authButton),
-                            const SizedBox(width: 6),
-                            AppText(
-                              'Call',
-                              fontSize: FontSizes.regular,
-                              fontWeight: FontWeights.semiBold,
-                              color: AppColor.authButton,
-                            ),
-                          ],
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: canMessage ? onMessage : null,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                child: chatLoading
+                    ? const Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColor.authButton,
+                          ),
                         ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.chat_bubble_outline_rounded,
+                              size: 15, color: AppColor.authButton),
+                          const SizedBox(width: 6),
+                          AppText(
+                            'Message',
+                            fontSize: FontSizes.regular,
+                            fontWeight: FontWeights.semiBold,
+                            color: AppColor.authButton,
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                ),
               ),
-              Container(width: 1, height: 40, color: const Color(0xFFF3F4F6)),
-              Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: canMessage ? onMessage : null,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      child: chatLoading
-                          ? const Center(
-                              child: SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColor.authButton,
-                                ),
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.chat_bubble_outline_rounded,
-                                    size: 15, color: AppColor.authButton),
-                                const SizedBox(width: 6),
-                                AppText(
-                                  'Message',
-                                  fontSize: FontSizes.regular,
-                                  fontWeight: FontWeights.semiBold,
-                                  color: AppColor.authButton,
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),

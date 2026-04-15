@@ -545,6 +545,7 @@ class _AddressTile extends StatelessWidget {
           ),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 44,
@@ -563,12 +564,13 @@ class _AddressTile extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Expanded(
+                      Flexible(
                         child: AppText(address.addressName,
                             fontSize: FontSizes.regular,
                             maxLines: 5,
@@ -604,7 +606,8 @@ class _AddressTile extends StatelessWidget {
                 ],
               ),
             ),
-            if (isSelected)
+            if (isSelected) ...[
+              const SizedBox(width: 10),
               Container(
                 width: 24,
                 height: 24,
@@ -613,6 +616,7 @@ class _AddressTile extends StatelessWidget {
                 child: const Icon(Icons.check_rounded,
                     color: AppColor.white, size: 14),
               ),
+            ],
           ],
         ),
       ),

@@ -118,6 +118,8 @@ class _ProviderPayoutMethodScreenState
           onSubmit: _submit,
         ),
         const SizedBox(height: 16),
+        _TotalCard(amount: provider.totalCardAmount),
+        const SizedBox(height: 16),
         Row(
           children: [
             AppText(
@@ -373,6 +375,42 @@ class _RequestItem extends StatelessWidget {
     } catch (_) {
       return raw;
     }
+  }
+}
+
+class _TotalCard extends StatelessWidget {
+  const _TotalCard({required this.amount});
+
+  final double amount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFEEDFE4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText(
+            'Total Amount',
+            fontSize: 14,
+            fontWeight: FontWeights.semiBold,
+            color: AppColor.darkGrey,
+          ),
+          const SizedBox(height: 8),
+          AppText(
+            '\$${amount.toStringAsFixed(2)}',
+            fontSize: 24,
+            fontWeight: FontWeights.bold,
+            color: AppColor.darkGrey,
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -30,6 +30,10 @@ class ProviderPayoutMethodProvider extends ChangeNotifier {
   int get total => _total;
   int get perPage => _perPage;
   bool get hasMore => _currentPage < _lastPage;
+  double get totalCardAmount => _requests.fold(
+    0,
+    (sum, item) => sum + (double.tryParse(item.amount) ?? 0),
+  );
 
   Future<void> initialize({bool forceRefresh = false}) async {
     if (_status == ProviderPayoutStatus.loading) return;

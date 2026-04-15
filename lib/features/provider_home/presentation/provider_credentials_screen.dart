@@ -171,28 +171,29 @@ class _ProviderCredentialsScreenState extends State<ProviderCredentialsScreen> {
                 value: provider.licensed,
                 onChanged: provider.setLicensed,
               ),
-              const SizedBox(height: 16),
-              _UploadTile(
-                label: 'Cosmetology License',
-                imageFiles: provider.cosmetologyLicenseFile != null
-                    ? [provider.cosmetologyLicenseFile!]
-                    : const [],
-                imageUrls:
-                    (provider.cosmetologyLicenseUrl != null &&
-                        provider.cosmetologyLicenseUrl!.isNotEmpty)
-                    ? [provider.cosmetologyLicenseUrl!]
-                    : const [],
-                emptyText: 'Upload license image',
-                onTap: provider.pickCosmetologyLicense,
-              ),
-              const SizedBox(height: 14),
-              _UploadTile(
-                label: 'Specialty Certifications (Optional)',
-                imageFiles: provider.specialtyCertificationFiles,
-                imageUrls: provider.specialtyCertificationUrls,
-                emptyText: 'Upload certification images',
-                onTap: provider.pickSpecialtyCertifications,
-              ),
+              if (provider.licensed == 'Yes') ...[
+                const SizedBox(height: 16),
+                _UploadTile(
+                  label: 'Cosmetology License',
+                  imageFiles: provider.cosmetologyLicenseFile != null
+                      ? [provider.cosmetologyLicenseFile!]
+                      : const [],
+                  imageUrls: (provider.cosmetologyLicenseUrl != null &&
+                          provider.cosmetologyLicenseUrl!.isNotEmpty)
+                      ? [provider.cosmetologyLicenseUrl!]
+                      : const [],
+                  emptyText: 'Upload license image',
+                  onTap: provider.pickCosmetologyLicense,
+                ),
+                const SizedBox(height: 14),
+                _UploadTile(
+                  label: 'Specialty Certifications (Optional)',
+                  imageFiles: provider.specialtyCertificationFiles,
+                  imageUrls: provider.specialtyCertificationUrls,
+                  emptyText: 'Upload certification images',
+                  onTap: provider.pickSpecialtyCertifications,
+                ),
+              ],
               const SizedBox(height: 14),
               _TextFieldBlock(
                 label: 'Instagram (Optional)',

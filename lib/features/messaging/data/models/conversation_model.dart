@@ -89,7 +89,7 @@ class MessageModel {
   });
 
   String get normalizedSenderType => senderType.trim().toLowerCase();
-  bool get isFromCustomer => normalizedSenderType == 'customer';
+  bool get isFromCustomer => normalizedSenderType ==  'customer';
   bool get isFromProvider => normalizedSenderType == 'provider';
   bool get isFromMe => isFromCustomer;
 
