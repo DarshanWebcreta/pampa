@@ -2,11 +2,13 @@ class SlotModel {
   final String time;
   final String endTime;
   final bool available;
+  final String? label;
 
   const SlotModel({
     required this.time,
     required this.endTime,
     required this.available,
+    this.label,
   });
 
   factory SlotModel.fromJson(Map<String, dynamic> json) {

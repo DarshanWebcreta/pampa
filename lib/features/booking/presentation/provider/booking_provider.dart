@@ -226,7 +226,7 @@ class BookingProvider extends ChangeNotifier {
       final h = mins ~/ 60;
       final m = mins % 60;
       final startTimeStr = '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
-      
+
       final endTotalMins = mins + service.duration;
       final eh = endTotalMins ~/ 60;
       final em = endTotalMins % 60;
@@ -238,6 +238,7 @@ class BookingProvider extends ChangeNotifier {
         available: true,
       ));
     }
+
 
     _availableSlots = staticSlots;
     _slotsLoading = false;

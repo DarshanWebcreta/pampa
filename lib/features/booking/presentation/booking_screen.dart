@@ -43,11 +43,19 @@ class BookingScreen extends StatefulWidget {
   State<BookingScreen> createState() => _BookingScreenState();
 }
 
+// Period definition used in the UI
+const _periods = [
+  {'label': 'Morning',   'from': 9 * 60,  'to': 12 * 60},
+  {'label': 'Afternoon', 'from': 12 * 60, 'to': 16 * 60},
+  {'label': 'Evening',   'from': 16 * 60, 'to': 22 * 60},
+];
+
 class _BookingScreenState extends State<BookingScreen> {
   int _step = 0; // 0 = address, 1 = date & time
   AddressModel? _selectedAddress;
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
   String? _selectedTimeDisplay;
+  String? _selectedPeriod; // 'Morning' | 'Afternoon' | 'Evening'
 
   @override
   void initState() {
@@ -89,18 +97,34 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Future<void> _loadSlots(DateTime date) async {
-    setState(() => _selectedTimeDisplay = null);
-    
+    setState(() {
+      _selectedTimeDisplay = null;
+      _selectedPeriod = null;
+    });
+
     final bp = context.read<BookingProvider>();
     final provider = widget.preSelectedProvider;
-    
+
     if (provider != null) {
       await bp.fetchAvailableSlots(provider.id, serviceId: widget.serviceId);
     } else {
-      // If no provider yet, we show static slots based on service duration (9am-10pm)
       bp.generateStaticSlots();
     }
   }
+
+  /// Returns slots whose start time falls within [fromMins, toMins)
+  List<SlotModel> _slotsForPeriod(List<SlotModel> all, int fromMins, int toMins) {
+    return all.where((s) {
+      if (s.time.isEmpty) return false;
+      final parts = s.time.split(':');
+      final mins = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+      return mins >= fromMins && mins < toMins;
+    }).toList();
+  }
+
+  /// True if the period contains at least one slot
+  bool _periodHasSlots(List<SlotModel> all, int fromMins, int toMins) =>
+      _slotsForPeriod(all, fromMins, toMins).isNotEmpty;
 
   void _onConfirm() {
     final bp = context.read<BookingProvider>();
@@ -352,16 +376,105 @@ class _BookingScreenState extends State<BookingScreen> {
                     fontWeight: FontWeights.bold,
                     color: AppColor.darkGrey),
                 const SizedBox(height: 12),
-                _TimeSlotGrid(
-                  slots: provider.availableSlots,
-                  loading: provider.slotsLoading,
-                  selectedDisplay: _selectedTimeDisplay,
-                  onSelect: (i) {
-                    final slot = provider.availableSlots[i];
-                    provider.selectTime(slot.time);
-                    setState(() => _selectedTimeDisplay = _formatDisplayTime(slot.time));
-                  },
-                ),
+                if (provider.slotsLoading)
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: List.generate(3, (_) => Container(
+                      width: 100, height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColor.lightGrey,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    )),
+                  )
+                else if (provider.availableSlots.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    decoration: BoxDecoration(
+                      color: AppColor.white,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Center(
+                      child: AppText(
+                        'No available slots for this date',
+                        fontSize: FontSizes.small,
+                        color: AppColor.grey,
+                      ),
+                    ),
+                  )
+                else ...[
+                  // ── Period tabs ──────────────────────────────────
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: _periods.map((p) {
+                      final label   = p['label'] as String;
+                      final from    = p['from']  as int;
+                      final to      = p['to']    as int;
+                      final active  = _periodHasSlots(provider.availableSlots, from, to);
+                      final selected = _selectedPeriod == label;
+                      return GestureDetector(
+                        onTap: active
+                            ? () => setState(() {
+                                _selectedPeriod = selected ? null : label;
+                                _selectedTimeDisplay = null;
+                                provider.selectTime('');
+                              })
+                            : null,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? AppColor.authButton
+                                : (active ? AppColor.white : AppColor.lightGrey.withValues(alpha: 0.5)),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: selected
+                                  ? AppColor.authButton
+                                  : (active
+                                      ? AppColor.authButton.withValues(alpha: 0.3)
+                                      : AppColor.lightGrey),
+                              width: selected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: AppText(
+                            label,
+                            fontSize: FontSizes.small,
+                            fontWeight: FontWeights.semiBold,
+                            color: selected
+                                ? AppColor.white
+                                : (active ? AppColor.darkGrey : AppColor.grey.withValues(alpha: 0.5)),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  // ── Slots for selected period ─────────────────────
+                  if (_selectedPeriod != null) ...[
+                    const SizedBox(height: 16),
+                    Builder(builder: (_) {
+                      final p = _periods.firstWhere((p) => p['label'] == _selectedPeriod);
+                      final filtered = _slotsForPeriod(
+                        provider.availableSlots,
+                        p['from'] as int,
+                        p['to']   as int,
+                      );
+                      return _TimeSlotGrid(
+                        slots: filtered,
+                        loading: false,
+                        selectedDisplay: _selectedTimeDisplay,
+                        onSelect: (i) {
+                          final slot = filtered[i];
+                          provider.selectTime(slot.time);
+                          setState(() => _selectedTimeDisplay = _formatDisplayTime(slot.time));
+                        },
+                      );
+                    }),
+                  ],
+                ],
               ],
             ),
           ),
@@ -515,6 +628,7 @@ class _TimeSlotGrid extends StatelessWidget {
     );
   }
 }
+
 
 // ─── Address tile ─────────────────────────────────────────────────────────────
 class _AddressTile extends StatelessWidget {

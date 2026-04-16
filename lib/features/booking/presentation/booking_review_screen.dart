@@ -142,58 +142,119 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColor.authBg,
-      appBar: AppBar(
-        backgroundColor: AppColor.authBg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leadingWidth: 90,
-        leading: TextButton.icon(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 14,
-            color: AppColor.darkGrey,
+    return Consumer<BookingProvider>(
+      builder: (context, bookingProvider, _) {
+        final service = bookingProvider.service!;
+        final provider = bookingProvider.selectedProvider!;
+        final ids = bookingProvider.selectedServiceIds.isNotEmpty
+            ? bookingProvider.selectedServiceIds
+            : (widget.serviceIds.isNotEmpty ? widget.serviceIds : [service.id]);
+        final selectedServices = ids
+            .map((id) => provider.serviceFor(id))
+            .whereType<ProviderServiceSummaryModel>()
+            .toList();
+        final providerService = provider.serviceFor(service.id);
+        final fullPrice = selectedServices.isNotEmpty
+            ? selectedServices.fold(0.0, (sum, s) => sum + s.priceAsDouble)
+            : (providerService?.priceAsDouble ?? service.priceAsDouble);
+        final duration = selectedServices.isNotEmpty
+            ? selectedServices.fold(0, (sum, s) => sum + s.duration)
+            : (providerService?.duration ?? service.duration);
+        final depositAmount = selectedServices.isNotEmpty
+            ? selectedServices.fold(0.0, (sum, s) => sum + s.deposit)
+            : (providerService != null && providerService.deposit > 0
+                ? providerService.deposit
+                : service.deposit);
+        final priorityFee = service.priorityFee;
+        final tip = bookingProvider.tipAmount;
+        final todayDue =
+            (depositAmount > 0 ? depositAmount : fullPrice) + priorityFee + tip;
+        final remainingBalance =
+            depositAmount > 0 ? fullPrice - depositAmount : 0.0;
+        print(selectedServices.length);
+
+        return Scaffold(
+          backgroundColor: AppColor.authBg,
+          appBar: AppBar(
+            backgroundColor: AppColor.authBg,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            leadingWidth: 90,
+            leading: TextButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 14,
+                color: AppColor.darkGrey,
+              ),
+              label: AppText(
+                'Back',
+                fontSize: FontSizes.small,
+                color: AppColor.darkGrey,
+              ),
+            ),
           ),
-          label: AppText(
-            'Back',
-            fontSize: FontSizes.small,
-            color: AppColor.darkGrey,
+          bottomNavigationBar: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColor.authButton,
+                    foregroundColor: AppColor.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: bookingProvider.isSubmitting
+                      ? null
+                      : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
+                              bookingProvider.paymentLink != null)
+                          ? () async {
+                              final paid = await Navigator.of(context).push<bool>(
+                                MaterialPageRoute(
+                                  builder: (_) => CustomWebView(
+                                    checkoutUrl: bookingProvider.paymentLink!,
+                                    title: 'Complete Payment',
+                                  ),
+                                ),
+                              );
+                              if (paid == true && context.mounted) {
+                                await context.read<MyBookingsProvider>().fetchBookings();
+                                if (!context.mounted) return;
+                                bookingProvider.clearPendingBooking();
+                                homeTabNotifier.value = 2;
+                                homeSuccessMessageNotifier.value = 'Booking created successfully!';
+                                Navigator.of(context).popUntil((route) => route.isFirst);
+                              }
+                            }
+                          : () => _submit(context),
+                  child: bookingProvider.isSubmitting
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: AppColor.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : AppText(
+                          (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
+                                  bookingProvider.paymentLink != null)
+                              ? 'Retry Payment'
+                              : 'Submit Booking',
+                          color: AppColor.white,
+                          fontWeight: FontWeights.semiBold,
+                          fontSize: FontSizes.regular,
+                        ),
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
-      body: Consumer<BookingProvider>(
-        builder: (context, bookingProvider, _) {
-          final service = bookingProvider.service!;
-          final provider = bookingProvider.selectedProvider!;
-          final ids = bookingProvider.selectedServiceIds.isNotEmpty
-              ? bookingProvider.selectedServiceIds
-              : (widget.serviceIds.isNotEmpty ? widget.serviceIds : [service.id]);
-          final selectedServices = ids
-              .map((id) => provider.serviceFor(id))
-              .whereType<ProviderServiceSummaryModel>()
-              .toList();
-          final providerService = provider.serviceFor(service.id);
-          final fullPrice = selectedServices.isNotEmpty
-              ? selectedServices.fold(0.0, (sum, s) => sum + s.priceAsDouble)
-              : (providerService?.priceAsDouble ?? service.priceAsDouble);
-          final duration = selectedServices.isNotEmpty
-              ? selectedServices.fold(0, (sum, s) => sum + s.duration)
-              : (providerService?.duration ?? service.duration);
-          final depositAmount = selectedServices.isNotEmpty
-              ? selectedServices.fold(0.0, (sum, s) => sum + s.deposit)
-              : (providerService != null && providerService.deposit > 0
-                  ? providerService.deposit
-                  : service.deposit);
-          final priorityFee = service.priorityFee;
-          final tip = bookingProvider.tipAmount;
-          final todayDue =
-              (depositAmount > 0 ? depositAmount : fullPrice) + priorityFee + tip;
-          final remainingBalance =
-              depositAmount > 0 ? fullPrice - depositAmount : 0.0;
-          print(selectedServices.length);
-          return SingleChildScrollView(
+          body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,68 +340,11 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                   amountDueToday: todayDue,
                   remainingBalance: remainingBalance,
                 ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColor.authButton,
-                      foregroundColor: AppColor.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onPressed: bookingProvider.isSubmitting
-                        ? null
-                        : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
-                                bookingProvider.paymentLink != null)
-                            ? () async {
-                                final paid = await Navigator.of(context).push<bool>(
-                                  MaterialPageRoute(
-                                    builder: (_) => CustomWebView(
-                                      checkoutUrl: bookingProvider.paymentLink!,
-                                      title: 'Complete Payment',
-                                    ),
-                                  ),
-                                );
-                                if (paid == true && context.mounted) {
-                                  // Success path: refresh bookings and navigate
-                                  await context.read<MyBookingsProvider>().fetchBookings();
-                                  if (!context.mounted) return;
-                                  bookingProvider.clearPendingBooking();
-                                  homeTabNotifier.value = 2;
-                                  homeSuccessMessageNotifier.value = 'Booking created successfully!';
-                                  Navigator.of(context).popUntil((route) => route.isFirst);
-                                }
-                              }
-                            : () => _submit(context),
-                    child: bookingProvider.isSubmitting
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              color: AppColor.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : AppText(
-                            (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
-                                    bookingProvider.paymentLink != null)
-                                ? 'Retry Payment'
-                                : 'Submit Booking',
-                            color: AppColor.white,
-                            fontWeight: FontWeights.semiBold,
-                            fontSize: FontSizes.regular,
-                          ),
-                  ),
-                ),
               ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
