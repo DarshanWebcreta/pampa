@@ -13,6 +13,7 @@ import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/core/widgets/text_field_widget.dart';
 import 'package:pampa/core/widgets/custom_button.dart';
 import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
+import 'package:pampa/core/widgets/phone_field.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -31,6 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  CountryCode _selectedCountry = kCountryCodes.first; // defaults to US
 
   @override
   void dispose() {
@@ -52,7 +54,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       email: _emailController.text.trim(),
       password: _passwordController.text,
       passwordConfirmation: _confirmPasswordController.text,
-      mobile: _mobileController.text.trim(),
+      mobile: '${_selectedCountry.dial}${_mobileController.text.trim()}',
     );
 
     if (!mounted) return;
@@ -244,29 +246,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 18),
             _buildLabel('Mobile Number'),
             const SizedBox(height: 8),
-            CustomTextFormField(
+            PhoneField(
               controller: _mobileController,
-              hintText: 'Enter your mobile number',
               fillColor: AppColor.authBg,
-              textInput: TextInputType.phone,
-              textCapitalization: TextCapitalization.none,
-              focusColor: AppColor.authButton,
-              enableColor: AppColor.mediumGrey,
-              radius: 12,
-              fieldHeight: 14,
-              errorDisplay: true,
-              autovalidate: true,
-              inputFormatter: [FilteringTextInputFormatter.digitsOnly],
-              prefix: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(Icons.phone_outlined, color: AppColor.grey, size: 20),
-              ),
+              initialCountry: _selectedCountry,
+              onCountryChanged: (c) => setState(() => _selectedCountry = c),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Mobile number is required';
                 }
-                if (value.trim().length < 10) {
-                  return 'Enter a valid 10-digit mobile number';
+                if (value.trim().length < 6) {
+                  return 'Enter a valid phone number';
                 }
                 return null;
               },

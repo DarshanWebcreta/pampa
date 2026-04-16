@@ -9,6 +9,7 @@ import 'package:pampa/core/values/app_text_value.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
+import 'package:pampa/core/widgets/phone_field.dart';
 
 class PersonalInformationScreen extends StatefulWidget {
   const PersonalInformationScreen({super.key});
@@ -32,6 +33,7 @@ class _PersonalInformationScreenState
   late final TextEditingController _stateCtrl;
   late final TextEditingController _countryCtrl;
 
+  CountryCode _selectedCountry = kCountryCodes.first;
   File? _selectedPhoto;
 
   @override
@@ -41,7 +43,21 @@ class _PersonalInformationScreenState
     _firstNameCtrl = TextEditingController(text: p?.firstName ?? '');
     _lastNameCtrl = TextEditingController(text: p?.lastName ?? '');
     _emailCtrl = TextEditingController(text: p?.email ?? '');
-    _mobileCtrl = TextEditingController(text: p?.mobile ?? '');
+
+    // Strip dial code from stored mobile if present so just the number shows
+    final rawMobile = p?.mobile ?? '';
+    final matchedCountry = kCountryCodes.firstWhere(
+      (c) => rawMobile.startsWith(c.dial),
+      orElse: () => kCountryCodes.first,
+    );
+    if (rawMobile.startsWith(matchedCountry.dial)) {
+      _selectedCountry = matchedCountry;
+      _mobileCtrl = TextEditingController(
+          text: rawMobile.substring(matchedCountry.dial.length));
+    } else {
+      _mobileCtrl = TextEditingController(text: rawMobile);
+    }
+
     _streetCtrl = TextEditingController(text: p?.streetAddress ?? '');
     _zipCtrl = TextEditingController(text: p?.zipCode ?? '');
     _cityCtrl = TextEditingController(text: p?.city ?? '');
@@ -82,7 +98,7 @@ class _PersonalInformationScreenState
       firstName: _firstNameCtrl.text.trim(),
       lastName: _lastNameCtrl.text.trim(),
       email: _emailCtrl.text.trim(),
-      mobile: _mobileCtrl.text.trim(),
+      mobile: '${_selectedCountry.dial}${_mobileCtrl.text.trim()}',
       streetAddress: _streetCtrl.text.trim(),
       zipCode: _zipCtrl.text.trim(),
       city: _cityCtrl.text.trim(),
@@ -206,11 +222,17 @@ class _PersonalInformationScreenState
                   },
                 ),
                 const SizedBox(height: 10),
-                _FieldCard(
-                  icon: Icons.phone_outlined,
-                  label: 'Phone Number',
+
+                // ── Phone (with country-code picker) ────────────────────
+                _sectionLabel('Phone Number'),
+                const SizedBox(height: 6),
+                PhoneField(
                   controller: _mobileCtrl,
-                  keyboardType: TextInputType.phone,
+                  fillColor: AppColor.white,
+                  initialCountry: _selectedCountry,
+                  radius: 14,
+                  onCountryChanged: (c) =>
+                      setState(() => _selectedCountry = c),
                 ),
 
                 // const SizedBox(height: 24),
