@@ -5,7 +5,7 @@ class ImagePaths {
   //     "assets/images/subscription.svg",
   //     "assets/images/wallete.svg",
   //     "assets/images/cart.svg"
-  static const imagePath = 'assets/image/';
+  static const imagePath = 'assets/images/';
   static const svgPath = 'assets/svgs/';
   static const lottieAnimationPath = 'assets/animations/';
 
@@ -16,6 +16,7 @@ class ImagePaths {
 class ImageStrings {
   ImageStrings._();
   static const String splash = '${ImagePaths.imagePath}splash_screen.webp';
+  static const String appDesignLogo = '${ImagePaths.imagePath}app_design_logo.png';
   static const String logoWithName = '${ImagePaths.imagePath}delivrise_logo_with_name.png';
   static const String placeHolder = '${ImagePaths.imagePath}place_holder.png';
   static const String location = '${ImagePaths.svgPath}location.svg';

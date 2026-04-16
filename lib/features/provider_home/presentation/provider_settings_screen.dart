@@ -9,6 +9,7 @@ import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
+import 'package:pampa/features/home/presentation/home_screen.dart';
 import 'package:pampa/features/profile/presentation/notifications_screen.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_category_management_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_credentials_provider.dart';
@@ -288,8 +289,11 @@ class ProviderSettingsScreen extends StatelessWidget {
 
     if (shouldLogout != true || !context.mounted) return;
     await context.read<AuthProvider>().logout();
+    // Reset customer home bottom bar selection so the next login is fresh.
+    homeTabNotifier.value = 0;
+    homeSuccessMessageNotifier.value = null;
     if (!context.mounted) return;
-    context.go(RouteNames.userType);
+    context.go(RouteNames.login);
   }
 }
 

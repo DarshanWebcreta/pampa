@@ -150,7 +150,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Clears token + user from storage. Call this then navigate to login.
+  /// Clears auth session (token/user) but keeps `userType` selected
+  /// so the next login screen can be shown for the same account type.
   Future<void> logout() async {
     try {
       // Best-effort server-side logout (ignore errors — token is cleared locally regardless)
@@ -160,7 +161,6 @@ class AuthProvider extends ChangeNotifier {
     StorageManager.deleteData(StoreKeys.token);
     StorageManager.deleteData(StoreKeys.zipCode);
     StorageManager.deleteData(StoreKeys.syncedFcmToken);
-    StorageManager.deleteData(StoreKeys.userType);
     _user = null;
     _status = AuthStatus.initial;
     _errorMessage = '';

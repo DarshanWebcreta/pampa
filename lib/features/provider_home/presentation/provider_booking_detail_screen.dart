@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pampa/core/values/urls.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/utils/functional_component.dart';
@@ -331,6 +332,11 @@ class _ProviderBookingDetailScreenState
 
             const SizedBox(height: 12),
 
+            // ── Inspiration ─────────────────────────────────────────────
+            _InspirationCard(booking: booking),
+
+            const SizedBox(height: 12),
+
             // ── Payment ────────────────────────────────────────────────
             _PaymentCard(booking: booking, isConfirmed: isConfirmed),
 
@@ -616,6 +622,7 @@ class _DetailsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final addr = booking.address;
     final totalDuration = booking.services.fold(0, (s, e) => s + e.duration);
+    final notes = booking.notes?.trim();
     final durationStr = totalDuration > 0
         ? totalDuration < 60
             ? '$totalDuration minutes'
@@ -743,6 +750,150 @@ class _DetailsCard extends StatelessWidget {
               ),
             ),
           ],
+          const SizedBox(height: 10),
+          _DetailRow(
+            icon: Icons.sticky_note_2_outlined,
+            child: AppText(
+              notes?.isNotEmpty == true ? notes! : 'No notes added',
+              fontSize: FontSizes.regular,
+              color: notes?.isNotEmpty == true ? AppColor.darkGrey : AppColor.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InspirationCard extends StatelessWidget {
+  final ProviderBookingModel booking;
+
+  const _InspirationCard({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    final pinterestLink = booking.pinterestLink?.trim();
+    final inspirationPhoto = booking.inspirationPhoto?.trim();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText(
+            'Inspiration',
+            fontSize: FontSizes.medium,
+            fontWeight: FontWeights.bold,
+            color: AppColor.darkGrey,
+          ),
+          const SizedBox(height: 12),
+          _DetailRow(
+            icon: Icons.link_rounded,
+            child: pinterestLink?.isNotEmpty == true
+                ? GestureDetector(
+                    onTap: () async {
+                      final uri = Uri.tryParse(pinterestLink??'');
+                      if (uri != null && await canLaunchUrl(uri)) {
+                        launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    child: AppText(
+                      pinterestLink??'',
+                      fontSize: FontSizes.regular,
+                      color: AppColor.authButton,
+                    ),
+                  )
+                : AppText(
+                    'No Pinterest link',
+                    fontSize: FontSizes.regular,
+                    color: AppColor.grey,
+                  ),
+          ),
+          const SizedBox(height: 10),
+          _DetailRow(
+            icon: Icons.photo_outlined,
+            child: inspirationPhoto?.isNotEmpty == true
+                ? GestureDetector(
+                    onTap: () {
+                      final url =
+                          '${ApiStrings.imageUrl}${inspirationPhoto ?? ''}';
+                      showDialog<void>(
+                        context: context,
+                        barrierDismissible: true,
+                        builder: (dialogContext) => Dialog(
+                          insetPadding: EdgeInsets.zero,
+                          backgroundColor: Colors.black,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: InteractiveViewer(
+                                  minScale: 1,
+                                  maxScale: 4,
+                                  child: Center(
+                                    child: Image.network(
+                                      url,
+                                      fit: BoxFit.contain,
+                                      errorBuilder:
+                                          (context, _, __) => const Center(
+                                        child: Icon(
+                                          Icons.broken_image_rounded,
+                                          color: Colors.white,
+                                          size: 50,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 24,
+                                left: 16,
+                                child: SafeArea(
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.close_rounded,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () =>
+                                        Navigator.of(dialogContext).pop(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: SizedBox(
+                        height: 140,
+                        width: double.infinity,
+                        child: FunctionalComponent.cachedNetworkImage(
+                          '${ApiStrings.imageUrl}${inspirationPhoto ?? ''}',
+                          fit: BoxFit.cover,
+                          radius: 10,
+                        ),
+                      ),
+                    ),
+                  )
+                : AppText(
+                    'No inspiration photo',
+                    fontSize: FontSizes.regular,
+                    color: AppColor.grey,
+                  ),
+          ),
         ],
       ),
     );

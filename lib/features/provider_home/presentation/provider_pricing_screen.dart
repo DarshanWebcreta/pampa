@@ -247,7 +247,7 @@ class _TopIntro extends StatelessWidget {
               Expanded(
                 child: _PricingField(
                   controller: perKmCtrl,
-                  label: 'Per km charge',
+                  label: 'Per miles charge',
                   hint: '15',
                   prefix: '\$',
                   validator: _numberValidator,
@@ -257,7 +257,7 @@ class _TopIntro extends StatelessWidget {
               Expanded(
                 child: _PricingField(
                   controller: distanceCtrl,
-                  label: 'Max distance (km)',
+                  label: 'Max distance (miles)',
                   hint: '25',
                   validator: _intValidator,
                 ),

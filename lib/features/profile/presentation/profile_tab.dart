@@ -10,6 +10,7 @@ import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/address/presentation/saved_addresses_screen.dart';
 import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
+import 'package:pampa/features/home/presentation/home_screen.dart';
 import 'package:pampa/features/profile/data/models/customer_profile_model.dart';
 import 'package:pampa/features/profile/presentation/beauty_preferences_screen.dart';
 import 'package:pampa/features/profile/presentation/notifications_screen.dart';
@@ -196,7 +197,12 @@ class _ProfileTabState extends State<ProfileTab> {
     await context.read<AuthProvider>().logout();
     if (!context.mounted) return;
     setState(() => _isLoggingOut = false);
-    context.go(RouteNames.userType);
+    
+    // Reset customer home bottom bar selection so the next login is fresh.
+    homeTabNotifier.value = 0;
+    homeSuccessMessageNotifier.value = null;
+
+    context.go(RouteNames.login);
   }
 }
 

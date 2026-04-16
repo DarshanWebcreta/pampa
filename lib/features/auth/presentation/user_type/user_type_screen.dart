@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pampa/core/values/imagepath.dart';
+import 'package:pampa/core/widgets/custom_image.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
@@ -27,27 +29,8 @@ class UserTypeScreen extends StatelessWidget {
             children: [
               const Spacer(flex: 2),
               // ── Logo & Branding ──────────────────────────────────────────
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColor.authButton,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColor.authButton.withValues(alpha: 0.3),
-                      blurRadius: 24,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.spa_rounded,
-                  color: AppColor.white,
-                  size: 36,
-                ),
-              ),
-              const SizedBox(height: 20),
+             AssetImageView(path: ImageStrings.appDesignLogo,height: 80,),
+              const SizedBox(height: 6),
               AppText(
                 'Welcome to Pampa',
                 fontSize: 26,

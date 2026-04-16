@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pampa/core/values/imagepath.dart';
+import 'package:pampa/core/widgets/custom_image.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
@@ -141,38 +143,20 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: AppColor.authButton,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColor.authButton.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.spa_rounded,
-              color: AppColor.white,
-              size: 40,
-            ),
-          ),
-          const SizedBox(height: 20),
-          AppText(
-            'Welcome Back',
-            fontSize: 26,
-            fontWeight: FontWeight.w700,
-            color: AppColor.authButton,
-          ),
-          const SizedBox(height: 6),
+          AssetImageView(path: ImageStrings.appDesignLogo,height: 50,),
+
+
+          // AppText(
+          //   'Welcome Back',
+          //   fontSize: 26,
+          //   fontWeight: FontWeight.w700,
+          //   color: AppColor.authButton,
+          // ),
+           const SizedBox(height: 6),
           AppText(
             'Sign in to continue',
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
             color: AppColor.grey,
           ),
         ],

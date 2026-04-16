@@ -119,6 +119,8 @@ class ProviderBookingModel {
   final String status;
   final String paymentStatus;
   final String? notes;
+  final String? pinterestLink;
+  final String? inspirationPhoto;
   final String? confirmedAt;
   final ProviderBookingCustomer customer;
   final List<ProviderBookingService> services;
@@ -136,6 +138,8 @@ class ProviderBookingModel {
     required this.status,
     required this.paymentStatus,
     this.notes,
+    this.pinterestLink,
+    this.inspirationPhoto,
     this.confirmedAt,
     required this.customer,
     required this.services,
@@ -156,6 +160,8 @@ class ProviderBookingModel {
       status: json['status'] as String? ?? '',
       paymentStatus: json['payment_status'] as String? ?? '',
       notes: json['notes'] as String?,
+      pinterestLink: json['pinterest_link'] as String?,
+      inspirationPhoto: json['inspiration_photo'] as String?,
       confirmedAt: json['confirmed_at'] as String?,
       customer: ProviderBookingCustomer.fromJson(
           json['customer'] as Map<String, dynamic>? ?? {}),

@@ -23,6 +23,7 @@ import 'package:pampa/features/provider_home/presentation/provider_earnings_tab.
 import 'package:pampa/features/provider_home/presentation/provider/provider_earnings_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider_profile_tab.dart';
 import 'package:pampa/features/provider_home/presentation/provider_settings_screen.dart';
+import 'package:pampa/features/home/presentation/home_screen.dart';
 
 class ProviderHomeScreen extends StatefulWidget {
   const ProviderHomeScreen({super.key});
@@ -317,7 +318,10 @@ class _DashboardTabState extends State<_DashboardTab> {
                     );
                     if (confirm != true || !context.mounted) return;
                     await context.read<AuthProvider>().logout();
-                    if (context.mounted) context.go(RouteNames.userType);
+                    // Reset customer home bottom bar selection so the next login is fresh.
+                    homeTabNotifier.value = 0;
+                    homeSuccessMessageNotifier.value = null;
+                    if (context.mounted) context.go(RouteNames.login);
                   },
                   child: Container(
                     width: 34,
