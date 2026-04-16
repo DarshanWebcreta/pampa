@@ -1,7 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:pampa/core/storage/storage.dart';
-import 'package:pampa/core/storage/storage_keys.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/values/app_text_value.dart';
@@ -62,205 +61,267 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColor.authBg,
-      appBar: AppBar(
-        backgroundColor: AppColor.authBg,
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColor.darkGrey),
-        ),
-        title: AppText(
-          'Choose your provider',
-          fontSize: FontSizes.large,
-          fontWeight: FontWeights.bold,
-          color: AppColor.darkGrey,
-        ),
-      ),
+      backgroundColor: const Color(0xFFF7F1F4),
       body: Consumer<BookingProvider>(
         builder: (context, bookingProvider, _) {
           final service = bookingProvider.service;
-          if (service == null) {
-            return const SizedBox.shrink();
-          }
+          if (service == null) return const SizedBox.shrink();
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                child: _BookingSummaryCard(
-                  address: widget.address,
-                  date: bookingProvider.selectedDate,
-                  time: bookingProvider.selectedTime ?? '',
+          return CustomScrollView(
+            slivers: [
+              // ── Sticky gradient header ────────────────────────────────
+              SliverAppBar(
+                pinned: true,
+                expandedHeight: 190,
+                backgroundColor: AppColor.authButton,
+                surfaceTintColor: Colors.transparent,
+                leading: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Material(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 18),
+                    ),
+                  ),
+                ),
+                flexibleSpace: FlexibleSpaceBar(
+                  collapseMode: CollapseMode.pin,
+                  background: _HeaderBanner(
+                    address: widget.address,
+                    date: bookingProvider.selectedDate,
+                    time: bookingProvider.selectedTime ?? '',
+                    serviceName: service.serviceName,
+                  ),
                 ),
               ),
-              Container(height: 1, color: AppColor.authButton.withValues(alpha: 0.08)),
-              Expanded(
-                child: Builder(
-                  builder: (_) {
-                    switch (bookingProvider.providerFetchStatus) {
-                      case ProviderFetchStatus.loading:
-                        return const Center(
-                          child: CircularProgressIndicator(
+
+              // ── Provider count subheader ──────────────────────────────
+              if (bookingProvider.providerFetchStatus ==
+                  ProviderFetchStatus.success &&
+                  bookingProvider.providers.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.fromLTRB(20, 20, 20, 4),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: AppColor.authButton.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: AppText(
+                            '${bookingProvider.providers.length} available',
+                            fontSize: 12,
+                            fontWeight: FontWeights.semiBold,
                             color: AppColor.authButton,
                           ),
-                        );
-                      case ProviderFetchStatus.error:
-                        return _ProviderStateView(
-                          message: bookingProvider.providerFetchError,
-                          buttonLabel: 'Try again',
-                          onTap: () => bookingProvider.fetchAvailableProviders(
-                            zipCode: widget.address.zipCode,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: AppText(
+                            'for ${service.serviceName}',
+                            fontSize: 13,
+                            color: AppColor.grey,
+                            maxLines: 1,
                           ),
-                        );
-                      case ProviderFetchStatus.success:
-                        if (bookingProvider.providers.isEmpty) {
-                          return _ProviderStateView(
-                            message:
-                                'No providers are available for this date and time.',
-                            buttonLabel: 'Choose another time',
-                            onTap: () => Navigator.of(context).pop(),
-                          );
-                        }
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                              child: AppText(
-                                '${bookingProvider.providers.length} provider${bookingProvider.providers.length == 1 ? '' : 's'} available for ${service.serviceName}',
-                                fontSize: FontSizes.regular,
-                                color: AppColor.grey,
-                                maxLines: 2,
-                              ),
-                            ),
-                            Expanded(
-                              child: ListView.separated(
-                                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                                itemCount: bookingProvider.providers.length,
-                                separatorBuilder: (context, index) =>
-                                    const SizedBox(height: 16),
-                                itemBuilder: (context, index) {
-                                  final provider = bookingProvider.providers[index];
-                                  return _ProviderCard(
-                                    provider: provider,
-                                    selectedServiceId: service.id,
-                                    onTap: () => _openReview(provider),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        );
-                      case ProviderFetchStatus.initial:
-                        return const SizedBox.shrink();
-                    }
-                  },
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+
+              // ── Body ─────────────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: _buildBody(bookingProvider),
               ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
           );
         },
       ),
     );
   }
+
+  Widget _buildBody(BookingProvider bookingProvider) {
+    switch (bookingProvider.providerFetchStatus) {
+      case ProviderFetchStatus.loading:
+        return const Padding(
+          padding: EdgeInsets.only(top: 80),
+          child: Center(
+            child: CircularProgressIndicator(color: AppColor.authButton),
+          ),
+        );
+      case ProviderFetchStatus.error:
+        return _EmptyState(
+          icon: Icons.wifi_off_rounded,
+          title: 'Connection issue',
+          subtitle: bookingProvider.providerFetchError.isNotEmpty
+              ? bookingProvider.providerFetchError
+              : 'Failed to load providers.',
+          buttonLabel: 'Try again',
+          onTap: () => bookingProvider.fetchAvailableProviders(
+            zipCode: widget.address.zipCode,
+          ),
+        );
+      case ProviderFetchStatus.success:
+        if (bookingProvider.providers.isEmpty) {
+          return _EmptyState(
+            icon: Icons.person_search_rounded,
+            title: 'No providers yet',
+            subtitle:
+                'No providers are available for this date and time in your area.',
+            buttonLabel: 'Choose another time',
+            onTap: () => Navigator.of(context).pop(),
+          );
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          itemCount: bookingProvider.providers.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 14),
+          itemBuilder: (context, index) {
+            final provider = bookingProvider.providers[index];
+            final service = bookingProvider.service!;
+            return _ProviderCard(
+              provider: provider,
+              selectedServiceId: service.id,
+              onTap: () => _openReview(provider),
+            );
+          },
+        );
+      case ProviderFetchStatus.initial:
+        return const SizedBox.shrink();
+    }
+  }
 }
 
-class _BookingSummaryCard extends StatelessWidget {
+// ─── Header banner ────────────────────────────────────────────────────────────
+
+class _HeaderBanner extends StatelessWidget {
   final AddressModel address;
   final DateTime date;
   final String time;
+  final String serviceName;
 
-  const _BookingSummaryCard({
+  const _HeaderBanner({
     required this.address,
     required this.date,
     required this.time,
+    required this.serviceName,
   });
+
+  static String _formatTime(String t) {
+    if (t.isEmpty) return '-';
+    try {
+      return DateFormat('h:mm a').format(DateFormat('HH:mm').parseStrict(t));
+    } catch (_) {
+      return t;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final dateLabel = DateFormat('MMM d').format(date);
-    final parsedTime = _parseTime(time);
+    final dateLabel = DateFormat('EEE, MMM d').format(date);
+    final timeLabel = _formatTime(time);
+    final addr =
+        '${address.streetAddress}, ${address.city}'
+        '${address.state != null ? ', ${address.state}' : ''}'
+        ' ${address.zipCode}'
+            .trim()
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .replaceAll(RegExp(r',\s*$'), '');
 
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColor.authButton.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(18),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF7B2249), AppColor.authButton],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SummaryRow(
-            icon: Icons.location_on_outlined,
-            label:
-                '${address.streetAddress}, ${address.city}, ${address.state ?? ''} ${address.zipCode}'.trim(),
-          ),
-          const SizedBox(height: 10),
-          Row(
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 56, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Expanded(
-                child: _SummaryRow(
-                  icon: Icons.calendar_today_outlined,
-                  label: dateLabel,
-                ),
+              AppText(
+                'Choose your provider',
+                fontSize: 22,
+                fontWeight: FontWeights.bold,
+                color: Colors.white,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _SummaryRow(
-                  icon: Icons.access_time_outlined,
-                  label: parsedTime,
-                ),
+              const SizedBox(height: 14),
+
+              // Info chips row
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  _InfoChip(icon: Icons.location_on_outlined, label: addr),
+                  _InfoChip(icon: Icons.calendar_today_outlined, label: dateLabel),
+                  _InfoChip(icon: Icons.access_time_outlined, label: timeLabel),
+                ],
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _InfoChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: Colors.white.withValues(alpha: 0.9)),
+          const SizedBox(width: 5),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 200),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
     );
   }
-
-  static String _parseTime(String time) {
-    if (time.isEmpty) return '-';
-    try {
-      final parsed = DateFormat('HH:mm').parseStrict(time);
-      return DateFormat('h:mm a').format(parsed);
-    } catch (_) {
-      return time;
-    }
-  }
 }
 
-class _SummaryRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _SummaryRow({
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: AppColor.authButton),
-        const SizedBox(width: 8),
-        Expanded(
-          child: AppText(
-            label.replaceAll(RegExp(r'\s+,|,\s*$'), '').replaceAll('  ', ' '),
-            fontSize: FontSizes.regular,
-            color: AppColor.darkGrey,
-            maxLines: 3,
-          ),
-        ),
-      ],
-    );
-  }
-}
+// ─── Provider card ────────────────────────────────────────────────────────────
 
 class _ProviderCard extends StatelessWidget {
   final ProviderModel provider;
@@ -273,233 +334,380 @@ class _ProviderCard extends StatelessWidget {
     required this.onTap,
   });
 
+  String _formatPrice(double price) {
+    if (price == price.truncateToDouble()) return '\$${price.toInt()}';
+    return '\$${price.toStringAsFixed(2)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final service = provider.serviceFor(selectedServiceId);
     final price = service?.priceAsDouble ?? 0.0;
     final duration = service?.formattedDuration ?? '-';
+    final deposit = service?.deposit ?? 0.0;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: Ink(
-        padding: const EdgeInsets.symmetric(vertical: 12,horizontal: 16),
-        decoration: BoxDecoration(
-          color: AppColor.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColor.authButton.withValues(alpha: 0.12)),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ProviderAvatar(
-              photoUrl: provider.photoUrl,
-              fallbackText: provider.displayName,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText(
-                    provider.displayName,
-                    fontSize: FontSizes.regular,
-                    fontWeight: FontWeights.bold,
-                    color: AppColor.darkGrey,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        splashColor: AppColor.authButton.withValues(alpha: 0.06),
+        child: Ink(
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFFEADDE2)),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Top: avatar + name + rating ────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ProviderAvatar(
+                      photoUrl: provider.photoUrl,
+                      name: provider.displayName,
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppText(
+                            provider.displayName,
+                            fontSize: 16,
+                            fontWeight: FontWeights.bold,
+                            color: AppColor.darkGrey,
+                            maxLines: 1,
+                          ),
+                          const SizedBox(height: 5),
+                          // Rating + status
+                          Row(
+                            children: [
+                              const Icon(Icons.star_rounded,
+                                  size: 15, color: Color(0xFFFABF35)),
+                              const SizedBox(width: 3),
+                              AppText(
+                                provider.rating.toStringAsFixed(1),
+                                fontSize: 13,
+                                fontWeight: FontWeights.semiBold,
+                                color: AppColor.darkGrey,
+                              ),
+                              const SizedBox(width: 10),
+                              _StatusBadge(status: provider.status),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          // Location
+                          if ((provider.city ?? '').isNotEmpty)
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on_rounded,
+                                    size: 13, color: AppColor.grey),
+                                const SizedBox(width: 3),
+                                Expanded(
+                                  child: AppText(
+                                    [provider.city, provider.state]
+                                        .where((x) =>
+                                            x != null && x.isNotEmpty)
+                                        .join(', '),
+                                    fontSize: 12,
+                                    color: AppColor.grey,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Bio (if available) ─────────────────────────────────
+              if ((provider.bio ?? '').isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: AppText(
+                    provider.bio!,
+                    fontSize: 12,
+                    color: AppColor.grey,
                     maxLines: 2,
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.star_rounded,
-                          size: 18, color: AppColor.blue),
-                      const SizedBox(width: 4),
-                      AppText(
-                        provider.rating.toStringAsFixed(1),
-                        fontSize: FontSizes.small,
-                        fontWeight: FontWeights.semiBold,
-                        color: AppColor.darkGrey,
-                      ),
-                      const SizedBox(width: 10),
-                      Container(
-                        width: 4,
-                        height: 4,
-                        decoration: const BoxDecoration(
-                          color: AppColor.grey,
-                          shape: BoxShape.circle,
+                ),
+
+              // ── Divider ────────────────────────────────────────────
+              const Divider(height: 1, thickness: 1, color: Color(0xFFF3ECF0)),
+
+              // ── Bottom: price + cta ────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                child: Row(
+                  children: [
+                    // Price block
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          _formatPrice(price),
+                          fontSize: 18,
+                          fontWeight: FontWeights.bold,
+                          color: AppColor.authButton,
+                        ),
+                        Row(
+                          children: [
+                            const Icon(Icons.timer_outlined,
+                                size: 12, color: AppColor.grey),
+                            const SizedBox(width: 3),
+                            AppText(
+                              duration,
+                              fontSize: 12,
+                              color: AppColor.grey,
+                            ),
+                            if (deposit > 0) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 3,
+                                height: 3,
+                                decoration: const BoxDecoration(
+                                    color: AppColor.grey,
+                                    shape: BoxShape.circle),
+                              ),
+                              const SizedBox(width: 8),
+                              AppText(
+                                '${_formatPrice(deposit)} deposit',
+                                fontSize: 12,
+                                color: AppColor.grey,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    const Spacer(),
+
+                    // CTA button
+                    GestureDetector(
+                      onTap: onTap,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 22, vertical: 11),
+                        decoration: BoxDecoration(
+                          color: AppColor.authButton,
+                          borderRadius: BorderRadius.circular(999),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColor.authButton.withValues(alpha: 0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Text(
+                          'Book Now',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: AppText(
-                          provider.status,
-                          fontSize: FontSizes.small,
-                          color: AppColor.grey,
-                          maxLines: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      AppText(
-                        _formatPrice(price),
-                        fontSize:  FontSizes.small,
-                        fontWeight: FontWeights.bold,
-                        color: AppColor.authButton,
-                      ),
-                      const SizedBox(width: 8),
-                      AppText(
-                        duration,
-                        fontSize: FontSizes.small,
-                        color: AppColor.grey,
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColor.authButton.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: AppText(
-                'Select',
-                fontSize: 12,
-                color: AppColor.authButton,
-                fontWeight: FontWeights.semiBold,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-
-  String _formatPrice(double price) {
-    if (price == price.truncateToDouble()) {
-      return '\$${price.toInt()}';
-    }
-    return '\$${price.toStringAsFixed(2)}';
-  }
 }
+
+// ─── Provider avatar ──────────────────────────────────────────────────────────
 
 class _ProviderAvatar extends StatelessWidget {
   final String? photoUrl;
-  final String fallbackText;
+  final String name;
 
-  const _ProviderAvatar({
-    required this.photoUrl,
-    required this.fallbackText,
-  });
+  const _ProviderAvatar({required this.photoUrl, required this.name});
 
-  @override
-  Widget build(BuildContext context) {
-    final initials = fallbackText
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((part) => part.isNotEmpty)
+  String get _initials {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '?';
+    return parts
+        .where((p) => p.isNotEmpty)
         .take(2)
-        .map((part) => part[0].toUpperCase())
+        .map((p) => p[0].toUpperCase())
         .join();
-
-    if (photoUrl == null || photoUrl!.isEmpty) {
-      return _AvatarFallback(initials: initials);
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: Image.network(
-        photoUrl!,
-        width: 40,
-        height: 40,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) =>
-            _AvatarFallback(initials: initials),
-      ),
-    );
   }
-}
-
-class _AvatarFallback extends StatelessWidget {
-  final String initials;
-
-  const _AvatarFallback({required this.initials});
 
   @override
   Widget build(BuildContext context) {
+    const size = 64.0;
+    const radius = 18.0;
+
+    if (photoUrl != null && photoUrl!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: CachedNetworkImage(
+          imageUrl: photoUrl!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          placeholder: (_, __) => _avatarFallback(size, radius),
+          errorWidget: (_, __, ___) => _avatarFallback(size, radius),
+        ),
+      );
+    }
+    return _avatarFallback(size, radius);
+  }
+
+  Widget _avatarFallback(double size, double radius) {
     return Container(
-      width: 76,
-      height: 76,
-      alignment: Alignment.center,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
-        color: AppColor.authButton.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF7B2249), AppColor.authButton],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(radius),
       ),
-      child: AppText(
-        initials.isEmpty ? '?' : initials,
-        fontSize: FontSizes.large,
-        fontWeight: FontWeights.bold,
-        color: AppColor.authButton,
+      alignment: Alignment.center,
+      child: Text(
+        _initials,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
 }
 
-class _ProviderStateView extends StatelessWidget {
-  final String message;
+// ─── Status badge ─────────────────────────────────────────────────────────────
+
+class _StatusBadge extends StatelessWidget {
+  final String status;
+  const _StatusBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = status.toLowerCase() == 'active';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: isActive
+            ? const Color(0xFFE6F9EE)
+            : const Color(0xFFFCE8E8),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              color: isActive
+                  ? const Color(0xFF1F8F4C)
+                  : Colors.red.shade600,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            status,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: isActive
+                  ? const Color(0xFF1F8F4C)
+                  : Colors.red.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Empty / error state ──────────────────────────────────────────────────────
+
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
   final String buttonLabel;
   final VoidCallback onTap;
 
-  const _ProviderStateView({
-    required this.message,
+  const _EmptyState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
     required this.buttonLabel,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 60, 28, 28),
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.person_search_rounded,
-              size: 48,
-              color: AppColor.authButton,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColor.authButton.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 36, color: AppColor.authButton),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
             AppText(
-              message,
-              fontSize: FontSizes.regular,
+              title,
+              fontSize: 18,
+              fontWeight: FontWeights.bold,
               color: AppColor.darkGrey,
+              align: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            AppText(
+              subtitle,
+              fontSize: 13,
+              color: AppColor.grey,
               align: TextAlign.center,
               maxLines: 4,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             SizedBox(
-              height: 48,
+              height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColor.authButton,
-                  foregroundColor: AppColor.white,
+                  foregroundColor: Colors.white,
                   elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
                 onPressed: onTap,
-                child: AppText(
+                child: Text(
                   buttonLabel,
-                  color: AppColor.white,
-                  fontWeight: FontWeights.semiBold,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
             ),

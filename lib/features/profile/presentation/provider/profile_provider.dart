@@ -47,8 +47,10 @@ class ProfileProvider extends ChangeNotifier {
   ProfileUpdateStatus get updateStatus => _updateStatus;
   String get updateError => _updateError;
 
-  Future<void> fetchProfile() async {
+  Future<void> fetchProfile({bool forceRefresh = false}) async {
     if (_status == ProfileStatus.loading) return;
+    // Skip re-fetch unless forced or not yet loaded
+    if (!forceRefresh && _status == ProfileStatus.success) return;
 
     _status = ProfileStatus.loading;
     _errorMessage = '';
@@ -146,5 +148,5 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
-  void refresh() => fetchProfile();
+  void refresh() => fetchProfile(forceRefresh: true);
 }

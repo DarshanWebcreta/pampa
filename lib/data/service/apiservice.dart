@@ -83,12 +83,14 @@ abstract class ApiService {
   Future<dynamic> getServices(@Query("category_id") int? categoryId);
 
   @POST(ApiPath.categories)
-  Future<dynamic> createCategory(@Body() Map<String, dynamic> body);
+  @MultiPart()
+  Future<dynamic> createCategory(@Body() FormData body);
 
-  @PUT("${ApiPath.categories}/{id}")
+  @POST("${ApiPath.categories}/{id}")
+  @MultiPart()
   Future<dynamic> updateCategory(
     @Path("id") int id,
-    @Body() Map<String, dynamic> body,
+    @Body() FormData body,
   );
 
   @POST(ApiPath.services)

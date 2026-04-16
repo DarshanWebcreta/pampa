@@ -287,14 +287,18 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> createCategory(Map<String, dynamic> body) async {
+  Future<dynamic> createCategory(FormData body) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(body);
+    final _data = body;
     final _options = _setStreamType<dynamic>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'multipart/form-data',
+          )
           .compose(
             _dio.options,
             'categories',
@@ -309,14 +313,18 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> updateCategory(int id, Map<String, dynamic> body) async {
+  Future<dynamic> updateCategory(int id, FormData body) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(body);
+    final _data = body;
     final _options = _setStreamType<dynamic>(
-      Options(method: 'PUT', headers: _headers, extra: _extra)
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'multipart/form-data',
+          )
           .compose(
             _dio.options,
             'categories/${id}',

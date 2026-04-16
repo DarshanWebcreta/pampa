@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/utils/functional_component.dart';
@@ -129,6 +132,8 @@ class _ProviderCategoryManagementScreenState
   }
 }
 
+// ─── Category card ────────────────────────────────────────────────────────────
+
 class _CategoryCard extends StatelessWidget {
   const _CategoryCard({required this.category, required this.onEdit});
 
@@ -139,7 +144,7 @@ class _CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isActive = category.isActive;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -147,34 +152,36 @@ class _CategoryCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColor.authButton.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.category_rounded,
-              color: AppColor.authButton,
-            ),
-          ),
+          // ── Icon / Image ─────────────────────────────────────────────
+          _CategoryIcon(iconUrl: category.icon),
           const SizedBox(width: 14),
+
+          // ── Text info ────────────────────────────────────────────────
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText(
                   category.categoryName,
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeights.bold,
                   color: AppColor.darkGrey,
                 ),
+                if ((category.tag ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  AppText(
+                    category.tag!,
+                    fontSize: 12,
+                    color: AppColor.grey,
+                    maxLines: 1,
+                  ),
+                ],
                 const SizedBox(height: 6),
+                // Status pill
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
-                    vertical: 5,
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: isActive
@@ -189,13 +196,15 @@ class _CategoryCard extends StatelessWidget {
                           ? const Color(0xFF1F8F4C)
                           : Colors.red.shade700,
                       fontWeight: FontWeight.w700,
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                   ),
                 ),
               ],
             ),
           ),
+
+          // ── Edit button ──────────────────────────────────────────────
           IconButton(
             onPressed: onEdit,
             icon: const Icon(Icons.edit_outlined, color: AppColor.darkGrey),
@@ -205,6 +214,41 @@ class _CategoryCard extends StatelessWidget {
     );
   }
 }
+
+// ── Category icon widget ──────────────────────────────────────────────────────
+
+class _CategoryIcon extends StatelessWidget {
+  final String? iconUrl;
+
+  const _CategoryIcon({this.iconUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = iconUrl != null && iconUrl!.isNotEmpty;
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: AppColor.authButton.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: hasImage
+          ? FunctionalComponent.cachedNetworkImage(
+              iconUrl!,
+              fit: BoxFit.cover,
+              radius: 14,
+            )
+          : const Icon(
+              Icons.category_rounded,
+              color: AppColor.authButton,
+              size: 26,
+            ),
+    );
+  }
+}
+
+// ─── Category form sheet ──────────────────────────────────────────────────────
 
 class _CategoryFormSheet extends StatefulWidget {
   const _CategoryFormSheet({this.category});
@@ -217,7 +261,9 @@ class _CategoryFormSheet extends StatefulWidget {
 
 class _CategoryFormSheetState extends State<_CategoryFormSheet> {
   late final TextEditingController _nameCtrl;
+  late final TextEditingController _tagCtrl;
   late String _status;
+  File? _pickedIcon;
   final _formKey = GlobalKey<FormState>();
 
   bool get _isEdit => widget.category != null;
@@ -228,13 +274,28 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
     _nameCtrl = TextEditingController(
       text: widget.category?.categoryName ?? '',
     );
+    _tagCtrl = TextEditingController(
+      text: widget.category?.tag ?? '',
+    );
     _status = widget.category?.status ?? 'Active';
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _tagCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickIcon() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    if (picked != null) {
+      setState(() => _pickedIcon = File(picked.path));
+    }
   }
 
   Future<void> _submit() async {
@@ -246,10 +307,14 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
             id: widget.category!.id,
             categoryName: _nameCtrl.text.trim(),
             status: _status,
+            tag: _tagCtrl.text.trim().isEmpty ? null : _tagCtrl.text.trim(),
+            icon: _pickedIcon,
           )
         : await provider.createCategory(
             categoryName: _nameCtrl.text.trim(),
             status: _status,
+            tag: _tagCtrl.text.trim().isEmpty ? null : _tagCtrl.text.trim(),
+            icon: _pickedIcon,
           );
 
     if (!mounted) return;
@@ -287,97 +352,127 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
           ),
           child: Form(
             key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText(
-                  _isEdit ? 'Edit Category' : 'Add Category',
-                  fontSize: 18,
-                  fontWeight: FontWeights.bold,
-                  color: AppColor.darkGrey,
-                ),
-                const SizedBox(height: 6),
-                AppText(
-                  'Use this to manage category names and visibility.',
-                  fontSize: 13,
-                  color: AppColor.grey,
-                ),
-                const SizedBox(height: 18),
-                const _FieldLabel('Category Name'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _nameCtrl,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: _inputDecoration('Enter category name'),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Category name is required.';
-                    }
-                    if (value.trim().length > 150) {
-                      return 'Category name must be under 150 characters.';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                const _FieldLabel('Status'),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatusChip(
-                        label: 'Active',
-                        selected: _status == 'Active',
-                        onTap: () => setState(() => _status = 'Active'),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Header ─────────────────────────────────────────────
+                  AppText(
+                    _isEdit ? 'Edit Category' : 'Add Category',
+                    fontSize: 18,
+                    fontWeight: FontWeights.bold,
+                    color: AppColor.darkGrey,
+                  ),
+                  const SizedBox(height: 6),
+                  AppText(
+                    'Manage category details, icon and visibility.',
+                    fontSize: 13,
+                    color: AppColor.grey,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Icon picker ────────────────────────────────────────
+                  const _FieldLabel('Category Icon'),
+                  const SizedBox(height: 10),
+                  _IconPickerTile(
+                    existingUrl: widget.category?.icon,
+                    pickedFile: _pickedIcon,
+                    onTap: _pickIcon,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── Category Name ──────────────────────────────────────
+                  const _FieldLabel('Category Name'),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _nameCtrl,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: _inputDecoration('Enter category name'),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Category name is required.';
+                      }
+                      if (value.trim().length > 150) {
+                        return 'Category name must be under 150 characters.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── Tag ────────────────────────────────────────────────
+                  const _FieldLabel('Tag / Description'),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _tagCtrl,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: _inputDecoration(
+                        'e.g. Cuts, color, styling & treatments'),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── Status ─────────────────────────────────────────────
+                  const _FieldLabel('Status'),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatusChip(
+                          label: 'Active',
+                          selected: _status == 'Active',
+                          onTap: () => setState(() => _status = 'Active'),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _StatusChip(
-                        label: 'Inactive',
-                        selected: _status == 'Inactive',
-                        onTap: () => setState(() => _status = 'Inactive'),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _StatusChip(
+                          label: 'Inactive',
+                          selected: _status == 'Inactive',
+                          onTap: () => setState(() => _status = 'Inactive'),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 22),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: saving ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColor.authButton,
-                      disabledBackgroundColor: AppColor.authButton.withValues(
-                        alpha: 0.6,
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+
+                  // ── Submit ─────────────────────────────────────────────
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: saving ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColor.authButton,
+                        disabledBackgroundColor: AppColor.authButton.withValues(
+                          alpha: 0.6,
+                        ),
+                        minimumSize: const Size.fromHeight(52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      minimumSize: const Size.fromHeight(52),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: saving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                      child: saving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : Text(
+                              _isEdit ? 'Update Category' : 'Create Category',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
                               ),
                             ),
-                          )
-                        : Text(
-                            _isEdit ? 'Update Category' : 'Create Category',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -385,6 +480,129 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
     );
   }
 }
+
+// ─── Icon picker tile ─────────────────────────────────────────────────────────
+
+class _IconPickerTile extends StatelessWidget {
+  final String? existingUrl;
+  final File? pickedFile;
+  final VoidCallback onTap;
+
+  const _IconPickerTile({
+    required this.onTap,
+    this.existingUrl,
+    this.pickedFile,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasNew = pickedFile != null;
+    final hasExisting = existingUrl != null && existingUrl!.isNotEmpty;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 90,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F3F5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColor.authButton.withValues(alpha: 0.25),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Preview box
+            Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(14),
+                ),
+                color: AppColor.authButton.withValues(alpha: 0.08),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: hasNew
+                  ? Image.file(pickedFile!, fit: BoxFit.cover)
+                  : hasExisting
+                      ? FunctionalComponent.cachedNetworkImage(
+                          existingUrl!,
+                          fit: BoxFit.cover,
+                          radius: 0,
+                        )
+                      : const Icon(
+                          Icons.image_outlined,
+                          size: 32,
+                          color: AppColor.authButton,
+                        ),
+            ),
+
+            // Label
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hasNew
+                          ? 'Icon selected'
+                          : hasExisting
+                              ? 'Tap to change icon'
+                              : 'Tap to upload icon',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: hasNew
+                            ? AppColor.authButton
+                            : AppColor.darkGrey,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      hasNew
+                          ? pickedFile!.path.split('/').last
+                          : 'PNG, JPG supported',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColor.grey,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Camera icon
+            Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColor.authButton.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.photo_camera_outlined,
+                  size: 18,
+                  color: AppColor.authButton,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Field label ──────────────────────────────────────────────────────────────
 
 class _FieldLabel extends StatelessWidget {
   const _FieldLabel(this.label);
@@ -401,6 +619,8 @@ class _FieldLabel extends StatelessWidget {
     );
   }
 }
+
+// ─── Status chip ──────────────────────────────────────────────────────────────
 
 class _StatusChip extends StatelessWidget {
   const _StatusChip({
@@ -443,6 +663,8 @@ class _StatusChip extends StatelessWidget {
     );
   }
 }
+
+// ─── State message ────────────────────────────────────────────────────────────
 
 class _StateMessage extends StatelessWidget {
   const _StateMessage({
@@ -501,6 +723,8 @@ class _StateMessage extends StatelessWidget {
     );
   }
 }
+
+// ─── Input decoration ─────────────────────────────────────────────────────────
 
 InputDecoration _inputDecoration(String hint) {
   return InputDecoration(

@@ -330,6 +330,19 @@ class _BookingDetailContent extends StatelessWidget {
             headerLabel: 'Payment Summary',
             child: _PaymentSummaryContent(booking: booking),
           ),
+
+          // Section 6: Inspiration & Notes (only if any field is non-null)
+          if ((booking.notes?.isNotEmpty ?? false) ||
+              (booking.pinterestLink?.isNotEmpty ?? false) ||
+              (booking.inspirationPhoto?.isNotEmpty ?? false)) ...
+            [
+              const SizedBox(height: 16),
+              _SectionCard(
+                headerIcon: Icons.auto_awesome_rounded,
+                headerLabel: 'Inspiration & Notes',
+                child: _InspirationContent(booking: booking),
+              ),
+            ],
         ],
       ),
     );
@@ -984,6 +997,196 @@ class _BottomBar extends StatelessWidget {
   }
 }
 
+// ─── Inspiration & Notes content ─────────────────────────────────────────────
+
+class _InspirationContent extends StatelessWidget {
+  final MyBookingModel booking;
+
+  const _InspirationContent({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto = (booking.inspirationPhoto ?? '').isNotEmpty;
+    final hasLink = (booking.pinterestLink ?? '').isNotEmpty;
+    final hasNotes = (booking.notes ?? '').isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Inspiration photo ─────────────────────────────────────────
+        if (hasPhoto) ...[
+          AppText(
+            'Inspiration Photo',
+            fontSize: FontSizes.small,
+            color: AppColor.grey,
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              PageRouteBuilder(
+                opaque: false,
+                barrierDismissible: true,
+                pageBuilder: (_, _, _) => BookingInspirationViewer(
+                  imageUrl: _resolvePhotoUrl(booking.inspirationPhoto ?? ''),
+                  tag: 'inspiration_${booking.id}',
+                ),
+                transitionsBuilder: (_, anim, __, child) =>
+                    FadeTransition(opacity: anim, child: child),
+              ),
+            ),
+            child: Hero(
+              tag: 'inspiration_${booking.id}',
+              child: SizedBox(
+                height: 180,
+                width: double.infinity,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      FunctionalComponent.cachedNetworkImage(
+                        _resolvePhotoUrl(booking.inspirationPhoto ?? ''),
+                        fit: BoxFit.cover,
+                        radius: 14,
+                      ),
+                      // Tap hint overlay
+                      Positioned(
+                        bottom: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.fullscreen_rounded,
+                                  size: 13, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'View full',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (hasLink || hasNotes) const SizedBox(height: 16),
+        ],
+
+        // ── Pinterest link ────────────────────────────────────────────
+        if (hasLink) ...[
+          _InspirationRow(
+            icon: Icons.link_rounded,
+            iconColor: const Color(0xFFE60023), // Pinterest red
+            label: 'Pinterest Link',
+            child: GestureDetector(
+              onTap: () {
+                // Open in webview / launch URL
+              },
+              child: Text(
+                booking.pinterestLink??'',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFFE60023),
+                  decoration: TextDecoration.underline,
+                  decorationColor: Color(0xFFE60023),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+          if (hasNotes) const SizedBox(height: 14),
+        ],
+
+        // ── Notes ─────────────────────────────────────────────────────
+        if (hasNotes)
+          _InspirationRow(
+            icon: Icons.sticky_note_2_outlined,
+            iconColor: AppColor.authButton,
+            label: 'Notes',
+            child: Text(
+              booking.notes!,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColor.darkGrey,
+                height: 1.5,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  static String _resolvePhotoUrl(String path) {
+    final t = path.trim();
+    if (t.startsWith('http://') || t.startsWith('https://')) return t;
+    if (t.startsWith('/')) return '${ApiStrings.imageUrl}$t';
+    return '${ApiStrings.imageUrl}/$t';
+  }
+}
+
+class _InspirationRow extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final Widget child;
+
+  const _InspirationRow({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 16, color: iconColor),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppText(
+                label,
+                fontSize: 11,
+                color: AppColor.grey,
+              ),
+              const SizedBox(height: 3),
+              child,
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ─── Helper widgets ───────────────────────────────────────────────────────────
 
 class _PayRow extends StatelessWidget {
@@ -1090,6 +1293,143 @@ class _InfoTile extends StatelessWidget {
           color: AppColor.darkGrey,
         ),
       ],
+    );
+  }
+}
+
+// ─── Full-screen image viewer ─────────────────────────────────────────────────
+
+class BookingInspirationViewer extends StatefulWidget {
+  final String imageUrl;
+  final String tag;
+
+  const BookingInspirationViewer({
+    required this.imageUrl,
+    required this.tag,
+  });
+
+  @override
+  State<BookingInspirationViewer> createState() => BookingInspirationViewerState();
+}
+
+class BookingInspirationViewerState extends State<BookingInspirationViewer>
+    with SingleTickerProviderStateMixin {
+  final _transformCtrl = TransformationController();
+  late final AnimationController _dismissCtrl;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _dismissCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+      value: 1.0,
+    );
+    _opacity = _dismissCtrl;
+  }
+
+  @override
+  void dispose() {
+    _transformCtrl.dispose();
+    _dismissCtrl.dispose();
+    super.dispose();
+  }
+
+  void _close() {
+    _dismissCtrl.reverse().then((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
+  void _onDoubleTap() {
+    if (_transformCtrl.value != Matrix4.identity()) {
+      _transformCtrl.value = Matrix4.identity();
+    } else {
+      _transformCtrl.value = Matrix4.identity()..scale(2.5);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: GestureDetector(
+        onTap: _close,
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              // ── Zoomable image ─────────────────────────────────────
+              Center(
+                child: GestureDetector(
+                  onDoubleTap: _onDoubleTap,
+                  child: InteractiveViewer(
+                    transformationController: _transformCtrl,
+                    minScale: 0.8,
+                    maxScale: 5.0,
+                    child: Hero(
+                      tag: widget.tag,
+                      child: FunctionalComponent.cachedNetworkImage(
+                        widget.imageUrl,
+                        fit: BoxFit.contain,
+                        radius: 0,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Close button ───────────────────────────────────────
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 12,
+                right: 16,
+                child: GestureDetector(
+                  onTap: _close,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Double-tap hint ────────────────────────────────────
+              Positioned(
+                bottom: MediaQuery.of(context).padding.bottom + 20,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Double-tap to zoom · Tap anywhere to close',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

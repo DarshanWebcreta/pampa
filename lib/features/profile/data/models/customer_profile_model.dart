@@ -1,4 +1,5 @@
-class CustomerProfileModel {
+import 'package:pampa/core/values/urls.dart';
+class CustomerProfileModel{
   final int id;
   final String name;
   final String firstName;
@@ -60,9 +61,21 @@ class CustomerProfileModel {
       mobile: (json['mobile'] ?? '').toString(),
       type: (json['type'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
-      photoUrl: (json['profile_image_url'] ?? json['photo_url'] ?? '').toString().isEmpty
-          ? null
-          : (json['profile_image_url'] ?? json['photo_url']).toString(),
+      photoUrl: () {
+        final raw = (json['profile_image'] ??      // ← actual API key
+                json['profile_image_url'] ??
+                json['photo_url'] ??
+                json['profile_photo'] ??
+                json['photo'] ??
+                '')
+            .toString()
+            .trim();
+        if (raw.isEmpty) return null;
+        // Relative path → prepend host (e.g. /storage/uploads/users/xxx.jpg)
+        if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+        if (raw.startsWith('/')) return '${ApiStrings.imageUrl}$raw';
+        return '${ApiStrings.imageUrl}/$raw';
+      }(),
       streetAddress: (json['street_address'] ?? '').toString().isEmpty
           ? null
           : json['street_address'].toString(),

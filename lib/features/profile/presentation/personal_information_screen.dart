@@ -110,6 +110,11 @@ class _PersonalInformationScreenState
     if (!mounted) return;
 
     if (success) {
+      // Re-fetch /customer/me so the profile avatar & all fields
+      // in the profile tab reflect the latest server data.
+      if (mounted) {
+        context.read<ProfileProvider>().fetchProfile(forceRefresh: true);
+      }
       FunctionalComponent.showSnackBar(
         context: context,
         title: 'Profile updated successfully.',

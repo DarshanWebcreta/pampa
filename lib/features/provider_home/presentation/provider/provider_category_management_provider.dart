@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:pampa/data/service/apiservice.dart';
 import 'package:pampa/features/categories/data/models/category_model.dart';
@@ -55,15 +58,20 @@ class ProviderCategoryManagementProvider extends ChangeNotifier {
   Future<String?> createCategory({
     required String categoryName,
     required String status,
+    String? tag,
+    File? icon,
   }) async {
     _saving = true;
     notifyListeners();
 
     try {
-      final response = await _api.createCategory({
-        'category_name': categoryName,
-        'status': status,
-      });
+      final formData = await _buildFormData(
+        categoryName: categoryName,
+        status: status,
+        tag: tag,
+        icon: icon,
+      );
+      final response = await _api.createCategory(formData);
       final map = response as Map<String, dynamic>;
       if (map['status'] != true) {
         return map['message'] as String? ?? 'Failed to create category.';
@@ -88,15 +96,20 @@ class ProviderCategoryManagementProvider extends ChangeNotifier {
     required int id,
     required String categoryName,
     required String status,
+    String? tag,
+    File? icon,
   }) async {
     _saving = true;
     notifyListeners();
 
     try {
-      final response = await _api.updateCategory(id, {
-        'category_name': categoryName,
-        'status': status,
-      });
+      final formData = await _buildFormData(
+        categoryName: categoryName,
+        status: status,
+        tag: tag,
+        icon: icon,
+      );
+      final response = await _api.updateCategory(id, formData);
       final map = response as Map<String, dynamic>;
       if (map['status'] != true) {
         return map['message'] as String? ?? 'Failed to update category.';
@@ -119,4 +132,34 @@ class ProviderCategoryManagementProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  Future<FormData> _buildFormData({
+    required String categoryName,
+    required String status,
+    String? tag,
+    File? icon,
+  }) async {
+    final fields = <MapEntry<String, dynamic>>[
+      MapEntry('category_name', categoryName),
+      MapEntry('status', status),
+      if (tag != null && tag.isNotEmpty) MapEntry('tag', tag),
+    ];
+
+    if (icon != null) {
+      fields.add(
+        MapEntry(
+          'icon',
+          await MultipartFile.fromFile(
+            icon.path,
+            filename: icon.path.split('/').last,
+          ),
+        ),
+      );
+    }
+
+    return FormData.fromMap(Map.fromEntries(fields));
+  }
 }
+

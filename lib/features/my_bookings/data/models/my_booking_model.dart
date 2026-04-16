@@ -50,6 +50,9 @@ class MyBookingModel {
   final String paymentStatus;
   final String status;
   final DateTime? createdAt;
+  final String? notes;
+  final String? pinterestLink;
+  final String? inspirationPhoto;
   final BookingServiceModel service;
   final ProviderModel? provider;
 
@@ -69,6 +72,9 @@ class MyBookingModel {
     required this.paymentStatus,
     required this.status,
     this.createdAt,
+    this.notes,
+    this.pinterestLink,
+    this.inspirationPhoto,
     required this.service,
     this.provider,
   });
@@ -102,6 +108,9 @@ class MyBookingModel {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'])
           : null,
+      notes: json['notes'] as String?,
+      pinterestLink: json['pinterest_link'] as String?,
+      inspirationPhoto: json['inspiration_photo'] as String?,
       service: json['service'] != null
           ? BookingServiceModel.fromJson(json['service'])
           : BookingServiceModel.empty(),
