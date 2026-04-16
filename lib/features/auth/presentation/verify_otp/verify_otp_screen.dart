@@ -193,7 +193,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                           color: AppColor.grey,
                         ),
                         Consumer<AuthProvider>(
-                          builder: (_, auth, __) => TextButton(
+                          builder: (_, auth, _) => TextButton(
                             onPressed: auth.isLoading ? null : _onResendOtp,
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.zero,
