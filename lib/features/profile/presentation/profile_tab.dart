@@ -18,6 +18,7 @@ import 'package:pampa/features/favorites/presentation/favorite_providers_screen.
 import 'package:pampa/features/profile/presentation/page_detail_screen.dart';
 import 'package:pampa/features/profile/presentation/personal_information_screen.dart';
 import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
+import 'package:pampa/features/auth/presentation/change_password/change_password_screen.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -133,6 +134,19 @@ class _ProfileTabState extends State<ProfileTab> {
                 //   ),
                 // ]),
                 // const SizedBox(height: 20),
+                const SizedBox(height: 20),
+                _SectionLabel('Security'),
+                const SizedBox(height: 8),
+                _MenuGroup(items: [
+                  _MenuItem(
+                    icon: Icons.lock_outline_rounded,
+                    label: 'Change Password',
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const ChangePasswordScreen(),
+                    )),
+                  ),
+                ]),
+                const SizedBox(height: 20),
                 if (provider.pages.isNotEmpty) ...[
                   _SectionLabel('Support'),
                   const SizedBox(height: 8),

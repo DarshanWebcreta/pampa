@@ -9,6 +9,10 @@ import 'package:pampa/features/auth/presentation/login/login_screen.dart';
 import 'package:pampa/features/auth/presentation/register/register_screen.dart';
 import 'package:pampa/features/auth/presentation/welcome/welcome_screen.dart';
 import 'package:pampa/features/auth/presentation/user_type/user_type_screen.dart';
+import 'package:pampa/features/auth/presentation/forgot_password/forgot_password_screen.dart';
+import 'package:pampa/features/auth/presentation/verify_otp/verify_otp_screen.dart';
+import 'package:pampa/features/auth/presentation/reset_password/reset_password_screen.dart';
+import 'package:pampa/features/auth/presentation/change_password/change_password_screen.dart';
 import 'package:pampa/features/categories/presentation/category_list_screen.dart';
 import 'package:pampa/features/home/presentation/home_screen.dart';
 import 'package:pampa/features/services/presentation/provider/service_provider.dart';
@@ -173,6 +177,39 @@ class AppRouter {
             providerName: extra['providerName'] as String,
           );
         },
+      ),
+
+      GoRoute(
+        path: RouteNames.forgotPassword,
+        name: RouteNames.forgotPassword,
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+
+      GoRoute(
+        path: RouteNames.verifyOtp,
+        name: RouteNames.verifyOtp,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final email = extra?['email'] as String? ?? '';
+          return VerifyOtpScreen(email: email);
+        },
+      ),
+
+      GoRoute(
+        path: RouteNames.resetPassword,
+        name: RouteNames.resetPassword,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final email = extra?['email'] as String? ?? '';
+          final otp   = extra?['otp']   as String? ?? '';
+          return ResetPasswordScreen(email: email, otp: otp);
+        },
+      ),
+
+      GoRoute(
+        path: RouteNames.changePasswordRoute,
+        name: RouteNames.changePasswordRoute,
+        builder: (context, state) => const ChangePasswordScreen(),
       ),
 
     ],

@@ -49,6 +49,31 @@ abstract class ApiService {
   @POST(ApiPath.logout)
   Future<dynamic> logout();
 
+  /// Password management (type = 'customer' | 'provider')
+  @POST("{type}/forgot-password")
+  Future<dynamic> forgotPassword(
+    @Path("type") String type,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST("{type}/verify-otp")
+  Future<dynamic> verifyOtp(
+    @Path("type") String type,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST("{type}/reset-password")
+  Future<dynamic> resetPassword(
+    @Path("type") String type,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST("{type}/change-password")
+  Future<dynamic> changePassword(
+    @Path("type") String type,
+    @Body() Map<String, dynamic> body,
+  );
+
   /// SERVICES
 
   @GET(ApiPath.categories)

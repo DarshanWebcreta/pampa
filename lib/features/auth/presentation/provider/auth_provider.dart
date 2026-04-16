@@ -174,6 +174,101 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Sends a 6-digit OTP to the given email.
+  Future<bool> forgotPassword({required String email}) async {
+    _setLoading();
+    try {
+      await _authRepository.forgotPassword(email: email, type: _userType);
+      _status = AuthStatus.success;
+      _errorMessage = '';
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _cleanMessage(e.toString());
+      _status = AuthStatus.error;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Verifies the OTP before allowing the password reset.
+  Future<bool> verifyOtp({
+    required String email,
+    required String otp,
+  }) async {
+    _setLoading();
+    try {
+      await _authRepository.verifyOtp(
+        email: email,
+        otp: otp,
+        type: _userType,
+      );
+      _status = AuthStatus.success;
+      _errorMessage = '';
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _cleanMessage(e.toString());
+      _status = AuthStatus.error;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Resets the password using the OTP received by email.
+  Future<bool> resetPassword({
+    required String email,
+    required String otp,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    _setLoading();
+    try {
+      await _authRepository.resetPassword(
+        email: email,
+        otp: otp,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+        type: _userType,
+      );
+      _status = AuthStatus.success;
+      _errorMessage = '';
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _cleanMessage(e.toString());
+      _status = AuthStatus.error;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Changes the password for an authenticated user.
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    _setLoading();
+    try {
+      await _authRepository.changePassword(
+        oldPassword: oldPassword,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+        type: _userType,
+      );
+      _status = AuthStatus.success;
+      _errorMessage = '';
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _cleanMessage(e.toString());
+      _status = AuthStatus.error;
+      notifyListeners();
+      return false;
+    }
+  }
+
   void _setLoading() {
     _status = AuthStatus.loading;
     _errorMessage = '';

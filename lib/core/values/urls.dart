@@ -37,6 +37,12 @@ class ApiPath {
   static const String customerProfile = "customer/profile";
   static const String logout = "customer/logout";
 
+  // Password management — dynamic by user type
+  static String forgotPassword(String type) => "$type/forgot-password";
+  static String verifyOtp(String type) => "$type/verify-otp";
+  static String resetPassword(String type) => "$type/reset-password";
+  static String changePassword(String type) => "$type/change-password";
+
   /// ==============================
   /// SERVICES & CATEGORIES
   /// ==============================

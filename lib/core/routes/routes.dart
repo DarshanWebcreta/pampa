@@ -34,4 +34,8 @@ class RouteNames {
   static const bookingDetail = '/booking-detail';
   static const myBookingDetail = '/my-booking-detail';
   static const chat = '/chat';
+  static const forgotPassword = '/forgot-password';
+  static const verifyOtp = '/verify-otp';
+  static const resetPassword = '/reset-password';
+  static const changePasswordRoute = '/change-password-screen';
 }

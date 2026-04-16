@@ -266,6 +266,19 @@ class _LoginScreenState extends State<LoginScreen> {
               },
             ),
 
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: () => context.push(RouteNames.forgotPassword),
+                child: AppText(
+                  'Forgot Password?',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColor.authButton,
+                ),
+              ),
+            ),
             const SizedBox(height: 28),
             Consumer<AuthProvider>(
               builder: (context, auth, _) {

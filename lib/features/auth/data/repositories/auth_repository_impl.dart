@@ -129,6 +129,108 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (_) {}
   }
 
+  @override
+  Future<void> forgotPassword({
+    required String email,
+    required String type,
+  }) async {
+    try {
+      final response = await _apiService.forgotPassword(type, {'email': email});
+      final map = response as Map<String, dynamic>;
+      if (map['status'] != true) {
+        throw Exception(map['message'] ?? 'Failed to send OTP. Please try again.');
+      }
+    } on DioException catch (e) {
+      final msg = _extractServerMessage(e);
+      throw Exception(msg ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (_) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  @override
+  Future<void> verifyOtp({
+    required String email,
+    required String otp,
+    required String type,
+  }) async {
+    try {
+      final response = await _apiService.verifyOtp(type, {
+        'email': email,
+        'otp': otp,
+      });
+      final map = response as Map<String, dynamic>;
+      if (map['status'] != true) {
+        throw Exception(map['message'] ?? 'Invalid or expired OTP.');
+      }
+    } on DioException catch (e) {
+      final msg = _extractServerMessage(e);
+      throw Exception(msg ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (_) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  @override
+  Future<void> resetPassword({
+    required String email,
+    required String otp,
+    required String password,
+    required String passwordConfirmation,
+    required String type,
+  }) async {
+    try {
+      final response = await _apiService.resetPassword(type, {
+        'email': email,
+        'otp': otp,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      });
+      final map = response as Map<String, dynamic>;
+      if (map['status'] != true) {
+        throw Exception(map['message'] ?? 'Password reset failed. Please try again.');
+      }
+    } on DioException catch (e) {
+      final msg = _extractServerMessage(e);
+      throw Exception(msg ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (_) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  @override
+  Future<void> changePassword({
+    required String oldPassword,
+    required String password,
+    required String passwordConfirmation,
+    required String type,
+  }) async {
+    try {
+      final response = await _apiService.changePassword(type, {
+        'old_password': oldPassword,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      });
+      final map = response as Map<String, dynamic>;
+      if (map['status'] != true) {
+        throw Exception(map['message'] ?? 'Password change failed. Please try again.');
+      }
+    } on DioException catch (e) {
+      final msg = _extractServerMessage(e);
+      throw Exception(msg ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (_) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
   /// Extracts validation or error messages from the server 422/400 response body.
   String? _extractServerMessage(DioException e) {
     try {

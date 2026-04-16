@@ -28,6 +28,7 @@ import 'package:pampa/features/provider_home/presentation/provider_chat_screen.d
 import 'package:pampa/features/provider_home/presentation/provider/provider_messaging_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_bank_detail_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider_bank_detail_screen.dart';
+import 'package:pampa/features/auth/presentation/change_password/change_password_screen.dart';
 
 class ProviderSettingsScreen extends StatelessWidget {
   const ProviderSettingsScreen({super.key});
@@ -152,6 +153,22 @@ class ProviderSettingsScreen extends StatelessWidget {
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const NotificationsScreen(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const _SectionLabel('Security'),
+          const SizedBox(height: 8),
+          _SettingsGroup(
+            items: [
+              _SettingsItemData(
+                icon: Icons.lock_outline_rounded,
+                label: 'Change Password',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ChangePasswordScreen(),
                   ),
                 ),
               ),
