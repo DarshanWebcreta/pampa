@@ -100,6 +100,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  SizedBox(height: 25,),
                   FunctionalComponent.goBackArrow(context: context),
 
                   AppText(

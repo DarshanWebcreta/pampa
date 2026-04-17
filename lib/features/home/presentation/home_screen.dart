@@ -1743,7 +1743,7 @@ class _UpcomingSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<MyBookingsProvider>(
       builder: (_, provider, _) {
-        final upcoming = provider.bookings
+        final upcoming = provider.upcomingBookings
             .where((b) => b.isPending || b.isConfirmed)
             .toList();
 
@@ -1837,7 +1837,7 @@ class _PastServicesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<MyBookingsProvider>(
       builder: (_, provider, _) {
-        final past = provider.bookings.where((b) => b.isCompleted).toList();
+        final past = provider.pastBookings;
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
@@ -2174,19 +2174,6 @@ class _PastBookingCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   child: AppText('Book Again', fontSize: FontSizes.small, fontWeight: FontWeights.semiBold, color: AppColor.darkGrey),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColor.authButton,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                  ),
-                  child: AppText('Review', fontSize: FontSizes.small, fontWeight: FontWeights.semiBold, color: AppColor.white),
                 ),
               ),
             ],

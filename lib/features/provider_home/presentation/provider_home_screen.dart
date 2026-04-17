@@ -25,6 +25,9 @@ import 'package:pampa/features/provider_home/presentation/provider_profile_tab.d
 import 'package:pampa/features/provider_home/presentation/provider_settings_screen.dart';
 import 'package:pampa/features/home/presentation/home_screen.dart';
 
+// ─── Tab switcher notifier ────────────────────────────────────────────────────
+final providerHomeTabNotifier = ValueNotifier<int>(0);
+
 class ProviderHomeScreen extends StatefulWidget {
   const ProviderHomeScreen({super.key});
 
@@ -38,10 +41,27 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> with RouteAware
   @override
   void initState() {
     super.initState();
+    providerHomeTabNotifier.addListener(_onTabNavigated);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshAllData();
       getIt<PushNotificationService>().syncTokenWithBackend();
     });
+  }
+
+  void _onTabNavigated() {
+    if (mounted) {
+      final i = providerHomeTabNotifier.value;
+      if (i == 1) {
+        getIt<ProviderBookingsProvider>().resetAndFetch();
+      }
+      if (i == 2) {
+        getIt<ProviderEarningsProvider>().fetchEarnings();
+      }
+      if (i == 3) {
+        getIt<ProviderMessagingProvider>().refreshConversations();
+      }
+      setState(() {}); // Tab index managed by ValueListenableBuilder below
+    }
   }
 
   @override
@@ -56,6 +76,7 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> with RouteAware
   @override
   void dispose() {
     AppRouter.routeObserver.unsubscribe(this);
+    providerHomeTabNotifier.removeListener(_onTabNavigated);
     super.dispose();
   }
 
@@ -114,43 +135,35 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> with RouteAware
         ChangeNotifierProvider.value(value: getIt<ProviderMessagingProvider>()),
         ChangeNotifierProvider.value(value: getIt<ProviderEarningsProvider>()),
       ],
-      child: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
-          if (didPop) return;
-          if (_currentIndex != 0) {
-            setState(() => _currentIndex = 0);
-          } else {
-            _showExitDialog();
-          }
-        },
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF5F5F7),
-          body: IndexedStack(
-            index: _currentIndex,
-            children: [
-              const _DashboardTab(),
-              const ProviderBookingsTab(),
-              const ProviderEarningsTab(),
-              const ProviderConversationsTab(),
-              const ProviderProfileTab(),
-            ],
-          ),
-          bottomNavigationBar: _ProviderBottomNav(
-            currentIndex: _currentIndex,
-            items: _navItems,
-            onTap: (i) {
-              if (i == 1) {
-                getIt<ProviderBookingsProvider>().resetAndFetch();
-              }
-              if (i == 2) {
-                getIt<ProviderEarningsProvider>().fetchEarnings();
-              }
-              if (i == 3) {
-                getIt<ProviderMessagingProvider>().refreshConversations();
-              }
-              setState(() => _currentIndex = i);
-            },
+      child: ValueListenableBuilder<int>(
+        valueListenable: providerHomeTabNotifier,
+        builder: (context, currentIndex, _) => PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            if (currentIndex != 0) {
+              providerHomeTabNotifier.value = 0;
+            } else {
+              _showExitDialog();
+            }
+          },
+          child: Scaffold(
+            backgroundColor: const Color(0xFFF5F5F7),
+            body: IndexedStack(
+              index: currentIndex,
+              children: [
+                const _DashboardTab(),
+                const ProviderBookingsTab(),
+                const ProviderEarningsTab(),
+                const ProviderConversationsTab(),
+                const ProviderProfileTab(),
+              ],
+            ),
+            bottomNavigationBar: _ProviderBottomNav(
+              currentIndex: currentIndex,
+              items: _navItems,
+              onTap: (i) => providerHomeTabNotifier.value = i,
+            ),
           ),
         ),
       ),
@@ -732,55 +745,61 @@ class _EarningsCard extends StatelessWidget {
         ? '\$ ${total.toInt()}'
         : '\$ ${total.toStringAsFixed(2)}';
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColor.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              AppText(
-                'This Week\'s Earnings',
-                fontSize: FontSizes.medium,
-                fontWeight: FontWeights.bold,
+    return GestureDetector(
+      onTap: () => providerHomeTabNotifier.value = 2,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColor.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AppText(
+                  'This Week\'s Earnings',
+                  fontSize: FontSizes.medium,
+                  fontWeight: FontWeights.bold,
+                  color: AppColor.darkGrey,
+                ),
+                GestureDetector(
+                  onTap: () => providerHomeTabNotifier.value = 2,
+                  child: AppText(
+                    'View All',
+                    fontSize: 12,
+                    fontWeight: FontWeights.semiBold,
+                    color: AppColor.authButton,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              totalStr,
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
                 color: AppColor.darkGrey,
               ),
-              AppText(
-                'View All',
-                fontSize: 12,
-                fontWeight: FontWeights.semiBold,
-                color: AppColor.authButton,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            totalStr,
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: AppColor.darkGrey,
             ),
-          ),
-          const SizedBox(height: 4),
-          AppText(
-            '${earnings.weekStart} — ${earnings.weekEnd}',
-            fontSize: 12,
-            color: AppColor.grey,
-          ),
-        ],
+            const SizedBox(height: 4),
+            AppText(
+              '${earnings.weekStart} — ${earnings.weekEnd}',
+              fontSize: 12,
+              color: AppColor.grey,
+            ),
+          ],
+        ),
       ),
     );
   }
