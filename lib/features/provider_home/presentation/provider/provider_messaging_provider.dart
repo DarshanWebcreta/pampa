@@ -117,57 +117,88 @@ class ProviderMessagingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Send message (Optimistic UI) ──────────────────────────────────────────
   Future<bool> sendMessage({
     required int conversationId,
     required String body,
   }) async {
-    if (body.trim().isEmpty) return false;
-    _isSending = true;
+    final text = body.trim();
+    if (text.isEmpty) return false;
+
+    // 1. Create temporary message
+    final tempId = -DateTime.now().millisecondsSinceEpoch;
+    final tempMsg = MessageModel(
+      id: tempId,
+      body: text,
+      senderType: 'provider', // ProviderMessagingProvider is for provider
+      senderName: 'Me',
+      createdAt: DateTime.now(),
+      status: MessageStatus.sending,
+    );
+
+    // 2. Add to local list immediately
+    _messages = [..._messages, tempMsg];
     notifyListeners();
 
+    return _performSendMessage(conversationId, tempMsg);
+  }
+
+  Future<void> retryMessage(int tempId) async {
+    final idx = _messages.indexWhere((m) => m.id == tempId);
+    if (idx == -1) return;
+
+    final msg = _messages[idx];
+    if (msg.status != MessageStatus.error) return;
+
+    // Set back to sending
+    _messages[idx] = msg.copyWith(status: MessageStatus.sending);
+    notifyListeners();
+
+    if (_activeConversation == null) return;
+    await _performSendMessage(_activeConversation!.id, _messages[idx]);
+  }
+
+  Future<bool> _performSendMessage(int conversationId, MessageModel tempMsg) async {
     try {
-      final msg = await _repository.sendProviderMessage(
+      final realMsg = await _repository.sendProviderMessage(
         conversationId: conversationId,
-        body: body.trim(),
+        body: tempMsg.body,
       );
-      _messages = [..._messages, msg];
-      final idx = _conversations.indexWhere((c) => c.id == conversationId);
+
+      // Replace temp message with real one
+      final idx = _messages.indexWhere((m) => m.id == tempMsg.id);
       if (idx != -1) {
-        _conversations[idx] = ConversationModel(
-          id: _conversations[idx].id,
-          otherUser: _conversations[idx].otherUser,
+        _messages[idx] = realMsg.copyWith(status: MessageStatus.sent);
+      } else {
+        _messages = [..._messages, realMsg];
+      }
+
+      // Update last message in conversation list
+      final cIdx = _conversations.indexWhere((c) => c.id == conversationId);
+      if (cIdx != -1) {
+        _conversations[cIdx] = ConversationModel(
+          id: _conversations[cIdx].id,
+          otherUser: _conversations[cIdx].otherUser,
           lastMessage: ConversationLastMessage(
-            body: msg.body,
-            senderType: msg.senderType,
-            createdAt: msg.createdAt,
+            body: realMsg.body,
+            senderType: realMsg.senderType,
+            createdAt: realMsg.createdAt,
           ),
           unreadCount: 0,
-          lastMessageAt: msg.createdAt,
-          createdAt: _conversations[idx].createdAt,
+          lastMessageAt: realMsg.createdAt,
+          createdAt: _conversations[cIdx].createdAt,
         );
-      } else if (_activeConversation != null) {
-        _conversations = [
-          ConversationModel(
-            id: _activeConversation!.id,
-            otherUser: _activeConversation!.otherUser,
-            lastMessage: ConversationLastMessage(
-              body: msg.body,
-              senderType: msg.senderType,
-              createdAt: msg.createdAt,
-            ),
-            unreadCount: 0,
-            lastMessageAt: msg.createdAt,
-            createdAt: _activeConversation!.createdAt,
-          ),
-          ..._conversations,
-        ];
       }
-      _isSending = false;
+      
       notifyListeners();
       return true;
     } catch (_) {
-      _isSending = false;
-      notifyListeners();
+      // Mark as error
+      final idx = _messages.indexWhere((m) => m.id == tempMsg.id);
+      if (idx != -1) {
+        _messages[idx] = _messages[idx].copyWith(status: MessageStatus.error);
+        notifyListeners();
+      }
       return false;
     }
   }

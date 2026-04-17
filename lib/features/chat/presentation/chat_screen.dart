@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pampa/core/utils/functional_component.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/values/app_text_value.dart';
@@ -88,10 +89,18 @@ class _BookingChatScreenState extends State<BookingChatScreen> {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty) return;
     _msgCtrl.clear();
-    await context.read<MessagingProvider>().sendMessage(
+    context.read<MessagingProvider>().sendMessage(
           conversationId: conv.id,
           body: text,
-        );
+        ).then((success) {
+          if (!success && mounted) {
+            FunctionalComponent.showSnackBar(
+              context: context,
+              title: 'Message failed to send',
+              success: false,
+            );
+          }
+        });
     _scrollToBottom();
   }
 
@@ -331,10 +340,25 @@ class _MessageBubble extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     AppText(timeStr, fontSize: 10, color: AppColor.grey),
-                    if (isMe && message.readAt != null) ...[
+                    if (isMe) ...[
                       const SizedBox(width: 4),
-                      const Icon(Icons.done_all_rounded,
-                          size: 12, color: AppColor.authButton),
+                      if (message.status == MessageStatus.sending)
+                        const Icon(Icons.done_rounded,
+                            size: 12, color: AppColor.grey),
+                      if (message.status == MessageStatus.sent)
+                        Icon(Icons.done_all_rounded,
+                            size: 12,
+                            color: message.readAt != null
+                                ? AppColor.authButton
+                                : AppColor.grey),
+                      if (message.status == MessageStatus.error)
+                        GestureDetector(
+                          onTap: () => context
+                              .read<MessagingProvider>()
+                              .retryMessage(message.id),
+                          child: const Icon(Icons.error_outline_rounded,
+                              size: 14, color: AppColor.red),
+                        ),
                     ],
                   ],
                 ),
@@ -468,14 +492,8 @@ class _InputBarState extends State<_InputBar> {
                     : AppColor.mediumGrey,
                 shape: BoxShape.circle,
               ),
-              child: widget.isSending
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: CircularProgressIndicator(
-                          color: AppColor.white, strokeWidth: 2),
-                    )
-                  : const Icon(Icons.send_rounded,
-                      color: AppColor.white, size: 20),
+              child: const Icon(Icons.send_rounded,
+                  color: AppColor.white, size: 20),
             ),
           ),
         ],

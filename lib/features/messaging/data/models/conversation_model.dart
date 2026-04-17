@@ -71,6 +71,8 @@ class ConversationModel {
   }
 }
 
+enum MessageStatus { sending, sent, error }
+
 class MessageModel {
   final int id;
   final String body;
@@ -78,6 +80,7 @@ class MessageModel {
   final String senderName;
   final DateTime? readAt;
   final DateTime createdAt;
+  final MessageStatus status;
 
   const MessageModel({
     required this.id,
@@ -86,12 +89,33 @@ class MessageModel {
     required this.senderName,
     this.readAt,
     required this.createdAt,
+    this.status = MessageStatus.sent,
   });
 
   String get normalizedSenderType => senderType.trim().toLowerCase();
-  bool get isFromCustomer => normalizedSenderType ==  'customer';
+  bool get isFromCustomer => normalizedSenderType == 'customer';
   bool get isFromProvider => normalizedSenderType == 'provider';
   bool get isFromMe => isFromCustomer;
+
+  MessageModel copyWith({
+    int? id,
+    String? body,
+    String? senderType,
+    String? senderName,
+    DateTime? readAt,
+    DateTime? createdAt,
+    MessageStatus? status,
+  }) {
+    return MessageModel(
+      id: id ?? this.id,
+      body: body ?? this.body,
+      senderType: senderType ?? this.senderType,
+      senderName: senderName ?? this.senderName,
+      readAt: readAt ?? this.readAt,
+      createdAt: createdAt ?? this.createdAt,
+      status: status ?? this.status,
+    );
+  }
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     return MessageModel(
@@ -103,6 +127,7 @@ class MessageModel {
           ? DateTime.tryParse(json['read_at'] as String)
           : null,
       createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      status: MessageStatus.sent,
     );
   }
 }
