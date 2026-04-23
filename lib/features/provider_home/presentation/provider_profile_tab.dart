@@ -10,6 +10,13 @@ import 'package:pampa/features/provider_home/data/models/provider_profile_model.
 import 'package:pampa/features/provider_home/presentation/provider/provider_profile_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider_edit_profile_screen.dart';
 
+double _kmToMiles(num km) => km * 0.621371;
+String _milesLabelFromKm(num km) {
+  final miles = _kmToMiles(km);
+  final rounded = miles.toStringAsFixed(miles % 1 == 0 ? 0 : 1);
+  return '$rounded mi';
+}
+
 class ProviderProfileTab extends StatefulWidget {
   const ProviderProfileTab({super.key});
 
@@ -256,7 +263,7 @@ class _ProfileBody extends StatelessWidget {
                   if (profile.maxServiceDistance > 0)
                     _InfoPill(
                       icon: Icons.near_me_outlined,
-                      text: '${profile.maxServiceDistance} km radius',
+                      text: '${_milesLabelFromKm(profile.maxServiceDistance)} radius',
                     ),
                   if (profile.zipCodes.isNotEmpty)
                     _InfoPill(
@@ -492,7 +499,9 @@ String _fallbackSummary(ProviderProfileModel profile, String locationText) {
     );
   }
   if (profile.maxServiceDistance > 0) {
-    parts.add('Travels up to ${profile.maxServiceDistance} km for appointments.');
+    parts.add(
+      'Travels up to ${_milesLabelFromKm(profile.maxServiceDistance)} for appointments.',
+    );
   }
   final hoursText = _profileHours(profile);
   if (hoursText.isNotEmpty) {
@@ -547,7 +556,7 @@ List<_ProfileStatItem> _buildStats(ProviderProfileModel profile) {
     _ProfileStatItem(
       label: 'Service Radius',
       value: profile.maxServiceDistance > 0
-          ? '${profile.maxServiceDistance} km'
+          ? _milesLabelFromKm(profile.maxServiceDistance)
           : 'Not set',
     ),
   ];

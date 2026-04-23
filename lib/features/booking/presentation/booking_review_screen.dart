@@ -35,6 +35,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
   final _pinterestController = TextEditingController();
   final _picker = ImagePicker();
   XFile? _pickedPhoto;
+  bool _isOpeningPayment = false;
 
   @override
   void dispose() {
@@ -53,6 +54,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
   }
 
   Future<void> _submit(BuildContext context) async {
+    if (_isOpeningPayment) return;
     final bookingProvider = context.read<BookingProvider>();
     final service = bookingProvider.service;
 
@@ -78,7 +80,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
     final ids = bookingProvider.selectedServiceIds.isNotEmpty
         ? bookingProvider.selectedServiceIds
         : (widget.serviceIds.isNotEmpty ? widget.serviceIds : [service.id]);
-    print(ids);
+    setState(() => _isOpeningPayment = true);
     final success = await bookingProvider.submitBookingDetails(
       serviceIds: ids,
       providerId: selectedProvider.id,
@@ -92,6 +94,9 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
     if (!context.mounted) return;
 
     if (!success) {
+      if (mounted) {
+        setState(() => _isOpeningPayment = false);
+      }
       FunctionalComponent.showSnackBar(
         context: context,
         title: bookingProvider.submitError,
@@ -117,6 +122,9 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
       if (!context.mounted) return;
 
       if (paid != true) {
+        if (mounted) {
+          setState(() => _isOpeningPayment = false);
+        }
         // User cancelled — stay on the review screen
         FunctionalComponent.showSnackBar(
           context: context,
@@ -129,15 +137,22 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
       }
     }
 
-    // Payment done (or no payment link) — go to appointments tab
-    await context.read<MyBookingsProvider>().fetchBookings();
-    if (!context.mounted) return;
+    _completeBookingFlow(context, bookingProvider);
+  }
+
+  void _completeBookingFlow(
+    BuildContext context,
+    BookingProvider bookingProvider,
+  ) {
+    final bookingsProvider = context.read<MyBookingsProvider>();
+    bookingProvider.clearPendingBooking();
     homeTabNotifier.value = 2;
-    homeSuccessMessageNotifier.value =
-        bookingProvider.successMessage.isEmpty
-            ? 'Booking created successfully!'
-            : bookingProvider.successMessage;
+    homeSuccessMessageNotifier.value = bookingProvider.successMessage.isEmpty
+        ? 'Booking created successfully!'
+        : bookingProvider.successMessage;
     Navigator.of(context).popUntil((route) => route.isFirst);
+    // Refresh asynchronously so we don't keep users waiting on this screen.
+    bookingsProvider.fetchBookings();
   }
 
   @override
@@ -171,8 +186,6 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
             (depositAmount > 0 ? depositAmount : fullPrice) + priorityFee + tip;
         final remainingBalance =
             depositAmount > 0 ? fullPrice - depositAmount : 0.0;
-        print(selectedServices.length);
-
         return Scaffold(
           backgroundColor: AppColor.authBg,
           appBar: AppBar(
@@ -209,11 +222,13 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: bookingProvider.isSubmitting
+                  onPressed: bookingProvider.isSubmitting || _isOpeningPayment
                       ? null
                       : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
                               bookingProvider.paymentLink != null)
                           ? () async {
+                              if (_isOpeningPayment) return;
+                              setState(() => _isOpeningPayment = true);
                               final paid = await Navigator.of(context).push<bool>(
                                 MaterialPageRoute(
                                   builder: (_) => CustomWebView(
@@ -222,17 +237,15 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                                   ),
                                 ),
                               );
-                              if (paid == true && context.mounted) {
-                                await context.read<MyBookingsProvider>().fetchBookings();
-                                if (!context.mounted) return;
-                                bookingProvider.clearPendingBooking();
-                                homeTabNotifier.value = 2;
-                                homeSuccessMessageNotifier.value = 'Booking created successfully!';
-                                Navigator.of(context).popUntil((route) => route.isFirst);
+                              if (!context.mounted) return;
+                              if (paid == true) {
+                                _completeBookingFlow(context, bookingProvider);
+                                return;
                               }
+                              setState(() => _isOpeningPayment = false);
                             }
                           : () => _submit(context),
-                  child: bookingProvider.isSubmitting
+                  child: bookingProvider.isSubmitting || _isOpeningPayment
                       ? const SizedBox(
                           width: 22,
                           height: 22,

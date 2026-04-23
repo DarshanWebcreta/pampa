@@ -233,4 +233,18 @@ class MessagingProvider extends ChangeNotifier {
     _msgStatus = MessagesFetchStatus.initial;
     notifyListeners();
   }
+
+  void clearSession() {
+    _convStatus = ConversationsFetchStatus.initial;
+    _conversations = [];
+    _convError = '';
+    _pendingConversationId = null;
+    _activeConversation = null;
+    _messages = [];
+    _msgStatus = MessagesFetchStatus.initial;
+    _msgError = '';
+    _isSending = false;
+    _isReceivingNewMessage = false;
+    notifyListeners();
+  }
 }

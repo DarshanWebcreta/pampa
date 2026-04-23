@@ -45,12 +45,19 @@ class _ConversationsTabState extends State<ConversationsTab> {
     return Consumer<MessagingProvider>(
       builder: (context, provider, _) {
         final allConvs = provider.conversations;
-        final convs = _query.isEmpty
+        final filteredConvs = _query.isEmpty
             ? allConvs
             : allConvs.where((c) =>
                 c.otherUser.name.toLowerCase().contains(_query.toLowerCase()) ||
                 (c.lastMessage?.body.toLowerCase().contains(_query.toLowerCase()) ?? false),
               ).toList();
+        final convs = [...filteredConvs]
+          ..sort((a, b) {
+            final aAdmin = _isAdminConversation(a);
+            final bAdmin = _isAdminConversation(b);
+            if (aAdmin != bAdmin) return aAdmin ? -1 : 1;
+            return b.lastMessageAt.compareTo(a.lastMessageAt);
+          });
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,6 +159,11 @@ class _ConversationsTabState extends State<ConversationsTab> {
   }
 }
 
+bool _isAdminConversation(ConversationModel conversation) {
+  final otherName = conversation.otherUser.name.trim().toLowerCase();
+  return otherName.contains('admin');
+}
+
 // ─── Conversation tile ────────────────────────────────────────────────────────
 
 class _ConversationTile extends StatelessWidget {
@@ -164,14 +176,22 @@ class _ConversationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final last = conversation.lastMessage;
     final hasUnread = conversation.unreadCount > 0;
+    final isAdminChat = _isAdminConversation(conversation);
 
     return InkWell(
 
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColor.white,
-          borderRadius: BorderRadius.circular(16)
+          color: isAdminChat
+              ? AppColor.authButton.withValues(alpha: 0.08)
+              : AppColor.white,
+          borderRadius: BorderRadius.circular(16),
+          border: isAdminChat
+              ? Border.all(
+                  color: AppColor.authButton.withValues(alpha: 0.35),
+                )
+              : null,
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 14,horizontal: 12),
@@ -191,7 +211,9 @@ class _ConversationTile extends StatelessWidget {
                       children: [
                         Expanded(
                           child: AppText(
-                            conversation.otherUser.name,
+                            isAdminChat
+                                ? '${conversation.otherUser.name} (Pinned)'
+                                : conversation.otherUser.name,
                             fontSize: FontSizes.regular,
                             fontWeight: hasUnread
                                 ? FontWeights.bold
@@ -201,6 +223,24 @@ class _ConversationTile extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
+                        if (isAdminChat) ...[
+                          Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColor.authButton.withValues(alpha: 0.16),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.push_pin_rounded,
+                              size: 11,
+                              color: AppColor.authButton,
+                            ),
+                          ),
+                        ],
                         AppText(
                           _timeLabel(conversation.lastMessageAt),
                           fontSize: 11,

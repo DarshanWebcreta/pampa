@@ -72,7 +72,7 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
               // ── Sticky gradient header ────────────────────────────────
               SliverAppBar(
                 pinned: true,
-                expandedHeight: 190,
+                expandedHeight: 200,
                 backgroundColor: AppColor.authButton,
                 surfaceTintColor: Colors.transparent,
                 leading: Padding(
@@ -251,7 +251,7 @@ class _HeaderBanner extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 56, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 32, 20, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.end,

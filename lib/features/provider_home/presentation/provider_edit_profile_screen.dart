@@ -23,7 +23,6 @@ class ProviderEditProfileScreen extends StatefulWidget {
 
 class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
   late final TextEditingController _bioCtrl;
-  late final TextEditingController _certificationCtrl;
   late final TextEditingController _streetCtrl;
   late final TextEditingController _zipCtrl;
   late final TextEditingController _cityCtrl;
@@ -40,8 +39,6 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
   void initState() {
     super.initState();
     _bioCtrl = TextEditingController(text: widget.profile.bio ?? '');
-    _certificationCtrl =
-        TextEditingController(text: widget.profile.certification ?? '');
     _streetCtrl =
         TextEditingController(text: widget.profile.streetAddress ?? '');
     _zipCtrl = TextEditingController(text: widget.profile.zipCode ?? '');
@@ -65,7 +62,6 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
   @override
   void dispose() {
     _bioCtrl.dispose();
-    _certificationCtrl.dispose();
     _streetCtrl.dispose();
     _zipCtrl.dispose();
     _cityCtrl.dispose();
@@ -82,7 +78,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
     final prov = context.read<ProviderProfileProvider>();
     final err = await prov.updateProfile(
       bio: _bioCtrl.text.trim(),
-      certification: _certificationCtrl.text.trim(),
+      certification: widget.profile.certification ?? '',
       licensed: _licensed,
       streetAddress: _streetCtrl.text.trim(),
       zipCode: _zipCtrl.text.trim(),
@@ -232,19 +228,6 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      _SectionLabel('Certification'),
-                      const SizedBox(height: 8),
-                      _InputField(
-                        controller: _certificationCtrl,
-                        hint: 'Licensed Cosmetologist',
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Certification is required';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
                       _SectionLabel('Licensed'),
                       const SizedBox(height: 10),
                       Row(
@@ -354,7 +337,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                                 keyboardType: const TextInputType.numberWithOptions(
                                   decimal: false,
                                 ),
-                                suffixText: 'km',
+                                suffixText: 'mi',
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
                                     return 'Distance is required';
@@ -371,7 +354,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: _InputGroup(
-                              label: 'Per KM Charge',
+                              label: 'Per Mile Charge',
                               child: _InputField(
                                 controller: _perKmCtrl,
                                 hint: '1.50',

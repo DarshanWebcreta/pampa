@@ -177,4 +177,23 @@ class MyBookingsProvider extends ChangeNotifier {
     _activePayTargetId = null;
     notifyListeners();
   }
+
+  void clearSession() {
+    _status = MyBookingsFetchStatus.initial;
+    _allBookings = [];
+    _error = '';
+    _activeTab = AppointmentTab.upcoming;
+
+    _detailStatus = BookingDetailStatus.initial;
+    _detailBooking = null;
+    _detailError = '';
+
+    _cancelStatus = BookingActionStatus.idle;
+    _cancelError = '';
+
+    _payStatus = BookingActionStatus.idle;
+    _payError = '';
+    _activePayTargetId = null;
+    notifyListeners();
+  }
 }

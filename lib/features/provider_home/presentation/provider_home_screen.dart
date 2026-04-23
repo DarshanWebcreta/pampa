@@ -272,7 +272,11 @@ class _DashboardTabState extends State<_DashboardTab> {
   Widget build(BuildContext context) {
     return Consumer<ProviderDashboardProvider>(
       builder: (context, dashProv, _) {
-        return CustomScrollView(
+        return RefreshIndicator(
+          onRefresh: dashProv.fetchDashboard,
+          color: AppColor.authButton,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             // ── App Bar ───────────────────────────────────────────────────
             SliverAppBar(
@@ -420,6 +424,7 @@ class _DashboardTabState extends State<_DashboardTab> {
               ),
             ],
           ],
+          ),
         );
       },
     );

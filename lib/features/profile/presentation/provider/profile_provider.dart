@@ -49,8 +49,6 @@ class ProfileProvider extends ChangeNotifier {
 
   Future<void> fetchProfile({bool forceRefresh = false}) async {
     if (_status == ProfileStatus.loading) return;
-    // Skip re-fetch unless forced or not yet loaded
-    if (!forceRefresh && _status == ProfileStatus.success) return;
 
     _status = ProfileStatus.loading;
     _errorMessage = '';
@@ -149,4 +147,14 @@ class ProfileProvider extends ChangeNotifier {
   }
 
   void refresh() => fetchProfile(forceRefresh: true);
+
+  void clearSession() {
+    _status = ProfileStatus.initial;
+    _profile = null;
+    _errorMessage = '';
+    _pages = [];
+    _updateStatus = ProfileUpdateStatus.idle;
+    _updateError = '';
+    notifyListeners();
+  }
 }

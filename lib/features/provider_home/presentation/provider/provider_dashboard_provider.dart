@@ -107,4 +107,12 @@ class ProviderDashboardProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void clearSession() {
+    _dashboard = null;
+    _loading = false;
+    _toggleLoading = false;
+    _error = '';
+    notifyListeners();
+  }
 }

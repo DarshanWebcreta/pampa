@@ -36,4 +36,11 @@ class ProviderEarningsProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void clearSession() {
+    _earnings = null;
+    _loading = false;
+    _error = '';
+    notifyListeners();
+  }
 }

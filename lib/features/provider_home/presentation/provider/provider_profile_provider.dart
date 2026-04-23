@@ -135,4 +135,13 @@ class ProviderProfileProvider extends ChangeNotifier {
       return 'Delete failed. Please try again.';
     }
   }
+
+  void clearSession() {
+    _profile = null;
+    _loading = false;
+    _saving = false;
+    _galleryLoading = false;
+    _error = '';
+    notifyListeners();
+  }
 }

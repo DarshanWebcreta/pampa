@@ -182,24 +182,9 @@ class _ProviderBankDetailScreenState extends State<ProviderBankDetailScreen> {
                 _InfoRow(label: 'Routing Number', value: detail.routingNumber),
               ],
               const Divider(height: 24),
-              Row(
-                children: [
-                  AppText('Status', fontSize: 13, color: AppColor.grey),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: detail.isVerified ? const Color(0xFFE8F7ED) : const Color(0xFFFFF4E5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: AppText(
-                      detail.isVerified ? 'VERIFIED' : 'PENDING',
-                      fontSize: 11,
-                      fontWeight: FontWeights.bold,
-                      color: detail.isVerified ? const Color(0xFF1F8F4C) : const Color(0xFFB26A00),
-                    ),
-                  ),
-                ],
+              _InfoRow(
+                label: 'Verification',
+                value: detail.isVerified ? 'Verified' : 'Pending',
               ),
             ],
           ),

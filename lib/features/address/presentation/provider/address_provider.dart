@@ -187,4 +187,16 @@ class AddressProvider extends ChangeNotifier {
     _deleteError = '';
     notifyListeners();
   }
+
+  void clearSession() {
+    _fetchStatus = AddressFetchStatus.initial;
+    _saveStatus = AddressSaveStatus.idle;
+    _deleteStatus = AddressDeleteStatus.idle;
+    _addresses = [];
+    _selectedAddressId = null;
+    _fetchError = '';
+    _saveError = '';
+    _deleteError = '';
+    notifyListeners();
+  }
 }

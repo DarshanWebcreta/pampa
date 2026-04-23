@@ -166,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 ),
                 const SizedBox(height: 20),
                 AppText(
-                  'Payment Done',
+                  'Booking Created',
                   fontSize: FontSizes.large,
                   fontWeight: FontWeights.bold,
                   color: AppColor.darkGrey,
@@ -174,7 +174,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 ),
                 const SizedBox(height: 8),
                 AppText(
-                  message,
+                  message.isNotEmpty
+                      ? message
+                      : 'Your booking has been created successfully. You can track it in Appointments.',
                   fontSize: FontSizes.small,
                   color: AppColor.grey,
                   align: TextAlign.center,
@@ -194,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: const Text('View Bookings'),
+                    child: const Text('Close'),
                   ),
                 ),
               ],

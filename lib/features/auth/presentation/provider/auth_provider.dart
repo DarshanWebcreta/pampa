@@ -5,8 +5,18 @@ import 'package:pampa/core/error/exception.dart';
 import 'package:pampa/core/storage/storage.dart';
 import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/core/values/urls.dart';
+import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/auth/data/models/auth_response_model.dart';
 import 'package:pampa/features/auth/domain/repositories/auth_repository.dart';
+import 'package:pampa/features/address/presentation/provider/address_provider.dart';
+import 'package:pampa/features/messaging/presentation/provider/messaging_provider.dart';
+import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
+import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_bookings_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_dashboard_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_earnings_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_messaging_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_profile_provider.dart';
 
 enum AuthStatus { initial, loading, success, pendingApproval, error }
 
@@ -161,10 +171,41 @@ class AuthProvider extends ChangeNotifier {
     StorageManager.deleteData(StoreKeys.token);
     StorageManager.deleteData(StoreKeys.zipCode);
     StorageManager.deleteData(StoreKeys.syncedFcmToken);
+    _clearSessionCaches();
     _user = null;
     _status = AuthStatus.initial;
     _errorMessage = '';
     notifyListeners();
+  }
+
+  void _clearSessionCaches() {
+    if (getIt.isRegistered<ProfileProvider>()) {
+      getIt<ProfileProvider>().clearSession();
+    }
+    if (getIt.isRegistered<AddressProvider>()) {
+      getIt<AddressProvider>().clearSession();
+    }
+    if (getIt.isRegistered<MyBookingsProvider>()) {
+      getIt<MyBookingsProvider>().clearSession();
+    }
+    if (getIt.isRegistered<MessagingProvider>()) {
+      getIt<MessagingProvider>().clearSession();
+    }
+    if (getIt.isRegistered<ProviderMessagingProvider>()) {
+      getIt<ProviderMessagingProvider>().clearSession();
+    }
+    if (getIt.isRegistered<ProviderDashboardProvider>()) {
+      getIt<ProviderDashboardProvider>().clearSession();
+    }
+    if (getIt.isRegistered<ProviderBookingsProvider>()) {
+      getIt<ProviderBookingsProvider>().clearSession();
+    }
+    if (getIt.isRegistered<ProviderEarningsProvider>()) {
+      getIt<ProviderEarningsProvider>().clearSession();
+    }
+    if (getIt.isRegistered<ProviderProfileProvider>()) {
+      getIt<ProviderProfileProvider>().clearSession();
+    }
   }
 
   void resetState() {

@@ -75,4 +75,13 @@ class ProviderBookingsProvider extends ChangeNotifier {
   }
 
   void clearDate() => setDate(null);
+
+  void clearSession() {
+    _bookings = [];
+    _loading = false;
+    _error = '';
+    _selectedStatus = 'all';
+    _selectedDate = null;
+    notifyListeners();
+  }
 }
