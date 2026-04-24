@@ -31,6 +31,8 @@ class ProviderDetailScreen extends StatefulWidget {
 
 class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   late Set<int> _selectedIds;
+  static const String _allCategoryKey = '__all__';
+  String _activeCategory = _allCategoryKey;
 
   @override
   void initState() {
@@ -56,6 +58,41 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
 
   String _fmtPrice(double p) =>
       p == p.truncateToDouble() ? '\$${p.toInt()}' : '\$${p.toStringAsFixed(2)}';
+
+  String _categoryKeyFor(ProviderServiceSummaryModel service) {
+    if (service.categoryId != null) return 'id:${service.categoryId}';
+    final name = (service.categoryName ?? '').trim();
+    if (name.isNotEmpty) return 'name:${name.toLowerCase()}';
+    return 'uncategorized';
+  }
+
+  String _categoryLabelFor(ProviderServiceSummaryModel service) {
+    final name = (service.categoryName ?? '').trim();
+    return name.isNotEmpty ? name : 'Other Services';
+  }
+
+  List<_CategoryTabItem> get _categoryTabs {
+    final byKey = <String, _CategoryTabItem>{};
+    for (final service in widget.provider.services) {
+      final key = _categoryKeyFor(service);
+      byKey.putIfAbsent(
+        key,
+        () => _CategoryTabItem(key: key, label: _categoryLabelFor(service)),
+      );
+    }
+    final categories = byKey.values.toList()
+      ..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+    if (categories.isEmpty) return [];
+    if (categories.length == 1) return categories;
+    return [const _CategoryTabItem(key: _allCategoryKey, label: 'All'), ...categories];
+  }
+
+  List<ProviderServiceSummaryModel> get _visibleServices {
+    if (_activeCategory == _allCategoryKey) return widget.provider.services;
+    return widget.provider.services
+        .where((service) => _categoryKeyFor(service) == _activeCategory)
+        .toList();
+  }
 
   void _onContinue(BuildContext context) {
     final selectedIds = _selectedIds.toList();
@@ -92,6 +129,13 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   Widget build(BuildContext context) {
     final count = _selectedIds.length;
     final total = _totalPrice;
+    final categoryTabs = _categoryTabs;
+    final visibleServices = _visibleServices;
+
+    if (categoryTabs.isNotEmpty &&
+        !categoryTabs.any((tab) => tab.key == _activeCategory)) {
+      _activeCategory = categoryTabs.first.key;
+    }
 
     return Scaffold(
       backgroundColor: AppColor.white,
@@ -131,14 +175,70 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                         fontSize: FontSizes.regular,
                         color: AppColor.grey,
                       ),
+                      if (categoryTabs.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 34,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: categoryTabs.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 8),
+                            itemBuilder: (context, index) {
+                              final tab = categoryTabs[index];
+                              final isSelected = _activeCategory == tab.key;
+                              return ChoiceChip(
+                                label: Text(tab.label),
+                                selected: isSelected,
+                                onSelected: (_) => setState(() {
+                                  _activeCategory = tab.key;
+                                }),
+                                showCheckmark: false,
+                                selectedColor:
+                                    AppColor.authButton.withValues(alpha: 0.14),
+                                backgroundColor: AppColor.authBg,
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? AppColor.authButton.withValues(alpha: 0.35)
+                                      : AppColor.lightGrey,
+                                ),
+                                labelStyle: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? AppColor.authButton
+                                      : AppColor.darkGrey,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 14),
-                      ...widget.provider.services.map(
+                      ...visibleServices.map(
                         (s) => _ServiceItem(
                           service: s,
                           isSelected: _selectedIds.contains(s.id),
                           onTap: () => _toggleService(s.id),
                         ),
                       ),
+                      if (visibleServices.isEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          decoration: BoxDecoration(
+                            color: AppColor.authBg,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: AppText(
+                            'No services in this category',
+                            align: TextAlign.center,
+                            fontSize: FontSizes.small,
+                            color: AppColor.grey,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -279,6 +379,13 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
             ),
     );
   }
+}
+
+class _CategoryTabItem {
+  final String key;
+  final String label;
+
+  const _CategoryTabItem({required this.key, required this.label});
 }
 
 // ─── Gallery ──────────────────────────────────────────────────────────────────

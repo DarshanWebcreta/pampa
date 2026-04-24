@@ -16,6 +16,7 @@ class ServiceModel {
   final String createdAt;
   final String updatedAt;
   final CategoryModel? category;
+  final ProviderServiceModel? providerService;
 
   const ServiceModel({
     required this.id,
@@ -32,6 +33,7 @@ class ServiceModel {
     required this.createdAt,
     required this.updatedAt,
     this.category,
+    this.providerService,
   });
 
   factory ServiceModel.fromJson(Map<String, dynamic> json) {
@@ -41,7 +43,9 @@ class ServiceModel {
       serviceName: json['service_name'] ?? '',
       price: (json['price'] ?? '0.00').toString(),
       image: _resolveImageUrl(
-        json['image_url']?.toString() ?? json['image']?.toString() ?? '',
+        json['image_url']?.toString() ??
+            json['image']?.toString() ??
+            '',
       ),
       duration: json['duration'] ?? 0,
       deposit: _toDouble(json['deposit']),
@@ -52,7 +56,14 @@ class ServiceModel {
       createdAt: json['created_at'] ?? '',
       updatedAt: json['updated_at'] ?? '',
       category: json['category'] != null
-          ? CategoryModel.fromJson(json['category'] as Map<String, dynamic>)
+          ? CategoryModel.fromJson(
+        json['category'] as Map<String, dynamic>,
+      )
+          : null,
+      providerService: json['provider_service'] != null
+          ? ProviderServiceModel.fromJson(
+        json['provider_service'] as Map<String, dynamic>,
+      )
           : null,
     );
   }
@@ -61,17 +72,22 @@ class ServiceModel {
 
   double get priceAsDouble => double.tryParse(price) ?? 0.0;
 
-  /// Returns price as "\$10.00" formatted string.
+  /// 🔥 Use provider_service override if available
+  double get effectivePrice =>
+      providerService?.priceAsDouble ?? priceAsDouble;
+
+  int get effectiveDuration =>
+      providerService?.duration ?? duration;
+
   String get formattedPrice {
-    final val = priceAsDouble;
+    final val = effectivePrice;
     if (val == val.truncateToDouble()) {
       return '\$${val.toInt()}';
     }
     return '\$${val.toStringAsFixed(2)}';
   }
 
-  /// Returns duration as "60 min" string.
-  String get formattedDuration => '$duration min';
+  String get formattedDuration => '$effectiveDuration min';
 
   ServiceModel copyWith({
     int? id,
@@ -88,6 +104,7 @@ class ServiceModel {
     String? createdAt,
     String? updatedAt,
     CategoryModel? category,
+    ProviderServiceModel? providerService,
   }) {
     return ServiceModel(
       id: id ?? this.id,
@@ -99,11 +116,14 @@ class ServiceModel {
       deposit: deposit ?? this.deposit,
       priorityFee: priorityFee ?? this.priorityFee,
       description: description ?? this.description,
-      serviceCommission: serviceCommission ?? this.serviceCommission,
+      serviceCommission:
+      serviceCommission ?? this.serviceCommission,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       category: category ?? this.category,
+      providerService:
+      providerService ?? this.providerService,
     );
   }
 
@@ -116,7 +136,8 @@ class ServiceModel {
   static String _resolveImageUrl(String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return '';
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    if (trimmed.startsWith('http://') ||
+        trimmed.startsWith('https://')) {
       return trimmed;
     }
     if (trimmed.startsWith('/')) {
@@ -124,4 +145,41 @@ class ServiceModel {
     }
     return '${ApiStrings.imageUrl}/$trimmed';
   }
+}
+
+class ProviderServiceModel {
+  final String price;
+  final int duration;
+  final String? description;
+  final String status;
+
+  const ProviderServiceModel({
+    required this.price,
+    required this.duration,
+    this.description,
+    required this.status,
+  });
+
+  factory ProviderServiceModel.fromJson(
+      Map<String, dynamic> json) {
+    return ProviderServiceModel(
+      price: (json['price'] ?? '0.00').toString(),
+      duration: json['duration'] ?? 0,
+      description: json['description'],
+      status: json['status'] ?? 'Active',
+    );
+  }
+
+  double get priceAsDouble =>
+      double.tryParse(price) ?? 0.0;
+
+  String get formattedPrice {
+    final val = priceAsDouble;
+    if (val == val.truncateToDouble()) {
+      return '\$${val.toInt()}';
+    }
+    return '\$${val.toStringAsFixed(2)}';
+  }
+
+  String get formattedDuration => '$duration min';
 }

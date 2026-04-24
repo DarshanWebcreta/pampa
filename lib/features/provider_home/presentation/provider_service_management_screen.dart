@@ -31,19 +31,11 @@ class _ProviderServiceManagementScreenState
 
   Future<void> _openServiceForm([ServiceModel? service]) async {
     final provider = context.read<ProviderServiceManagementProvider>();
-    if (provider.categories.isEmpty &&
-        provider.status != ProviderServiceStatus.loading) {
-      FunctionalComponent.showSnackBar(
-        context: context,
-        title: 'Create a category first before adding services.',
-        success: false,
-      );
-      return;
-    }
 
     final didSave = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+
       backgroundColor: Colors.transparent,
       builder: (_) => ChangeNotifierProvider.value(
         value: provider,
@@ -54,55 +46,10 @@ class _ProviderServiceManagementScreenState
     if (didSave == true && mounted) {
       FunctionalComponent.showSnackBar(
         context: context,
-        title: service == null
-            ? 'Service created successfully.'
-            : 'Service updated successfully.',
+        title: 'Service updated successfully.',
         success: true,
       );
     }
-  }
-
-  Future<void> _confirmDelete(ServiceModel service) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Delete Service'),
-        content: Text('Delete "${service.serviceName}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
-
-    final provider = context.read<ProviderServiceManagementProvider>();
-    final error = await provider.deleteService(service.id);
-    if (!mounted) return;
-
-    if (error != null && error.isNotEmpty) {
-      FunctionalComponent.showSnackBar(
-        context: context,
-        title: error,
-        success: false,
-      );
-      return;
-    }
-
-    FunctionalComponent.showSnackBar(
-      context: context,
-      title: 'Service deleted successfully.',
-      success: true,
-    );
   }
 
   @override
@@ -120,18 +67,6 @@ class _ProviderServiceManagementScreenState
               fontSize: 18,
               fontWeight: FontWeights.bold,
               color: AppColor.darkGrey,
-            ),
-          ),
-          floatingActionButton: FloatingActionButton.extended(
-            backgroundColor: AppColor.authButton,
-            onPressed: provider.saving ? null : () => _openServiceForm(),
-            icon: const Icon(Icons.add_rounded, color: Colors.white),
-            label: const Text(
-              'Add Service',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
             ),
           ),
           body: RefreshIndicator(
@@ -161,10 +96,10 @@ class _ProviderServiceManagementScreenState
         );
       case ProviderServiceStatus.empty:
         return _ServiceStateMessage(
-          icon: Icons.content_cut_rounded,
-          title: 'No services found for this provider.',
-          actionLabel: 'Add Service',
-          onTap: () => _openServiceForm(),
+          icon: Icons.design_services_rounded,
+          title: 'No services found.',
+          actionLabel: 'Refresh',
+          onTap: provider.initialize,
         );
       case ProviderServiceStatus.initial:
         return const SizedBox.shrink();
@@ -177,8 +112,30 @@ class _ProviderServiceManagementScreenState
             final service = provider.services[index];
             return _ServiceCard(
               service: service,
+              assigned: provider.isAssigned(service.id),
+              assigning: provider.assigning,
               onEdit: () => _openServiceForm(service),
-              onDelete: () => _confirmDelete(service),
+              onAssignToggle: () async {
+                final error = provider.isAssigned(service.id)
+                    ? await provider.unassignService(service.id)
+                    : await provider.assignService(service.id);
+                if (!context.mounted) return;
+                if (error != null && error.isNotEmpty) {
+                  FunctionalComponent.showSnackBar(
+                    context: context,
+                    title: error,
+                    success: false,
+                  );
+                  return;
+                }
+                FunctionalComponent.showSnackBar(
+                  context: context,
+                  title: provider.isAssigned(service.id)
+                      ? 'Service assigned successfully.'
+                      : 'Service unassigned successfully.',
+                  success: true,
+                );
+              },
             );
           },
         );
@@ -189,13 +146,17 @@ class _ProviderServiceManagementScreenState
 class _ServiceCard extends StatelessWidget {
   const _ServiceCard({
     required this.service,
+    required this.assigned,
+    required this.assigning,
     required this.onEdit,
-    required this.onDelete,
+    required this.onAssignToggle,
   });
 
   final ServiceModel service;
+  final bool assigned;
+  final bool assigning;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback onAssignToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -259,6 +220,15 @@ class _ServiceCard extends StatelessWidget {
                         _InfoPill(label: service.formattedPrice),
                         _InfoPill(label: service.formattedDuration),
                         _InfoPill(
+                          label: assigned ? 'Assigned' : 'Unassigned',
+                          foreground: assigned
+                              ? const Color(0xFF1F8F4C)
+                              : AppColor.darkGrey,
+                          background: assigned
+                              ? const Color(0xFFE8F7ED)
+                              : const Color(0xFFF6EFF2),
+                        ),
+                        _InfoPill(
                           label: service.status,
                           foreground: isActive
                               ? const Color(0xFF1F8F4C)
@@ -291,22 +261,27 @@ class _ServiceCard extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('Edit'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onDelete,
+                  onPressed: assigning ? null : onAssignToggle,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red.shade700,
+                    foregroundColor: assigned
+                        ? Colors.red.shade700
+                        : AppColor.authButton,
                   ),
-                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                  label: const Text('Delete'),
+                  icon: Icon(
+                    assigned ? Icons.link_off_rounded : Icons.link_rounded,
+                    size: 18,
+                  ),
+                  label: Text(assigned ? 'Unassign' : 'Assign'),
                 ),
               ),
+              // const SizedBox(width: 10),
+              // Expanded(
+              //   child: OutlinedButton.icon(
+              //     onPressed: onEdit,
+              //     icon: const Icon(Icons.edit_outlined, size: 18),
+              //     label: const Text('Edit'),
+              //   ),
+              // ),
             ],
           ),
         ],
@@ -362,12 +337,8 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _priceCtrl;
   late final TextEditingController _durationCtrl;
-  late final TextEditingController _depositCtrl;
-  late final TextEditingController _priorityFeeCtrl;
   late final TextEditingController _descriptionCtrl;
 
-  int? _categoryId;
-  late String _status;
   File? _image;
 
   bool get _isEdit => widget.service != null;
@@ -377,25 +348,13 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
     super.initState();
     final service = widget.service;
     _nameCtrl = TextEditingController(text: service?.serviceName ?? '');
-    _priceCtrl = TextEditingController(text: service?.price ?? '');
+    _priceCtrl = TextEditingController(text: service?.effectivePrice.toString() ?? '');
     _durationCtrl = TextEditingController(
-      text: service != null && service.duration > 0
-          ? '${service.duration}'
-          : '',
-    );
-    _depositCtrl = TextEditingController(
-      text: service != null && service.deposit > 0
-          ? '${service.deposit.toInt()}'
-          : '',
-    );
-    _priorityFeeCtrl = TextEditingController(
-      text: service != null && service.priorityFee > 0
-          ? '${service.priorityFee.toInt()}'
+      text: service != null && service.effectiveDuration > 0
+          ? '${service.effectiveDuration}'
           : '',
     );
     _descriptionCtrl = TextEditingController(text: service?.description ?? '');
-    _categoryId = service?.categoryId;
-    _status = service?.status ?? 'Active';
   }
 
   @override
@@ -403,8 +362,6 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
     _nameCtrl.dispose();
     _priceCtrl.dispose();
     _durationCtrl.dispose();
-    _depositCtrl.dispose();
-    _priorityFeeCtrl.dispose();
     _descriptionCtrl.dispose();
     super.dispose();
   }
@@ -420,40 +377,16 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_categoryId == null) {
-      FunctionalComponent.showSnackBar(
-        context: context,
-        title: 'Please select a category.',
-        success: false,
-      );
-      return;
-    }
 
     final provider = context.read<ProviderServiceManagementProvider>();
-    final error = _isEdit
-        ? await provider.updateService(
-            id: widget.service!.id,
-            categoryId: _categoryId!,
-            serviceName: _nameCtrl.text.trim(),
-            price: _priceCtrl.text.trim(),
-            duration: _durationCtrl.text.trim(),
-            status: _status,
-            deposit: _depositCtrl.text.trim(),
-            priorityFee: _priorityFeeCtrl.text.trim(),
-            description: _descriptionCtrl.text.trim(),
-            image: _image,
-          )
-        : await provider.createService(
-            categoryId: _categoryId!,
-            serviceName: _nameCtrl.text.trim(),
-            price: _priceCtrl.text.trim(),
-            duration: _durationCtrl.text.trim(),
-            status: _status,
-            deposit: _depositCtrl.text.trim(),
-            priorityFee: _priorityFeeCtrl.text.trim(),
-            description: _descriptionCtrl.text.trim(),
-            image: _image,
-          );
+    if (!_isEdit) return;
+    final error = await provider.updateService(
+      id: widget.service!.id,
+      price: _priceCtrl.text.trim(),
+      duration: _durationCtrl.text.trim(),
+      description: _descriptionCtrl.text.trim(),
+      image: _image,
+    );
 
     if (!mounted) return;
 
@@ -472,11 +405,6 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ProviderServiceManagementProvider>();
-    final categories = provider.categories;
-    final currentCategoryId = _categoryId;
-    final hasSelectedCategory =
-        currentCategoryId != null &&
-        categories.any((item) => item.id == currentCategoryId);
 
     return SafeArea(
       top: false,
@@ -499,55 +427,25 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AppText(
-                    _isEdit ? 'Edit Service' : 'Add Service',
+                    'Edit Service',
                     fontSize: 18,
                     fontWeight: FontWeights.bold,
                     color: AppColor.darkGrey,
                   ),
                   const SizedBox(height: 6),
                   AppText(
-                    'Manage your provider service details, pricing and image.',
+                    'Update price, duration, description and image.',
                     fontSize: 13,
                     color: AppColor.grey,
                   ),
                   const SizedBox(height: 18),
-                  const _ServiceFieldLabel('Category'),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<int>(
-                    initialValue: hasSelectedCategory
-                        ? currentCategoryId
-                        : null,
-                    decoration: _serviceInputDecoration('Select category'),
-                    items: categories
-                        .map(
-                          (category) => DropdownMenuItem<int>(
-                            value: category.id,
-                            child: Text(category.categoryName),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: provider.saving
-                        ? null
-                        : (value) => setState(() => _categoryId = value),
-                    validator: (value) =>
-                        value == null ? 'Category is required.' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  const _ServiceFieldLabel('Service Name'),
+                  const _ServiceFieldLabel('Service Name (read only)'),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _nameCtrl,
+                    enabled: false,
                     textCapitalization: TextCapitalization.words,
                     decoration: _serviceInputDecoration('Express Haircut'),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Service name is required.';
-                      }
-                      if (value.trim().length > 150) {
-                        return 'Service name must be under 150 characters.';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -591,46 +489,6 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _NumberField(
-                          controller: _depositCtrl,
-                          label: 'Deposit %',
-                          hint: '20',
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return null;
-                            }
-                            final parsed = int.tryParse(value.trim());
-                            if (parsed == null || parsed < 0 || parsed > 100) {
-                              return '0-100';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _NumberField(
-                          controller: _priorityFeeCtrl,
-                          label: 'Priority Fee %',
-                          hint: '10',
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return null;
-                            }
-                            final parsed = int.tryParse(value.trim());
-                            if (parsed == null || parsed < 0 || parsed > 100) {
-                              return '0-100';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
                   const _ServiceFieldLabel('Description'),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -639,28 +497,6 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
                     decoration: _serviceInputDecoration(
                       'Optional service description',
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  const _ServiceFieldLabel('Status'),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ServiceStatusChip(
-                          label: 'Active',
-                          selected: _status == 'Active',
-                          onTap: () => setState(() => _status = 'Active'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _ServiceStatusChip(
-                          label: 'Inactive',
-                          selected: _status == 'Inactive',
-                          onTap: () => setState(() => _status = 'Inactive'),
-                        ),
-                      ),
-                    ],
                   ),
                   const SizedBox(height: 16),
                   const _ServiceFieldLabel('Image'),
@@ -741,7 +577,7 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
                               ),
                             )
                           : Text(
-                              _isEdit ? 'Update Service' : 'Create Service',
+                              'Update Service',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,

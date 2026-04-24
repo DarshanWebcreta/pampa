@@ -16,15 +16,19 @@ class ProviderServiceManagementProvider extends ChangeNotifier {
   ProviderServiceStatus _status = ProviderServiceStatus.initial;
   List<ServiceModel> _services = [];
   List<CategoryModel> _categories = [];
+  Set<int> _assignedServiceIds = <int>{};
   bool _saving = false;
   bool _deleting = false;
+  bool _assigning = false;
   String _error = '';
 
   ProviderServiceStatus get status => _status;
   List<ServiceModel> get services => _services;
   List<CategoryModel> get categories => _categories;
+  Set<int> get assignedServiceIds => _assignedServiceIds;
   bool get saving => _saving;
   bool get deleting => _deleting;
+  bool get assigning => _assigning;
   String get error => _error;
 
   Future<void> initialize({bool forceRefresh = false}) async {
@@ -59,6 +63,16 @@ class ProviderServiceManagementProvider extends ChangeNotifier {
               .toList()
             ..sort((a, b) => a.serviceName.compareTo(b.serviceName));
 
+      final profileResponse = await _api.getProviderProfile();
+      final profileMap = profileResponse as Map<String, dynamic>;
+      final profileData = profileMap['data'] as Map<String, dynamic>? ?? {};
+      final assignedServices =
+          (profileData['services'] as List<dynamic>? ?? [])
+              .map((item) => (item as Map<String, dynamic>)['id'] as int? ?? 0)
+              .where((id) => id > 0)
+              .toSet();
+      _assignedServiceIds = assignedServices;
+
       _status = _services.isEmpty
           ? ProviderServiceStatus.empty
           : ProviderServiceStatus.success;
@@ -81,52 +95,13 @@ class ProviderServiceManagementProvider extends ChangeNotifier {
     String? description,
     File? image,
   }) async {
-    _saving = true;
-    notifyListeners();
-
-    try {
-      final response = await _api.createService(
-        await _buildServiceFormData(
-          categoryId: categoryId,
-          serviceName: serviceName,
-          price: price,
-          duration: duration,
-          status: status,
-          deposit: deposit,
-          priorityFee: priorityFee,
-          description: description,
-          image: image,
-        ),
-      );
-      final map = response as Map<String, dynamic>;
-      if (map['status'] != true) {
-        return map['message'] as String? ?? 'Failed to create service.';
-      }
-
-      final data = map['data'] as Map<String, dynamic>? ?? {};
-      final created = ServiceModel.fromJson(data);
-      _services = [..._services, created]
-        ..sort((a, b) => a.serviceName.compareTo(b.serviceName));
-      _status = ProviderServiceStatus.success;
-      notifyListeners();
-      return null;
-    } catch (e) {
-      return e.toString().replaceFirst('Exception: ', '');
-    } finally {
-      _saving = false;
-      notifyListeners();
-    }
+    return 'Creating services is disabled. Services are managed by admin.';
   }
 
   Future<String?> updateService({
     required int id,
-    required int categoryId,
-    required String serviceName,
     required String price,
     required String duration,
-    required String status,
-    String? deposit,
-    String? priorityFee,
     String? description,
     File? image,
   }) async {
@@ -136,14 +111,9 @@ class ProviderServiceManagementProvider extends ChangeNotifier {
     try {
       final response = await _api.updateService(
         id,
-        await _buildServiceFormData(
-          categoryId: categoryId,
-          serviceName: serviceName,
+        await _buildUpdateServiceFormData(
           price: price,
           duration: duration,
-          status: status,
-          deposit: deposit,
-          priorityFee: priorityFee,
           description: description,
           image: image,
         ),
@@ -197,26 +167,14 @@ class ProviderServiceManagementProvider extends ChangeNotifier {
   }
 
   Future<FormData> _buildServiceFormData({
-    required int categoryId,
-    required String serviceName,
     required String price,
     required String duration,
-    required String status,
-    String? deposit,
-    String? priorityFee,
     String? description,
     File? image,
   }) async {
     final data = <String, dynamic>{
-      'category_id': categoryId,
-      'service_name': serviceName,
       'price': price,
       'duration': duration,
-      'status': status,
-      if (deposit != null && deposit.trim().isNotEmpty)
-        'deposit': deposit.trim(),
-      if (priorityFee != null && priorityFee.trim().isNotEmpty)
-        'priority_fee': priorityFee.trim(),
       if (description != null && description.trim().isNotEmpty)
         'description': description.trim(),
     };
@@ -229,5 +187,68 @@ class ProviderServiceManagementProvider extends ChangeNotifier {
     }
 
     return FormData.fromMap(data);
+  }
+
+  Future<FormData> _buildUpdateServiceFormData({
+    required String price,
+    required String duration,
+    String? description,
+    File? image,
+  }) async {
+    return _buildServiceFormData(
+      price: price,
+      duration: duration,
+      description: description,
+      image: image,
+    );
+  }
+
+  bool isAssigned(int serviceId) => _assignedServiceIds.contains(serviceId);
+
+  Future<String?> assignService(int serviceId) async {
+    if (_assigning) return null;
+    _assigning = true;
+    notifyListeners();
+    try {
+      final service = _services.firstWhere((s) => s.id == serviceId);
+      final response = await _api.assignProviderService(serviceId, {
+        'price': service.priceAsDouble,
+        'duration': service.duration,
+        'description': service.description ?? '',
+      });
+      final map = response as Map<String, dynamic>;
+      if (map['success'] == true || map['status'] == true) {
+        _assignedServiceIds = {..._assignedServiceIds, serviceId};
+        notifyListeners();
+        return null;
+      }
+      return map['message'] as String? ?? 'Failed to assign service.';
+    } catch (e) {
+      return e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _assigning = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> unassignService(int serviceId) async {
+    if (_assigning) return null;
+    _assigning = true;
+    notifyListeners();
+    try {
+      final response = await _api.unassignProviderService(serviceId);
+      final map = response as Map<String, dynamic>;
+      if (map['success'] == true || map['status'] == true) {
+        _assignedServiceIds = {..._assignedServiceIds}..remove(serviceId);
+        notifyListeners();
+        return null;
+      }
+      return map['message'] as String? ?? 'Failed to unassign service.';
+    } catch (e) {
+      return e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _assigning = false;
+      notifyListeners();
+    }
   }
 }

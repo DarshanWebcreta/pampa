@@ -56,18 +56,18 @@ class ProviderSettingsScreen extends StatelessWidget {
           const SizedBox(height: 8),
           _SettingsGroup(
             items: [
-              _SettingsItemData(
-                icon: Icons.category_outlined,
-                label: 'Category',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ChangeNotifierProvider.value(
-                      value: getIt<ProviderCategoryManagementProvider>(),
-                      child: const ProviderCategoryManagementScreen(),
-                    ),
-                  ),
-                ),
-              ),
+              // _SettingsItemData(
+              //   icon: Icons.category_outlined,
+              //   label: 'Category',
+              //   onTap: () => Navigator.of(context).push(
+              //     MaterialPageRoute(
+              //       builder: (_) => ChangeNotifierProvider.value(
+              //         value: getIt<ProviderCategoryManagementProvider>(),
+              //         child: const ProviderCategoryManagementScreen(),
+              //       ),
+              //     ),
+              //   ),
+              // ),
               _SettingsItemData(
                 icon: Icons.design_services_outlined,
                 label: 'Service',

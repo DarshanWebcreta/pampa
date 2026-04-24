@@ -104,6 +104,15 @@ abstract class ApiService {
   @DELETE("${ApiPath.services}/{id}")
   Future<dynamic> deleteService(@Path("id") int id);
 
+  @POST("providers/services/{id}/assign")
+  Future<dynamic> assignProviderService(
+    @Path("id") int id,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST("providers/services/{id}/unassign")
+  Future<dynamic> unassignProviderService(@Path("id") int id);
+
   @GET("services/{id}")
   Future<dynamic> serviceDetails(@Path("id") int id);
 

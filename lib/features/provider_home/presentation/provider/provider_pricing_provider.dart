@@ -114,8 +114,10 @@ class ProviderPricingProvider extends ChangeNotifier {
               .map(
                 (service) => ServicePricingDraft(
                   service: service,
-                  price: service.price,
-                  duration: service.duration > 0 ? '${service.duration}' : '',
+                  price: service.effectivePrice.toString(),
+                  duration: service.effectiveDuration > 0
+                      ? '${service.effectiveDuration}'
+                      : '',
                 ),
               )
               .toList()
@@ -175,9 +177,9 @@ class ProviderPricingProvider extends ChangeNotifier {
   void resetServiceDraft(int serviceId) {
     final draft = getDraft(serviceId);
     if (draft == null) return;
-    draft.price = draft.service.price;
-    draft.duration = draft.service.duration > 0
-        ? '${draft.service.duration}'
+    draft.price = draft.service.effectivePrice.toString();
+    draft.duration = draft.service.effectiveDuration > 0
+        ? '${draft.service.effectiveDuration}'
         : '';
     notifyListeners();
   }
@@ -224,13 +226,13 @@ class ProviderPricingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _api.updateService(
+      final response = await _api.assignProviderService(
         draft.service.id,
-        await _buildUpdatePayload(
-          service: draft.service,
-          price: price.trim(),
-          duration: duration.trim(),
-        ),
+        {
+          'price': double.tryParse(price.trim()) ?? 0.0,
+          'duration': int.tryParse(duration.trim()) ?? 0,
+          'description': draft.service.description ?? '',
+        },
       );
       final map = response as Map<String, dynamic>;
       if (map['status'] != true) {
@@ -250,8 +252,10 @@ class ProviderPricingProvider extends ChangeNotifier {
               .map(
                 (service) => ServicePricingDraft(
                   service: service,
-                  price: service.price,
-                  duration: service.duration > 0 ? '${service.duration}' : '',
+                  price: service.effectivePrice.toString(),
+                  duration: service.effectiveDuration > 0
+                      ? '${service.effectiveDuration}'
+                      : '',
                 ),
               )
               .toList()
@@ -269,24 +273,6 @@ class ProviderPricingProvider extends ChangeNotifier {
       _updatingServiceIds.remove(serviceId);
       notifyListeners();
     }
-  }
-
-  Future<FormData> _buildUpdatePayload({
-    required ServiceModel service,
-    required String price,
-    required String duration,
-  }) async {
-    return FormData.fromMap({
-      'category_id': service.categoryId,
-      'service_name': service.serviceName,
-      'price': price,
-      'duration': duration,
-      'status': service.status,
-      if (service.deposit > 0) 'deposit': service.deposit.toInt(),
-      if (service.priorityFee > 0) 'priority_fee': service.priorityFee.toInt(),
-      if ((service.description ?? '').trim().isNotEmpty)
-        'description': service.description!.trim(),
-    });
   }
 
   String _readSettingValue(

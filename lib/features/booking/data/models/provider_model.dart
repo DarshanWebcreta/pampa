@@ -146,6 +146,8 @@ class ProviderServiceSummaryModel {
   final int duration;
   final double deposit;
   final String? imageUrl;
+  final int? categoryId;
+  final String? categoryName;
 
   const ProviderServiceSummaryModel({
     required this.id,
@@ -154,6 +156,8 @@ class ProviderServiceSummaryModel {
     required this.duration,
     required this.deposit,
     required this.imageUrl,
+    this.categoryId,
+    this.categoryName,
   });
 
   double get priceAsDouble => double.tryParse(price) ?? 0.0;
@@ -161,6 +165,7 @@ class ProviderServiceSummaryModel {
   String get formattedDuration => '$duration min';
 
   factory ProviderServiceSummaryModel.fromJson(Map<String, dynamic> json) {
+    final category = json['category'] as Map<String, dynamic>?;
     return ProviderServiceSummaryModel(
       id: json['id'] as int? ?? 0,
       serviceName: json['service_name'] as String? ?? '',
@@ -169,6 +174,10 @@ class ProviderServiceSummaryModel {
       deposit: _toDouble(json['deposit']),
       imageUrl:
           json['image_url'] as String? ?? _resolveProviderAsset(json['image']),
+      categoryId: (json['category_id'] as int?) ?? (category?['id'] as int?),
+      categoryName: (json['category_name'] as String?) ??
+          (category?['category_name'] as String?) ??
+          (category?['name'] as String?),
     );
   }
 }
