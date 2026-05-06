@@ -25,14 +25,49 @@ class MyBookingsProvider extends ChangeNotifier {
   String get error => _error;
   AppointmentTab get activeTab => _activeTab;
 
-  List<MyBookingModel> get upcomingBookings =>
-      _allBookings.where((b) => !b.isCompleted && !b.isCancelled).toList();
+  DateTime? _selectedDate;
+  DateTime? get selectedDate => _selectedDate;
 
-  List<MyBookingModel> get pastBookings =>
-      _allBookings.where((b) => b.isCompleted).toList();
+  List<MyBookingModel> get upcomingBookings {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return _allBookings.where((b) {
+      // Not completed, not cancelled, and date is today or future
+      final isStatusUpcoming = !b.isCompleted && !b.isCancelled;
+      final isDateUpcoming = !b.appointmentDate.isBefore(today);
+      return isStatusUpcoming && isDateUpcoming;
+    }).toList();
+  }
 
-  List<MyBookingModel> get bookings =>
-      _activeTab == AppointmentTab.upcoming ? upcomingBookings : pastBookings;
+  List<MyBookingModel> get pastBookings {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return _allBookings.where((b) {
+      // Completed, OR date is in the past
+      final isStatusPast = b.isCompleted;
+      final isDatePast = b.appointmentDate.isBefore(today);
+      return isStatusPast || isDatePast;
+    }).toList();
+  }
+
+  List<MyBookingModel> get bookings {
+    var list = _activeTab == AppointmentTab.upcoming ? upcomingBookings : pastBookings;
+    
+    if (_selectedDate != null) {
+      list = list.where((b) =>
+        b.appointmentDate.year == _selectedDate!.year &&
+        b.appointmentDate.month == _selectedDate!.month &&
+        b.appointmentDate.day == _selectedDate!.day
+      ).toList();
+    }
+    
+    return list;
+  }
+
+  void setSelectedDate(DateTime? date) {
+    _selectedDate = date;
+    notifyListeners();
+  }
 
   Future<void> fetchBookings() async {
     if (_status == MyBookingsFetchStatus.loading) return;

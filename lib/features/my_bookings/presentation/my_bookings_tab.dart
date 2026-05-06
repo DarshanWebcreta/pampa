@@ -83,6 +83,36 @@ class _MyBookingsTabState extends State<MyBookingsTab> {
     });
   }
 
+  Future<void> _pickDate(BuildContext context, MyBookingsProvider provider) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: provider.selectedDate ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 2),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColor.authButton,
+              onPrimary: AppColor.white,
+              onSurface: AppColor.darkGrey,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColor.authButton,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      provider.setSelectedDate(picked);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<MyBookingsProvider>(
@@ -102,25 +132,75 @@ class _MyBookingsTabState extends State<MyBookingsTab> {
                     color: AppColor.darkGrey,
                   ),
                   const Spacer(),
+
                   GestureDetector(
-                    onTap: () => homeTabNotifier.value = 1,
+                    onTap: () => _pickDate(context, provider),
                     child: Container(
                       width: 38,
                       height: 38,
-                      decoration: const BoxDecoration(
-                        color: AppColor.darkGrey,
+                      decoration: BoxDecoration(
+                        color: provider.selectedDate != null ? AppColor.authButton : AppColor.lightGrey,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.add,
-                        color: AppColor.white,
-                        size: 20,
+                      child: Icon(
+                        Icons.calendar_month_rounded,
+                        color: provider.selectedDate != null ? AppColor.white : AppColor.darkGrey,
+                        size: 18,
                       ),
                     ),
                   ),
+                  // const SizedBox(width: 12),
+                  // GestureDetector(
+                  //   onTap: () => homeTabNotifier.value = 1,
+                  //   child: Container(
+                  //     width: 38,
+                  //     height: 38,
+                  //     decoration: const BoxDecoration(
+                  //       color: AppColor.darkGrey,
+                  //       shape: BoxShape.circle,
+                  //     ),
+                  //     child: const Icon(
+                  //       Icons.add,
+                  //       color: AppColor.white,
+                  //       size: 20,
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),
+
+            if (provider.selectedDate != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: Row(
+                  children: [
+                    AppText(
+                      'Showing bookings for ',
+                      fontSize: 13,
+                      color: AppColor.grey,
+                    ),
+                    AppText(
+                      DateFormat('MMMM d, yyyy').format(provider.selectedDate!),
+                      fontSize: 13,
+                      fontWeight: FontWeights.semiBold,
+                      color: AppColor.authButton,
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => provider.setSelectedDate(null),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColor.authButton.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close, size: 14, color: AppColor.authButton),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             const SizedBox(height: 16),
 
@@ -514,17 +594,22 @@ class _AppointmentCard extends StatelessWidget {
                       ),
                     ),
                   if (showBookAgain)
-                    GestureDetector(
-                      onTap: () => context.push(
-                        RouteNames.bookingDetail,
-                        extra: booking.service.id,
-                      ),
-                      child: AppText(
-                        'Book Again',
-                        fontSize: 12,
-                        fontWeight: FontWeights.semiBold,
-                        color: AppColor.authButton,
-                      ),
+                    Row(
+                      children: [
+                        SizedBox(width: 10,),
+                        GestureDetector(
+                          onTap: () => context.push(
+                            RouteNames.bookingDetail,
+                            extra: booking.service.id,
+                          ),
+                          child: AppText(
+                            'Book Again',
+                            fontSize: 12,
+                            fontWeight: FontWeights.semiBold,
+                            color: AppColor.authButton,
+                          ),
+                        ),
+                      ],
                     ),
                 ],
               ),

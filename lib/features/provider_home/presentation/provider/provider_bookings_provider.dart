@@ -19,7 +19,7 @@ class ProviderBookingsProvider extends ChangeNotifier {
   String get selectedStatus => _selectedStatus;
   DateTime? get selectedDate => _selectedDate;
 
-  static const statuses = ['all', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
+  static const statuses = ['all', 'Pending', 'Confirmed', 'Completed', 'Cancelled', 'Past'];
 
   Future<void> fetch() async {
     _loading = true;
@@ -27,7 +27,7 @@ class ProviderBookingsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final statusParam = _selectedStatus == 'all' ? null : _selectedStatus;
+      final statusParam = (_selectedStatus == 'all' || _selectedStatus == 'Past') ? null : _selectedStatus;
       final dateParam = _selectedDate != null
           ? '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}'
           : null;
@@ -42,6 +42,30 @@ class ProviderBookingsProvider extends ChangeNotifier {
         _bookings = list
             .map((b) => ProviderBookingModel.fromJson(b as Map<String, dynamic>))
             .toList();
+
+        // ── Local Filtering Fallback ──────────────────────────────────
+        
+        // 1. Handle "Past" custom status
+        if (_selectedStatus == 'Past') {
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          _bookings = _bookings.where((b) {
+            final dt = DateTime.tryParse(b.appointmentDate);
+            return dt != null && dt.isBefore(today);
+          }).toList();
+        } 
+        // 2. Handle other specific statuses (safety check)
+        else if (_selectedStatus != 'all') {
+          _bookings = _bookings.where((b) => 
+            b.status.toLowerCase() == _selectedStatus.toLowerCase()
+          ).toList();
+        }
+
+        // 3. Handle Date filter (safety check)
+        if (_selectedDate != null) {
+          final ds = '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}';
+          _bookings = _bookings.where((b) => b.appointmentDate == ds).toList();
+        }
       } else {
         _error = map['message'] as String? ?? 'Failed to load bookings.';
       }
