@@ -90,6 +90,53 @@ class _PersonalInformationScreenState
     }
   }
 
+  Future<void> _deletePhoto() async {
+    if (_selectedPhoto != null) {
+      setState(() => _selectedPhoto = null);
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Remove Photo'),
+        content: const Text('Are you sure you want to remove your profile photo?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    final provider = context.read<ProfileProvider>();
+    final success = await provider.updateProfile(
+      firstName: _firstNameCtrl.text.trim(),
+      lastName: _lastNameCtrl.text.trim(),
+      email: _emailCtrl.text.trim(),
+      mobile: '${_selectedCountry.dial}${_mobileCtrl.text.trim()}',
+      removeImage: true,
+    );
+
+    if (success && mounted) {
+      provider.fetchProfile(forceRefresh: true);
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: 'Profile photo removed.',
+        success: true,
+      );
+    }
+  }
+
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -192,6 +239,9 @@ class _PersonalInformationScreenState
                   photoUrl: provider.profile?.photoUrl,
                   selectedFile: _selectedPhoto,
                   onTap: _pickPhoto,
+                  onDelete: (provider.profile?.photoUrl != null || _selectedPhoto != null)
+                      ? _deletePhoto
+                      : null,
                 ),
 
                 const SizedBox(height: 24),
@@ -315,11 +365,13 @@ class _PhotoPicker extends StatelessWidget {
   final String? photoUrl;
   final File? selectedFile;
   final VoidCallback onTap;
+  final VoidCallback? onDelete;
 
   const _PhotoPicker({
     required this.photoUrl,
     required this.selectedFile,
     required this.onTap,
+    this.onDelete,
   });
 
   @override
@@ -359,17 +411,45 @@ class _PhotoPicker extends StatelessWidget {
             Positioned(
               bottom: 0,
               right: 0,
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: const BoxDecoration(
-                  color: AppColor.authButton,
-                  shape: BoxShape.circle,
+              child: GestureDetector(
+                onTap: onTap,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: const BoxDecoration(
+                    color: AppColor.authButton,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.camera_alt_rounded,
+                      size: 14, color: AppColor.white),
                 ),
-                child: const Icon(Icons.camera_alt_rounded,
-                    size: 14, color: AppColor.white),
               ),
             ),
+            if (onDelete != null)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: onDelete,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.delete_outline_rounded,
+                        size: 16, color: Colors.red),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

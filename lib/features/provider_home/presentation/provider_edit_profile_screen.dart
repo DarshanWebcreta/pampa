@@ -157,6 +157,61 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
     }
   }
 
+  Future<void> _deletePhoto() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Remove Photo'),
+        content: const Text('Are you sure you want to remove your profile photo?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    final prov = context.read<ProviderProfileProvider>();
+    final err = await prov.updateProfile(
+      bio: _bioCtrl.text.trim(),
+      certification: widget.profile.certification ?? '',
+      licensed: _licensed,
+      streetAddress: _streetCtrl.text.trim(),
+      zipCode: _zipCtrl.text.trim(),
+      city: _cityCtrl.text.trim(),
+      state: _stateCtrl.text.trim(),
+      country: _countryCtrl.text.trim(),
+      maxServiceDistance: _distanceCtrl.text.trim(),
+      perKmCharge: _perKmCtrl.text.trim(),
+      serviceZipCodes: _serviceZipCodesCtrl.text.trim(),
+      removeImage: true,
+    );
+
+    if (!mounted) return;
+    if (err != null) {
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: err,
+        success: false,
+      );
+    } else {
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: 'Profile photo removed.',
+        success: true,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ProviderProfileProvider>(
@@ -205,7 +260,12 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 40),
               children: [
-                _ProfilePreview(profile: widget.profile),
+                _ProfilePreview(
+                  profile: prov.profile ?? widget.profile,
+                  onDelete: (prov.profile?.photoUrl != null || widget.profile.photoUrl != null)
+                      ? _deletePhoto
+                      : null,
+                ),
                 const SizedBox(height: 18),
                 _SectionCard(
                   title: 'Professional Details',
@@ -519,8 +579,9 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
 
 class _ProfilePreview extends StatelessWidget {
   final ProviderProfileModel profile;
+  final VoidCallback? onDelete;
 
-  const _ProfilePreview({required this.profile});
+  const _ProfilePreview({required this.profile, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -538,22 +599,50 @@ class _ProfilePreview extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: AppColor.authButton.withValues(alpha: 0.12),
-            backgroundImage: (profile.photoUrl ?? '').isNotEmpty
-                ? NetworkImage(profile.photoUrl!)
-                : null,
-            child: (profile.photoUrl ?? '').isEmpty
-                ? Text(
-                    (profile.name ?? '?').substring(0, 1).toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: AppColor.authButton,
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: AppColor.authButton.withValues(alpha: 0.12),
+                backgroundImage: (profile.photoUrl ?? '').isNotEmpty
+                    ? NetworkImage(profile.photoUrl!)
+                    : null,
+                child: (profile.photoUrl ?? '').isEmpty
+                    ? Text(
+                        (profile.name ?? '?').substring(0, 1).toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: AppColor.authButton,
+                        ),
+                      )
+                    : null,
+              ),
+              if (onDelete != null)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: GestureDetector(
+                    onTap: onDelete,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.close_rounded, size: 14, color: Colors.red),
                     ),
-                  )
-                : null,
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 12),
           Expanded(

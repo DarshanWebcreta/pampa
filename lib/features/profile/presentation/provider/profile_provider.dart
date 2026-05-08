@@ -80,6 +80,7 @@ class ProfileProvider extends ChangeNotifier {
     String? state,
     String? country,
     File? photo,
+    bool removeImage = false,
   }) async {
     _updateStatus = ProfileUpdateStatus.loading;
     _updateError = '';
@@ -87,7 +88,7 @@ class ProfileProvider extends ChangeNotifier {
 
     try {
       final fields = <MapEntry<String, MultipartFile>>[];
-      final Map<String, String> formFields = {
+      final Map<String, dynamic> formFields = {
         'first_name': firstName,
         'last_name': lastName,
         'name': '$firstName $lastName'.trim(),
@@ -99,6 +100,7 @@ class ProfileProvider extends ChangeNotifier {
         if (city != null && city.isNotEmpty) 'city': city,
         if (state != null && state.isNotEmpty) 'state': state,
         if (country != null && country.isNotEmpty) 'country': country,
+        if (removeImage) 'remove_profile_image': '1',
       };
 
       if (photo != null) {

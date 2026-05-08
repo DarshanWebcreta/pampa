@@ -55,6 +55,7 @@ class ProviderProfileProvider extends ChangeNotifier {
     required String maxServiceDistance,
     required String perKmCharge,
     required String serviceZipCodes,
+    bool removeImage = false,
   }) async {
     _saving = true;
     notifyListeners();
@@ -71,6 +72,7 @@ class ProviderProfileProvider extends ChangeNotifier {
         'max_service_distance': maxServiceDistance,
         'per_km_charge': perKmCharge,
         'service_zip_codes': serviceZipCodes,
+        if (removeImage) 'remove_profile_image': '1',
       };
 
       final res = await _api.updateProviderProfile(body);
