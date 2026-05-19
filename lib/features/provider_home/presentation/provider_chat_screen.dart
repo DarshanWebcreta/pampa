@@ -11,6 +11,7 @@ import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/features/messaging/data/models/conversation_model.dart';
 import 'package:pampa/features/messaging/presentation/provider/messaging_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_messaging_provider.dart';
+import 'package:pampa/features/support/presentation/widgets/report_issue_bottom_sheet.dart';
 
 /// Chat screen used by the provider side.
 /// "From me" = senderType == 'provider'.
@@ -123,6 +124,36 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
             ),
           ],
         ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'report') {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => ReportIssueBottomSheet(
+                    conversationId: widget.conversation.id,
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.more_vert, color: AppColor.darkGrey),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'report',
+                child: Row(
+                  children: [
+                    Icon(Icons.report_problem_outlined,
+                        color: Colors.red, size: 20),
+                    SizedBox(width: 8),
+                    AppText('Report', color: Colors.red),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Consumer<ProviderMessagingProvider>(
         builder: (context, provider, _) {
@@ -231,7 +262,10 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
                           return Column(
                             children: [
                               if (showDate) _DateDivider(date: msg.createdAt),
-                              _MessageBubble(message: msg),
+                              _MessageBubble(
+                                message: msg,
+                                conversationId: widget.conversation.id,
+                              ),
                             ],
                           );
                         },
@@ -259,8 +293,12 @@ class _ProviderChatScreenState extends State<ProviderChatScreen> {
 
 class _MessageBubble extends StatelessWidget {
   final MessageModel message;
+  final int conversationId;
 
-  const _MessageBubble({required this.message});
+  const _MessageBubble({
+    required this.message,
+    required this.conversationId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -280,70 +318,83 @@ class _MessageBubble extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Column(
-              crossAxisAlignment: isMe
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                Container(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.68,
+            child: GestureDetector(
+              onLongPress: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => ReportIssueBottomSheet(
+                    conversationId: conversationId,
+                    messageId: message.id,
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isMe ? AppColor.authButton : AppColor.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(18),
-                      topRight: const Radius.circular(18),
-                      bottomLeft: Radius.circular(isMe ? 18 : 4),
-                      bottomRight: Radius.circular(isMe ? 4 : 18),
+                );
+              },
+              child: Column(
+                crossAxisAlignment: isMe
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.68,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isMe ? AppColor.authButton : AppColor.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(18),
+                        topRight: const Radius.circular(18),
+                        bottomLeft: Radius.circular(isMe ? 18 : 4),
+                        bottomRight: Radius.circular(isMe ? 4 : 18),
                       ),
-                    ],
-                  ),
-                  child: AppText(
-                    message.body,
-                    fontSize: FontSizes.regular,
-                    color: isMe ? AppColor.white : AppColor.darkGrey,
-                    maxLines: 100,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppText(timeStr, fontSize: 10, color: AppColor.grey),
-                    if (isMe) ...[
-                      const SizedBox(width: 4),
-                      if (message.status == MessageStatus.sending)
-                        const Icon(Icons.done_rounded,
-                            size: 12, color: AppColor.grey),
-                      if (message.status == MessageStatus.sent)
-                        Icon(Icons.done_all_rounded,
-                            size: 12,
-                            color: message.readAt != null
-                                ? AppColor.authButton
-                                : AppColor.grey),
-                      if (message.status == MessageStatus.error)
-                        GestureDetector(
-                          onTap: () => context
-                              .read<ProviderMessagingProvider>()
-                              .retryMessage(message.id),
-                          child: const Icon(Icons.error_outline_rounded,
-                              size: 14, color: AppColor.red),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
                         ),
+                      ],
+                    ),
+                    child: AppText(
+                      message.body,
+                      fontSize: FontSizes.regular,
+                      color: isMe ? AppColor.white : AppColor.darkGrey,
+                      maxLines: 100,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppText(timeStr, fontSize: 10, color: AppColor.grey),
+                      if (isMe) ...[
+                        const SizedBox(width: 4),
+                        if (message.status == MessageStatus.sending)
+                          const Icon(Icons.done_rounded,
+                              size: 12, color: AppColor.grey),
+                        if (message.status == MessageStatus.sent)
+                          Icon(Icons.done_all_rounded,
+                              size: 12,
+                              color: message.readAt != null
+                                  ? AppColor.authButton
+                                  : AppColor.grey),
+                        if (message.status == MessageStatus.error)
+                          GestureDetector(
+                            onTap: () => context
+                                .read<ProviderMessagingProvider>()
+                                .retryMessage(message.id),
+                            child: const Icon(Icons.error_outline_rounded,
+                                size: 14, color: AppColor.red),
+                          ),
+                      ],
                     ],
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
           if (isMe) const SizedBox(width: 4),

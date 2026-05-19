@@ -25,6 +25,7 @@ import 'package:pampa/features/messaging/presentation/provider/messaging_provide
 import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
 import 'package:pampa/features/explore/presentation/provider/explore_provider.dart';
 import 'package:pampa/features/favorites/presentation/provider/favorites_provider.dart';
+import 'package:pampa/features/support/presentation/provider/support_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +56,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => getIt<ExploreProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<ProviderMessagingProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<FavoritesProvider>()),
+        ChangeNotifierProvider(create: (_) => getIt<SupportProvider>()),
     ],
     child:Container(
       color: Platform.isAndroid?AppColor.primaryColor:AppColor.transperent,

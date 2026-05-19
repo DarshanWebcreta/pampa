@@ -9,6 +9,7 @@ import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/messaging/data/models/conversation_model.dart';
 import 'package:pampa/features/messaging/presentation/provider/messaging_provider.dart';
+import 'package:pampa/features/support/presentation/widgets/report_issue_bottom_sheet.dart';
 
 class ChatScreen extends StatefulWidget {
   final ConversationModel conversation;
@@ -102,6 +103,36 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'report') {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => ReportIssueBottomSheet(
+                    conversationId: widget.conversation.id,
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.more_vert, color: AppColor.darkGrey),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'report',
+                child: Row(
+                  children: [
+                    Icon(Icons.report_problem_outlined,
+                        color: Colors.red, size: 20),
+                    SizedBox(width: 8),
+                    AppText('Report', color: Colors.red),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Consumer<MessagingProvider>(
         builder: (context, provider, _) {
@@ -192,7 +223,10 @@ class _ChatScreenState extends State<ChatScreen> {
                             children: [
                               if (showDate)
                                 _DateDivider(date: msg.createdAt),
-                              _MessageBubble(message: msg),
+                              _MessageBubble(
+                                message: msg,
+                                conversationId: widget.conversation.id,
+                              ),
                             ],
                           );
                         },
@@ -218,8 +252,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
 class _MessageBubble extends StatelessWidget {
   final MessageModel message;
+  final int conversationId;
 
-  const _MessageBubble({required this.message});
+  const _MessageBubble({
+    required this.message,
+    required this.conversationId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -238,56 +276,69 @@ class _MessageBubble extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Column(
-              crossAxisAlignment:
-                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                Container(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.68,
+            child: GestureDetector(
+              onLongPress: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => ReportIssueBottomSheet(
+                    conversationId: conversationId,
+                    messageId: message.id,
                   ),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isMe ? AppColor.authButton : AppColor.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(18),
-                      topRight: const Radius.circular(18),
-                      bottomLeft: Radius.circular(isMe ? 18 : 4),
-                      bottomRight: Radius.circular(isMe ? 4 : 18),
+                );
+              },
+              child: Column(
+                crossAxisAlignment:
+                    isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.68,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isMe ? AppColor.authButton : AppColor.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(18),
+                        topRight: const Radius.circular(18),
+                        bottomLeft: Radius.circular(isMe ? 18 : 4),
+                        bottomRight: Radius.circular(isMe ? 4 : 18),
                       ),
-                    ],
-                  ),
-                  child: AppText(
-                    message.body,
-                    fontSize: FontSizes.regular,
-                    color: isMe ? AppColor.white : AppColor.darkGrey,
-                    maxLines: 100,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppText(
-                      timeStr,
-                      fontSize: 10,
-                      color: AppColor.grey,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
                     ),
-                    if (isMe && message.readAt != null) ...[
-                      const SizedBox(width: 4),
-                      const Icon(Icons.done_all_rounded,
-                          size: 12, color: AppColor.authButton),
+                    child: AppText(
+                      message.body,
+                      fontSize: FontSizes.regular,
+                      color: isMe ? AppColor.white : AppColor.darkGrey,
+                      maxLines: 100,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppText(
+                        timeStr,
+                        fontSize: 10,
+                        color: AppColor.grey,
+                      ),
+                      if (isMe && message.readAt != null) ...[
+                        const SizedBox(width: 4),
+                        const Icon(Icons.done_all_rounded,
+                            size: 12, color: AppColor.authButton),
+                      ],
                     ],
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
           if (isMe) const SizedBox(width: 4),

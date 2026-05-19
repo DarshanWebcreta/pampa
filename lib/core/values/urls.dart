@@ -64,6 +64,8 @@ class ApiPath {
   static String setDefaultAddress(int id) => "customer/addresses/$id/default";
   static String deleteAddress(int id) => "customer/addresses/$id";
   static const String bookings = "bookings";
+  static const String issueType = "v1/support/issue-types";
+  static const String reportIssue = "v1/support/report-issue";
   static const String providers = "providers";
   static const String availableProviders = "providers/available-providers";
   static String availableSlots(int providerId) =>

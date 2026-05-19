@@ -46,6 +46,10 @@ import 'package:pampa/features/provider_home/presentation/provider/provider_pric
 import 'package:pampa/features/provider_home/presentation/provider/provider_service_management_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_bank_detail_provider.dart';
 
+import 'package:pampa/features/support/data/repositories/support_repository_impl.dart';
+import 'package:pampa/features/support/domain/repositories/support_repository.dart';
+import 'package:pampa/features/support/presentation/provider/support_provider.dart';
+
 final getIt = GetIt.instance;
 
 void setup() {
@@ -202,5 +206,13 @@ void setup() {
   // Provider Bank Details
   getIt.registerLazySingleton<ProviderBankDetailProvider>(
     () => ProviderBankDetailProvider(getIt<ApiService>()),
+  );
+
+  // Support
+  getIt.registerLazySingleton<SupportRepository>(
+    () => SupportRepositoryImpl(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<SupportProvider>(
+    () => SupportProvider(getIt<SupportRepository>()),
   );
 }

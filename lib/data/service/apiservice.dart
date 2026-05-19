@@ -308,6 +308,12 @@ abstract class ApiService {
   @POST(ApiPath.adminChat)
   Future<dynamic> getAdminChat();
 
+  @GET(ApiPath.issueType)
+  Future<dynamic> getIssueTypes();
+
+  @POST(ApiPath.reportIssue)
+  Future<dynamic> reportIssue(@Body() Map<String, dynamic> body);
+
   /// NOTIFICATION PREFERENCES
 
   @GET(ApiPath.notificationPreferences)
