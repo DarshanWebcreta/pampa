@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:pampa/core/routes/pages.dart';
 import 'package:pampa/core/services/push_notification_service.dart';
 import 'package:pampa/core/values/urls.dart';
+import 'package:pampa/features/address/presentation/saved_addresses_screen.dart' show SavedAddressesScreen;
+import 'package:pampa/features/address/presentation/address_search_screen.dart';
+import 'package:pampa/features/explore/presentation/provider/explore_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
@@ -71,14 +74,42 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with RouteAware {
+  late final AddressProvider _addressProvider;
+  bool _isRedirecting = false;
+
   @override
   void initState() {
     super.initState();
     homeSuccessMessageNotifier.addListener(_onSuccessMessage);
     homeTabNotifier.addListener(_onTabChanged);
+    _addressProvider = context.read<AddressProvider>();
+    _addressProvider.addListener(_onAddressProviderChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshDashboardData();
       getIt<PushNotificationService>().syncTokenWithBackend();
+      _addressProvider.fetchGoogleMapsApiKey();
+    });
+  }
+
+  void _onAddressProviderChanged() {
+    if (!mounted) return;
+    if (_addressProvider.fetchStatus == AddressFetchStatus.loaded) {
+      if (_addressProvider.addresses.isEmpty) {
+        _redirectToSavedAddresses();
+      } else {
+        context.read<ExploreProvider>().fetch();
+      }
+    }
+  }
+
+  void _redirectToSavedAddresses() {
+    if (_isRedirecting) return;
+    _isRedirecting = true;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SavedAddressesScreen()),
+    ).then((_) {
+      _isRedirecting = false;
+      _onAddressProviderChanged();
     });
   }
 
@@ -226,6 +257,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     AppRouter.routeObserver.unsubscribe(this);
     homeSuccessMessageNotifier.removeListener(_onSuccessMessage);
     homeTabNotifier.removeListener(_onTabChanged);
+    _addressProvider.removeListener(_onAddressProviderChanged);
     super.dispose();
   }
 
@@ -292,7 +324,19 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               return Expanded(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => homeTabNotifier.value = index,
+                  onTap: () {
+                    final hasAddress = context.read<AddressProvider>().addresses.isNotEmpty;
+                    if (!hasAddress && index == 1) {
+                      _redirectToSavedAddresses();
+                      FunctionalComponent.showSnackBar(
+                        context: context,
+                        title: 'Please add an address first',
+                        success: false,
+                      );
+                      return;
+                    }
+                    homeTabNotifier.value = index;
+                  },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -1084,6 +1128,7 @@ class _AddAddressFormState extends State<_AddAddressForm> {
   final _streetCtrl = TextEditingController();
   final _zipCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
+  bool _isLocating = false;
 
   @override
   void initState() {
@@ -1099,6 +1144,56 @@ class _AddAddressFormState extends State<_AddAddressForm> {
     _zipCtrl.dispose();
     _cityCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _useCurrentLocation() async {
+    debugPrint("HomeScreen: _useCurrentLocation called");
+    setState(() => _isLocating = true);
+    try {
+      final res = await context.read<AddressProvider>().findMyLocation();
+      debugPrint("HomeScreen: findMyLocation result = $res");
+      if (res != null) {
+        setState(() {
+          _streetCtrl.text = res['streetAddress'] ?? '';
+          _cityCtrl.text = res['city'] ?? '';
+          _zipCtrl.text = res['zipCode'] ?? '';
+          if (_nameCtrl.text.isEmpty) {
+            _nameCtrl.text = 'Home';
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint("HomeScreen: error in _useCurrentLocation = $e");
+      if (mounted) {
+        FunctionalComponent.showSnackBar(
+          context: context,
+          title: e.toString().replaceFirst('Exception: ', ''),
+          success: false,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
+    }
+  }
+
+  Future<void> _selectAddressFromSearch(BuildContext context) async {
+    final result = await Navigator.of(context).push<Map<String, String>>(
+      MaterialPageRoute(
+        builder: (_) => const AddressSearchScreen(),
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _streetCtrl.text = result['streetAddress'] ?? '';
+        _cityCtrl.text = result['city'] ?? '';
+        _zipCtrl.text = result['zipCode'] ?? '';
+        if (_nameCtrl.text.isEmpty) {
+          _nameCtrl.text = 'Home';
+        }
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -1165,6 +1260,44 @@ class _AddAddressFormState extends State<_AddAddressForm> {
                 fontSize: FontSizes.medium,
                 fontWeight: FontWeights.bold,
                 color: AppColor.darkGrey),
+            const Spacer(),
+            // Find My Location button
+            GestureDetector(
+              onTap: _isLocating ? null : _useCurrentLocation,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                decoration: BoxDecoration(
+                  color: AppColor.authButton.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _isLocating
+                        ? const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              color: AppColor.authButton,
+                              strokeWidth: 1.5,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.my_location_rounded,
+                            color: AppColor.authButton,
+                            size: 12,
+                          ),
+                    const SizedBox(width: 6),
+                    AppText(
+                      _isLocating ? 'Locating...' : 'Find my location',
+                      fontSize: 11,
+                      fontWeight: FontWeights.semiBold,
+                      color: AppColor.authButton,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 20),
@@ -1174,8 +1307,8 @@ class _AddAddressFormState extends State<_AddAddressForm> {
             children: [
               _HomeAddressField(
                 controller: _nameCtrl,
-                label: 'Full Address',
-                hint: 'e.g. 44/Otamba Society, Bapunagar',
+                label: 'Address Label',
+                hint: 'e.g. Home, Work',
                 icon: Icons.home_outlined,
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Required' : null,
@@ -1183,9 +1316,22 @@ class _AddAddressFormState extends State<_AddAddressForm> {
               const SizedBox(height: 12),
               _HomeAddressField(
                 controller: _streetCtrl,
-                label: 'Street / House No.',
-                hint: 'e.g. 33',
+                label: 'Street Address',
+                hint: 'Tap to search address',
                 icon: Icons.signpost_outlined,
+                readOnly: true,
+                onTap: () => _selectAddressFromSearch(context),
+                suffixIcon: TextButton(
+                  onPressed: () => _selectAddressFromSearch(context),
+                  child: Text(
+                    _streetCtrl.text.isEmpty ? 'Search' : 'Change',
+                    style: const TextStyle(
+                      color: AppColor.authButton,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Required' : null,
               ),
@@ -1260,6 +1406,10 @@ class _HomeAddressField extends StatelessWidget {
   final IconData icon;
   final String? Function(String?)? validator;
   final TextInputType keyboardType;
+  final void Function(String)? onChanged;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final Widget? suffixIcon;
 
   const _HomeAddressField({
     required this.controller,
@@ -1268,6 +1418,10 @@ class _HomeAddressField extends StatelessWidget {
     required this.icon,
     this.validator,
     this.keyboardType = TextInputType.text,
+    this.onChanged,
+    this.readOnly = false,
+    this.onTap,
+    this.suffixIcon,
   });
 
   @override
@@ -1276,11 +1430,15 @@ class _HomeAddressField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
+      onChanged: onChanged,
+      readOnly: readOnly,
+      onTap: onTap,
       style: const TextStyle(fontSize: 14, color: AppColor.darkGrey),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon, size: 18, color: AppColor.grey),
+        suffixIcon: suffixIcon,
         labelStyle: const TextStyle(fontSize: 13, color: AppColor.grey),
         hintStyle: const TextStyle(fontSize: 13, color: AppColor.mediumGrey),
         filled: true,
@@ -1703,7 +1861,26 @@ class _BookNewServiceButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: GestureDetector(
-        onTap: () => context.push(RouteNames.categoryList),
+        onTap: () {
+          final hasAddress = context.read<AddressProvider>().addresses.isNotEmpty;
+          if (!hasAddress) {
+            final parentState = context.findAncestorStateOfType<_HomeScreenState>();
+            if (parentState != null) {
+              parentState._redirectToSavedAddresses();
+            } else {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SavedAddressesScreen()),
+              );
+            }
+            FunctionalComponent.showSnackBar(
+              context: context,
+              title: 'Please add an address first',
+              success: false,
+            );
+            return;
+          }
+          context.push(RouteNames.categoryList);
+        },
         child: Container(
           height: 60,
           decoration: BoxDecoration(

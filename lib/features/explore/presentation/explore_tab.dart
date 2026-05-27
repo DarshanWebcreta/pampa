@@ -176,8 +176,8 @@ class _ExploreTabState extends State<ExploreTab> {
     }
 
     final result = provider.result;
-    if (result == null || result.isEmpty) {
-      return _buildEmpty();
+    if (result == null || result.providers.isEmpty) {
+      return _buildEmpty(isLocationEmpty: result?.providers.isEmpty ?? true);
     }
 
     return RefreshIndicator(
@@ -370,38 +370,47 @@ class _ExploreTabState extends State<ExploreTab> {
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty({bool isLocationEmpty = false}) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: const BoxDecoration(
-              color: AppColor.authBg,
-              shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                color: AppColor.authBg,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.search_off_rounded,
+                size: 32,
+                color: AppColor.authButton,
+              ),
             ),
-            child: const Icon(
-              Icons.search_off_rounded,
-              size: 32,
-              color: AppColor.authButton,
+            const SizedBox(height: 16),
+            AppText(
+              isLocationEmpty
+                  ? 'Currently service is not available in your area.'
+                  : 'No results found',
+              fontSize: FontSizes.medium,
+              fontWeight: FontWeights.semiBold,
+              color: AppColor.darkGrey,
+              align: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 16),
-          AppText(
-            'No results found',
-            fontSize: FontSizes.medium,
-            fontWeight: FontWeights.semiBold,
-            color: AppColor.darkGrey,
-          ),
-          const SizedBox(height: 8),
-          AppText(
-            'Try a different search term',
-            fontSize: FontSizes.small,
-            color: AppColor.grey,
-          ),
-        ],
+            const SizedBox(height: 8),
+            AppText(
+              isLocationEmpty
+                  ? 'Try a different address or search term'
+                  : 'Try a different search term',
+              fontSize: FontSizes.small,
+              color: AppColor.grey,
+              align: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -540,6 +549,33 @@ class _TappableProviderCard extends StatelessWidget {
                     fontSize: 12,
                     color: AppColor.grey,
                     maxLines: 2,
+                  ),
+                ],
+                if (provider.travelFee != null) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.directions_car_rounded,
+                        size: 13,
+                        color: AppColor.authButton,
+                      ),
+                      const SizedBox(width: 4),
+                      AppText(
+                        'Travel Fee: \$${provider.travelFee!.toStringAsFixed(2)}',
+                        fontSize: 12,
+                        fontWeight: FontWeights.semiBold,
+                        color: AppColor.authButton,
+                      ),
+                      if (provider.distanceMiles != null) ...[
+                        const SizedBox(width: 4),
+                        AppText(
+                          '(${provider.distanceMiles!.toStringAsFixed(1)} miles away)',
+                          fontSize: 11,
+                          color: AppColor.grey,
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ],

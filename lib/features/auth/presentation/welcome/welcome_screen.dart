@@ -6,6 +6,7 @@ import 'package:pampa/core/routes/routes.dart';
 import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/core/values/imagepath.dart';
 import 'package:pampa/features/auth/presentation/provider/auth_provider.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -106,7 +107,7 @@ class WelcomeScreen extends StatelessWidget {
                     color: AppColor.authButton,
                   ),
                 )
-              : const _GoogleLogo(),
+              : Image.asset(ImageStrings.googleLogo, width: 40, height: 40),
           label: 'Continue with Google',
           onTap: provider.isLoading ? null : () => _onGoogleSignIn(context),
         ),
@@ -225,97 +226,4 @@ class _FilledAuthButton extends StatelessWidget {
   }
 }
 
-class _GoogleLogo extends StatelessWidget {
-  const _GoogleLogo();
 
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(
-      width: 20,
-      height: 20,
-      child: CustomPaint(
-        painter: _GoogleLogoPainter(),
-      ),
-    );
-  }
-}
-
-class _GoogleLogoPainter extends CustomPainter {
-  const _GoogleLogoPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    // Draw the four colored arcs
-    final rect = Rect.fromCircle(center: center, radius: radius);
-
-    // Red (top-right)
-    canvas.drawArc(
-      rect,
-      -0.52,
-      1.57,
-      false,
-      Paint()
-        ..color = const Color(0xFFEA4335)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = size.width * 0.22
-        ..strokeCap = StrokeCap.butt,
-    );
-
-    // Blue (top-left to bottom-left)
-    canvas.drawArc(
-      rect,
-      1.05,
-      1.57,
-      false,
-      Paint()
-        ..color = const Color(0xFF4285F4)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = size.width * 0.22
-        ..strokeCap = StrokeCap.butt,
-    );
-
-    // Yellow (bottom-left to bottom-right)
-    canvas.drawArc(
-      rect,
-      2.62,
-      0.8,
-      false,
-      Paint()
-        ..color = const Color(0xFFFBBC05)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = size.width * 0.22
-        ..strokeCap = StrokeCap.butt,
-    );
-
-    // Green (bottom-right to right)
-    canvas.drawArc(
-      rect,
-      3.42,
-      0.77,
-      false,
-      Paint()
-        ..color = const Color(0xFF34A853)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = size.width * 0.22
-        ..strokeCap = StrokeCap.butt,
-    );
-
-    // Draw the white bar for the "G" cutout (horizontal)
-    final barPaint = Paint()
-      ..color = AppColor.white
-      ..strokeWidth = size.width * 0.24
-      ..strokeCap = StrokeCap.butt;
-
-    canvas.drawLine(
-      Offset(center.dx, center.dy),
-      Offset(center.dx + radius, center.dy),
-      barPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

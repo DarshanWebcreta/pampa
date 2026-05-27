@@ -17,6 +17,7 @@ class ImageStrings {
   ImageStrings._();
   static const String splash = '${ImagePaths.imagePath}splash_screen.webp';
   static const String appDesignLogo = '${ImagePaths.imagePath}app_design_logo.png';
+  static const String googleLogo = '${ImagePaths.imagePath}google.png';
   static const String logoWithName = '${ImagePaths.imagePath}delivrise_logo_with_name.png';
   static const String placeHolder = '${ImagePaths.imagePath}place_holder.png';
   static const String location = '${ImagePaths.svgPath}location.svg';

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/explore/data/models/explore_model.dart';
 import 'package:pampa/features/explore/domain/repositories/explore_repository.dart';
+import 'package:pampa/data/service/di.dart';
+import 'package:pampa/features/address/presentation/provider/address_provider.dart';
 
 enum ExploreFetchStatus { initial, loading, success, error }
 
@@ -22,14 +24,23 @@ class ExploreProvider extends ChangeNotifier {
   String get error => _error;
   String get query => _query;
 
-  Future<void> fetch({String? query}) async {
+  Future<void> fetch({
+    String? query,
+    String? zipCode,
+  }) async {
     _query = query ?? '';
     _status = ExploreFetchStatus.loading;
     _error = '';
     notifyListeners();
 
     try {
-      _result = await _repository.explore(query: _query.isEmpty ? null : _query);
+      final addressProvider = getIt<AddressProvider>();
+      final address = addressProvider.selectedAddress;
+
+      _result = await _repository.explore(
+        query: _query.isEmpty ? null : _query,
+        zipCode: zipCode ?? address?.zipCode,
+      );
       _status = ExploreFetchStatus.success;
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');

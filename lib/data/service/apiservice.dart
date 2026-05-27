@@ -80,7 +80,10 @@ abstract class ApiService {
   Future<dynamic> getCategories();
 
   @GET(ApiPath.services)
-  Future<dynamic> getServices(@Query("category_id") int? categoryId);
+  Future<dynamic> getServices(
+    @Query("category_id") int? categoryId, [
+    @Query("zip_code") String? zipCode,
+  ]);
 
   @POST(ApiPath.categories)
   @MultiPart()
@@ -144,7 +147,10 @@ abstract class ApiService {
   Future<dynamic> getProviderDetail(@Path("id") int id);
 
   @GET(ApiPath.providers)
-  Future<dynamic> getProviders(@Query("zip_code") String zipCode);
+  Future<dynamic> getProviders(
+    @Query("zip_code") String? zipCode, [
+    @Query("service_id") int? serviceId,
+  ]);
 
   @GET(ApiPath.availableProviders)
   Future<dynamic> getAvailableProviders(
@@ -161,6 +167,12 @@ abstract class ApiService {
     @Query("service_ids[]") int serviceId,
   );
 
+  @GET("providers/{id}/distance-charge")
+  Future<dynamic> getDistanceCharge(
+    @Path("id") int providerId,
+    @Query("customer_zip") String customerZip,
+  );
+
   @GET(ApiPath.bookings)
   Future<dynamic> getBookings();
 
@@ -174,6 +186,9 @@ abstract class ApiService {
 
   @GET(ApiPath.stripeConfig)
   Future<dynamic> stripeConfig();
+
+  @GET(ApiPath.configuration)
+  Future<dynamic> getConfiguration();
 
   @POST(ApiPath.createCheckoutSession)
   Future<dynamic> createCheckoutSession(@Body() Map<String, dynamic> body);
@@ -352,5 +367,8 @@ abstract class ApiService {
   /// EXPLORE
 
   @GET(ApiPath.explore)
-  Future<dynamic> explore(@Query("query") String? query);
+  Future<dynamic> explore(
+    @Query("query") String? query, [
+    @Query("zip_code") String? zipCode,
+  ]);
 }

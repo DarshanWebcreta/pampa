@@ -265,9 +265,12 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> getServices(int? categoryId) async {
+  Future<dynamic> getServices(int? categoryId, [String? zipCode]) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'category_id': categoryId};
+    final queryParameters = <String, dynamic>{
+      r'category_id': categoryId,
+      r'zip_code': zipCode,
+    };
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
@@ -633,9 +636,13 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> getProviders(String zipCode) async {
+  Future<dynamic> getProviders(String? zipCode, [int? serviceId]) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'zip_code': zipCode};
+    final queryParameters = <String, dynamic>{
+      r'zip_code': zipCode,
+      r'service_id': serviceId,
+    };
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<dynamic>(
@@ -702,6 +709,27 @@ class _ApiService implements ApiService {
           .compose(
             _dio.options,
             'providers/${providerId}/available-slots',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> getDistanceCharge(int providerId, String customerZip) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'customer_zip': customerZip};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'providers/${providerId}/distance-charge',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -786,6 +814,27 @@ class _ApiService implements ApiService {
           .compose(
             _dio.options,
             'payments/config',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> getConfiguration() async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            'configration',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -1822,9 +1871,12 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> explore(String? query) async {
+  Future<dynamic> explore(String? query, [String? zipCode]) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'query': query};
+    final queryParameters = <String, dynamic>{
+      r'query': query,
+      r'zip_code': zipCode,
+    };
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;

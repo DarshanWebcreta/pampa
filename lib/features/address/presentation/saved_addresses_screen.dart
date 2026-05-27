@@ -6,6 +6,7 @@ import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/address/data/models/address_model.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
+import 'package:pampa/features/address/presentation/address_search_screen.dart';
 
 class SavedAddressesScreen extends StatefulWidget {
   const SavedAddressesScreen({super.key});
@@ -73,40 +74,65 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColor.authBg,
-      appBar: AppBar(
-        backgroundColor: AppColor.authBg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 18, color: AppColor.darkGrey),
-        ),
-        title: AppText(
-          'Saved Addresses',
-          fontSize: FontSizes.medium,
-          fontWeight: FontWeights.bold,
-          color: AppColor.darkGrey,
-        ),
-        centerTitle: false,
-        actions: [
-          GestureDetector(
-            onTap: () => _openAddSheet(),
-            child: Container(
-              width: 36,
-              height: 36,
-              margin: const EdgeInsets.only(right: 16),
-              decoration: const BoxDecoration(
-                color: AppColor.authButton,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.add, color: AppColor.white, size: 20),
-            ),
+    final addresses = context.watch<AddressProvider>().addresses;
+    final canPop = addresses.isNotEmpty;
+
+    return PopScope(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please add at least one address to continue.'),
+            behavior: SnackBarBehavior.floating,
           ),
-        ],
-      ),
+        );
+      },
+      child: Scaffold(
+        backgroundColor: AppColor.authBg,
+        appBar: AppBar(
+          backgroundColor: AppColor.authBg,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            onPressed: () {
+              if (canPop) {
+                Navigator.of(context).pop();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please add at least one address to continue.'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                size: 18, color: AppColor.darkGrey),
+          ),
+          title: AppText(
+            'Saved Addresses',
+            fontSize: FontSizes.medium,
+            fontWeight: FontWeights.bold,
+            color: AppColor.darkGrey,
+          ),
+          centerTitle: false,
+          actions: [
+            GestureDetector(
+              onTap: () => _openAddSheet(),
+              child: Container(
+                width: 36,
+                height: 36,
+                margin: const EdgeInsets.only(right: 16),
+                decoration: const BoxDecoration(
+                  color: AppColor.authButton,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add, color: AppColor.white, size: 20),
+              ),
+            ),
+          ],
+        ),
       body: Consumer<AddressProvider>(
         builder: (context, provider, _) {
           if (provider.fetchStatus == AddressFetchStatus.loading) {
@@ -205,7 +231,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
           );
         },
       ),
-    );
+    ));
   }
 }
 
@@ -401,6 +427,7 @@ class _AddressSheetState extends State<_AddressSheet> {
   late final TextEditingController _cityCtrl;
   late final TextEditingController _zipCtrl;
   bool _isDefault = false;
+  bool _isLocating = false;
 
   bool get _isEditing => widget.existing != null;
 
@@ -422,6 +449,51 @@ class _AddressSheetState extends State<_AddressSheet> {
     _cityCtrl.dispose();
     _zipCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _useCurrentLocation() async {
+    debugPrint("SavedAddressesScreen: _useCurrentLocation called");
+    setState(() => _isLocating = true);
+    try {
+      final res = await context.read<AddressProvider>().findMyLocation();
+      debugPrint("SavedAddressesScreen: findMyLocation result = $res");
+      if (res != null) {
+        setState(() {
+          _streetCtrl.text = res['streetAddress'] ?? '';
+          _cityCtrl.text = res['city'] ?? '';
+          _zipCtrl.text = res['zipCode'] ?? '';
+        });
+      }
+    } catch (e) {
+      debugPrint("SavedAddressesScreen: error in _useCurrentLocation = $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
+    }
+  }
+
+  Future<void> _selectAddressFromSearch(BuildContext context) async {
+    final result = await Navigator.of(context).push<Map<String, String>>(
+      MaterialPageRoute(
+        builder: (_) => const AddressSearchScreen(),
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _streetCtrl.text = result['streetAddress'] ?? '';
+        _cityCtrl.text = result['city'] ?? '';
+        _zipCtrl.text = result['zipCode'] ?? '';
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -489,11 +561,53 @@ class _AddressSheetState extends State<_AddressSheet> {
                 ),
               ),
             ),
-            AppText(
-              _isEditing ? 'Edit Address' : 'Add New Address',
-              fontSize: FontSizes.medium,
-              fontWeight: FontWeights.bold,
-              color: AppColor.darkGrey,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AppText(
+                  _isEditing ? 'Edit Address' : 'Add New Address',
+                  fontSize: FontSizes.medium,
+                  fontWeight: FontWeights.bold,
+                  color: AppColor.darkGrey,
+                ),
+                // Find My Location option
+                GestureDetector(
+                  onTap: _isLocating ? null : _useCurrentLocation,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: AppColor.authButton.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _isLocating
+                            ? const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  color: AppColor.authButton,
+                                  strokeWidth: 1.5,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.my_location_rounded,
+                                color: AppColor.authButton,
+                                size: 12,
+                              ),
+                        const SizedBox(width: 6),
+                        AppText(
+                          _isLocating ? 'Locating...' : 'Find my location',
+                          fontSize: 11,
+                          fontWeight: FontWeights.semiBold,
+                          color: AppColor.authButton,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             _Field(
@@ -506,8 +620,21 @@ class _AddressSheetState extends State<_AddressSheet> {
             const SizedBox(height: 12),
             _Field(
               label: 'Street Address',
-              hint: '123 Main St',
+              hint: 'Tap to search address',
               controller: _streetCtrl,
+              readOnly: true,
+              onTap: () => _selectAddressFromSearch(context),
+              suffixIcon: TextButton(
+                onPressed: () => _selectAddressFromSearch(context),
+                child: Text(
+                  _streetCtrl.text.isEmpty ? 'Search' : 'Change',
+                  style: const TextStyle(
+                    color: AppColor.authButton,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Required' : null,
             ),
@@ -543,11 +670,11 @@ class _AddressSheetState extends State<_AddressSheet> {
               Row(
                 children: [
                   Checkbox(
-                    value: _isDefault,
-                    onChanged: (v) => setState(() => _isDefault = v ?? false),
-                    activeColor: AppColor.authButton,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4)),
+                     value: _isDefault,
+                     onChanged: (v) => setState(() => _isDefault = v ?? false),
+                     activeColor: AppColor.authButton,
+                     shape: RoundedRectangleBorder(
+                         borderRadius: BorderRadius.circular(4)),
                   ),
                   AppText(
                     'Set as default address',
@@ -607,6 +734,10 @@ class _Field extends StatelessWidget {
   final TextEditingController controller;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final Widget? suffixIcon;
 
   const _Field({
     required this.label,
@@ -614,6 +745,10 @@ class _Field extends StatelessWidget {
     required this.controller,
     this.keyboardType = TextInputType.text,
     this.validator,
+    this.onChanged,
+    this.readOnly = false,
+    this.onTap,
+    this.suffixIcon,
   });
 
   @override
@@ -630,6 +765,9 @@ class _Field extends StatelessWidget {
           controller: controller,
           keyboardType: keyboardType,
           validator: validator,
+          onChanged: onChanged,
+          readOnly: readOnly,
+          onTap: onTap,
           style: const TextStyle(
             fontSize: FontSizes.regular,
             color: AppColor.darkGrey,
@@ -640,6 +778,7 @@ class _Field extends StatelessWidget {
                 fontSize: FontSizes.regular, color: AppColor.mediumGrey),
             filled: true,
             fillColor: AppColor.authBg,
+            suffixIcon: suffixIcon,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(

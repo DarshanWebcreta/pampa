@@ -138,6 +138,22 @@ class AddressRepositoryImpl implements AddressRepository {
     }
   }
 
+  @override
+  Future<String> getGoogleMapsApiKey() async {
+    try {
+      final response = await _apiService.getConfiguration();
+      final map = response as Map<String, dynamic>;
+      if (map['status'] == true && map['data'] != null) {
+        return map['data']['google_maps_api_key'] ?? '';
+      }
+      throw Exception(map['message'] ?? 'Failed to load Google Maps API key.');
+    } on DioException catch (e) {
+      throw Exception(_extractServerMessage(e) ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    }
+  }
+
   String? _extractServerMessage(DioException e) {
     try {
       final data = e.response?.data;

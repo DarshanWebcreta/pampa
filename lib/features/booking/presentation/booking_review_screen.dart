@@ -38,6 +38,21 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
   bool _isOpeningPayment = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bp = context.read<BookingProvider>();
+      final provider = bp.selectedProvider;
+      if (provider != null) {
+        bp.fetchDistanceCharge(
+          providerId: provider.id,
+          customerZip: widget.address.zipCode,
+        );
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _notesController.dispose();
     _pinterestController.dispose();
@@ -180,10 +195,11 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
             : (providerService != null && providerService.deposit > 0
                 ? providerService.deposit
                 : service.deposit);
-        final priorityFee = service.priorityFee;
+         final priorityFee = service.priorityFee;
         final tip = bookingProvider.tipAmount;
+        final travelFee = bookingProvider.travelFee ?? 0.0;
         final todayDue =
-            (depositAmount > 0 ? depositAmount : fullPrice) + priorityFee + tip;
+            (depositAmount > 0 ? depositAmount : fullPrice) + priorityFee + tip + travelFee;
         final remainingBalance =
             depositAmount > 0 ? fullPrice - depositAmount : 0.0;
         return Scaffold(
@@ -215,14 +231,18 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                 height: 54,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColor.authButton,
+                    backgroundColor: bookingProvider.withinRange == false
+                        ? AppColor.grey
+                        : AppColor.authButton,
                     foregroundColor: AppColor.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: bookingProvider.isSubmitting || _isOpeningPayment
+                  onPressed: bookingProvider.isSubmitting ||
+                          _isOpeningPayment ||
+                          bookingProvider.withinRange == false
                       ? null
                       : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
                               bookingProvider.paymentLink != null)
@@ -255,10 +275,12 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                           ),
                         )
                       : AppText(
-                          (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
-                                  bookingProvider.paymentLink != null)
-                              ? 'Retry Payment'
-                              : 'Submit Booking',
+                          bookingProvider.withinRange == false
+                              ? 'Out of Service Range'
+                              : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
+                                      bookingProvider.paymentLink != null)
+                                  ? 'Retry Payment'
+                                  : 'Submit Booking',
                           color: AppColor.white,
                           fontWeight: FontWeights.semiBold,
                           fontSize: FontSizes.regular,
@@ -305,12 +327,48 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                   value: _formatFullAddress(widget.address),
                 ),
                 const SizedBox(height: 6),
-                AppText(
-                  provider.displayLocation,
-                  fontSize: 12,
-                  color: AppColor.grey,
-                  maxLines: 2,
-                ),
+                if (bookingProvider.distanceChargeLoading) ...[
+                  const Row(
+                    children: [
+                      SizedBox(
+                        height: 14,
+                        width: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.0,
+                          color: AppColor.authButton,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Calculating travel distance...',
+                        style: TextStyle(fontSize: 12, color: AppColor.grey),
+                      ),
+                    ],
+                  ),
+                ] else if (bookingProvider.withinRange == false) ...[
+                  const Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, color: Colors.red, size: 16),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'You are outside this provider\'s service range.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else if (bookingProvider.distanceMiles != null) ...[
+                  AppText(
+                    'Distance: ${bookingProvider.distanceMiles!.toStringAsFixed(1)} miles away',
+                    fontSize: 12,
+                    color: AppColor.grey,
+                  ),
+                ],
                 const SizedBox(height: 18),
                 _SectionLabel('Notes (Optional)'),
                 const SizedBox(height: 8),
@@ -350,6 +408,8 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                   depositAmount: depositAmount,
                   priorityFee: priorityFee,
                   tipAmount: tip,
+                  travelFee: travelFee,
+                  distanceMiles: bookingProvider.distanceMiles,
                   amountDueToday: todayDue,
                   remainingBalance: remainingBalance,
                 ),
@@ -673,6 +733,8 @@ class _PricingBreakdownCard extends StatelessWidget {
   final double depositAmount;
   final double priorityFee;
   final double tipAmount;
+  final double travelFee;
+  final double? distanceMiles;
   final double amountDueToday;
   final double remainingBalance;
 
@@ -682,6 +744,8 @@ class _PricingBreakdownCard extends StatelessWidget {
     required this.depositAmount,
     required this.priorityFee,
     required this.tipAmount,
+    required this.travelFee,
+    this.distanceMiles,
     required this.amountDueToday,
     required this.remainingBalance,
   });
@@ -735,6 +799,15 @@ class _PricingBreakdownCard extends StatelessWidget {
             _PriceRow(
               label: showIndividual ? 'Total Deposit Due Today' : 'Deposit Due Today',
               value: _fmt(depositAmount),
+            ),
+          ],
+          if (travelFee > 0) ...[
+            const SizedBox(height: 10),
+            _PriceRow(
+              label: distanceMiles != null
+                  ? 'Travel Fee (${distanceMiles!.toStringAsFixed(1)} mi)'
+                  : 'Travel Fee',
+              value: _fmt(travelFee),
             ),
           ],
           if (priorityFee > 0) ...[

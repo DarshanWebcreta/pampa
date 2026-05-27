@@ -13,6 +13,7 @@ import 'package:pampa/core/values/keys.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/address/data/models/address_model.dart';
 import 'package:pampa/features/address/presentation/provider/address_provider.dart';
+import 'package:pampa/features/address/presentation/address_search_screen.dart';
 import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/booking/presentation/booking_review_screen.dart';
 import 'package:pampa/features/booking/presentation/choose_provider_screen.dart';
@@ -976,6 +977,7 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
   final _streetCtrl = TextEditingController();
   final _zipCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
+  bool _isLocating = false;
 
   @override
   void initState() {
@@ -991,6 +993,49 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
     _zipCtrl.dispose();
     _cityCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _useCurrentLocation() async {
+    debugPrint("BookingScreen: _useCurrentLocation called");
+    setState(() => _isLocating = true);
+    try {
+      final res = await context.read<AddressProvider>().findMyLocation();
+      debugPrint("BookingScreen: findMyLocation result = $res");
+      if (res != null) {
+        setState(() {
+          _streetCtrl.text = res['streetAddress'] ?? '';
+          _cityCtrl.text = res['city'] ?? '';
+          _zipCtrl.text = res['zipCode'] ?? '';
+        });
+      }
+    } catch (e) {
+      debugPrint("BookingScreen: error in _useCurrentLocation = $e");
+      if (mounted) {
+        FunctionalComponent.showSnackBar(
+            context: context,
+            title: e.toString().replaceFirst('Exception: ', ''),
+            success: false);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
+    }
+  }
+
+  Future<void> _selectAddressFromSearch(BuildContext context) async {
+    final result = await Navigator.of(context).push<Map<String, String>>(
+      MaterialPageRoute(
+        builder: (_) => const AddressSearchScreen(),
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _streetCtrl.text = result['streetAddress'] ?? '';
+        _cityCtrl.text = result['city'] ?? '';
+        _zipCtrl.text = result['zipCode'] ?? '';
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -1053,14 +1098,53 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
                   color: AppColor.authButton, size: 20),
             ),
             const SizedBox(width: 12),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              AppText('Add Your Address',
-                  fontSize: FontSizes.medium,
-                  fontWeight: FontWeights.bold,
-                  color: AppColor.darkGrey),
-              AppText('Required to proceed with booking',
-                  fontSize: FontSizes.small, color: AppColor.grey),
-            ]),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                AppText('Add Your Address',
+                    fontSize: FontSizes.medium,
+                    fontWeight: FontWeights.bold,
+                    color: AppColor.darkGrey),
+                AppText('Required to proceed with booking',
+                    fontSize: FontSizes.small, color: AppColor.grey),
+              ]),
+            ),
+            // Find My Location button
+            GestureDetector(
+              onTap: _isLocating ? null : _useCurrentLocation,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                decoration: BoxDecoration(
+                  color: AppColor.authButton.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _isLocating
+                        ? const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              color: AppColor.authButton,
+                              strokeWidth: 1.5,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.my_location_rounded,
+                            color: AppColor.authButton,
+                            size: 12,
+                          ),
+                    const SizedBox(width: 6),
+                    AppText(
+                      _isLocating ? 'Locating...' : 'Find my location',
+                      fontSize: 11,
+                      fontWeight: FontWeights.semiBold,
+                      color: AppColor.authButton,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ]),
           const SizedBox(height: 24),
           Form(
@@ -1078,8 +1162,21 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
               _Field(
                   ctrl: _streetCtrl,
                   label: 'Street Address',
-                  hint: '742 Evergreen Terrace',
+                  hint: 'Tap to search address',
                   icon: Icons.signpost_outlined,
+                  readOnly: true,
+                  onTap: () => _selectAddressFromSearch(context),
+                  suffixIcon: TextButton(
+                    onPressed: () => _selectAddressFromSearch(context),
+                    child: Text(
+                      _streetCtrl.text.isEmpty ? 'Search' : 'Change',
+                      style: const TextStyle(
+                        color: AppColor.authButton,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
                   validator: (v) => v == null || v.trim().isEmpty
                       ? 'Required'
                       : null),
@@ -1149,6 +1246,10 @@ class _Field extends StatelessWidget {
   final IconData icon;
   final String? Function(String?)? validator;
   final TextInputType keyboardType;
+  final void Function(String)? onChanged;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final Widget? suffixIcon;
 
   const _Field({
     required this.ctrl,
@@ -1157,6 +1258,10 @@ class _Field extends StatelessWidget {
     required this.icon,
     this.validator,
     this.keyboardType = TextInputType.text,
+    this.onChanged,
+    this.readOnly = false,
+    this.onTap,
+    this.suffixIcon,
   });
 
   @override
@@ -1165,11 +1270,15 @@ class _Field extends StatelessWidget {
       controller: ctrl,
       keyboardType: keyboardType,
       validator: validator,
+      onChanged: onChanged,
+      readOnly: readOnly,
+      onTap: onTap,
       style: const TextStyle(fontSize: 14, color: AppColor.darkGrey),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon, size: 18, color: AppColor.grey),
+        suffixIcon: suffixIcon,
         labelStyle: const TextStyle(fontSize: 13, color: AppColor.grey),
         hintStyle:
             const TextStyle(fontSize: 13, color: AppColor.mediumGrey),

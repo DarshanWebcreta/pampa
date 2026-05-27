@@ -29,6 +29,8 @@ class ExploreProviderModel {
   final String? city;
   final String? state;
   final String name;
+  final double? distanceMiles;
+  final double? travelFee;
 
   const ExploreProviderModel({
     required this.id,
@@ -38,6 +40,8 @@ class ExploreProviderModel {
     this.city,
     this.state,
     required this.name,
+    this.distanceMiles,
+    this.travelFee,
   });
 
   String get displayLocation {
@@ -51,6 +55,17 @@ class ExploreProviderModel {
         ? ratingRaw.toDouble()
         : (ratingRaw is double ? ratingRaw : 0.0);
     final user = json['user'] as Map<String, dynamic>? ?? {};
+
+    final distanceRaw = json['distance_miles'];
+    final distanceMiles = distanceRaw is num
+        ? distanceRaw.toDouble()
+        : double.tryParse(distanceRaw?.toString() ?? '');
+
+    final travelRaw = json['travel_fee'];
+    final travelFee = travelRaw is num
+        ? travelRaw.toDouble()
+        : double.tryParse(travelRaw?.toString() ?? '');
+
     return ExploreProviderModel(
       id: json['id'] as int? ?? 0,
       photoUrl: json['photo_url'] as String? ?? _resolveUrl(json['photo']?.toString()),
@@ -59,6 +74,8 @@ class ExploreProviderModel {
       city: json['city'] as String?,
       state: json['state'] as String?,
       name: user['name'] as String? ?? '',
+      distanceMiles: distanceMiles,
+      travelFee: travelFee,
     );
   }
 }

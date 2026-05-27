@@ -86,6 +86,57 @@ class BookingProvider extends ChangeNotifier {
   int? get lastBookingId => _lastBookingId;
   bool get isSubmitting => _submitStatus == BookingSubmitStatus.submitting;
 
+  // ── Distance & Travel Charge ──────────────────────────────────────────────
+  double? _travelFee;
+  double? _distanceMiles;
+  bool? _withinRange;
+  bool _distanceChargeLoading = false;
+  String _distanceChargeError = '';
+
+  double? get travelFee => _travelFee;
+  double? get distanceMiles => _distanceMiles;
+  bool? get withinRange => _withinRange;
+  bool get distanceChargeLoading => _distanceChargeLoading;
+  String get distanceChargeError => _distanceChargeError;
+
+  Future<void> fetchDistanceCharge({
+    required int providerId,
+    required String customerZip,
+  }) async {
+    _distanceChargeLoading = true;
+    _distanceChargeError = '';
+    _travelFee = null;
+    _distanceMiles = null;
+    _withinRange = null;
+    notifyListeners();
+
+    try {
+      final response = await _repository.getDistanceCharge(
+        providerId: providerId,
+        customerZip: customerZip,
+      );
+      final map = response as Map<String, dynamic>;
+      if (map['status'] == true && map['data'] != null) {
+        final data = map['data'] as Map<String, dynamic>;
+        
+        final distanceRaw = data['distance_miles'];
+        _distanceMiles = distanceRaw is num ? distanceRaw.toDouble() : double.tryParse(distanceRaw?.toString() ?? '');
+        
+        final chargeRaw = data['distance_charge'];
+        _travelFee = chargeRaw is num ? chargeRaw.toDouble() : double.tryParse(chargeRaw?.toString() ?? '');
+        
+        _withinRange = data['within_range'] as bool?;
+      } else {
+        _distanceChargeError = map['message'] ?? 'Failed to get distance charge';
+      }
+    } catch (e) {
+      _distanceChargeError = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _distanceChargeLoading = false;
+      notifyListeners();
+    }
+  }
+
   // ── Fetch service detail ───────────────────────────────────────────────────
   Future<void> fetchServiceDetail(int id) async {
     if (_fetchStatus == BookingFetchStatus.loading) return;
@@ -114,7 +165,8 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _providers = await _repository.getProviders(zipCode);
+      final serviceId = _service?.id;
+      _providers = await _repository.getProviders(zipCode, serviceId: serviceId);
       _providerFetchStatus = ProviderFetchStatus.success;
     } catch (e) {
       _providerFetchError = e.toString().replaceFirst('Exception: ', '');
@@ -381,6 +433,11 @@ class BookingProvider extends ChangeNotifier {
   void clearPendingBooking() {
     _lastBookingId = null;
     _paymentLink = null;
+    _travelFee = null;
+    _distanceMiles = null;
+    _withinRange = null;
+    _distanceChargeLoading = false;
+    _distanceChargeError = '';
     if (_submitStatus == BookingSubmitStatus.submitted) {
       _submitStatus = BookingSubmitStatus.idle;
     }

@@ -80,6 +80,7 @@ class ApiPath {
   /// ==============================
 
   static const String stripeConfig = "payments/config";
+  static const String configuration = "configration";
   static const String createCheckoutSession =
       "payments/create-checkout-session";
   static const String pendingPayments = "payments/pending";

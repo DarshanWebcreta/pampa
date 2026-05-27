@@ -22,4 +22,6 @@ abstract class AddressRepository {
   Future<void> setDefaultAddress(int id);
 
   Future<void> deleteAddress(int id);
+
+  Future<String> getGoogleMapsApiKey();
 }

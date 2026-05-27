@@ -11,10 +11,11 @@ class ServiceRepositoryImpl implements ServiceRepository {
 
   @override
   Future<List<ServiceModel>> getServices({
-    required int categoryId,
+    int? categoryId,
+    String? zipCode,
   }) async {
     try {
-      final response = await _apiService.getServices(categoryId);
+      final response = await _apiService.getServices(categoryId, zipCode);
       final map = response as Map<String, dynamic>;
 
       if (map['status'] == true) {

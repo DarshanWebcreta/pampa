@@ -57,9 +57,9 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
-  Future<List<ProviderModel>> getProviders(String zipCode) async {
+  Future<List<ProviderModel>> getProviders(String? zipCode, {int? serviceId}) async {
     try {
-      final response = await _apiService.getProviders(zipCode);
+      final response = await _apiService.getProviders(zipCode, serviceId);
       final map = response as Map<String, dynamic>;
       if (map['status'] == true) {
         final data = map['data'] as List<dynamic>? ?? [];
@@ -69,6 +69,23 @@ class BookingRepositoryImpl implements BookingRepository {
             .toList();
       }
       throw Exception(map['message'] ?? 'Failed to load providers.');
+    } on DioException catch (e) {
+      throw Exception(HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (_) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  @override
+  Future<dynamic> getDistanceCharge({
+    required int providerId,
+    required String customerZip,
+  }) async {
+    try {
+      final response = await _apiService.getDistanceCharge(providerId, customerZip);
+      return response;
     } on DioException catch (e) {
       throw Exception(HandleExeption.handleError(e));
     } on Exception {

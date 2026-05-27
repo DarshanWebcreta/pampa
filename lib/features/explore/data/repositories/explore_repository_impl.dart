@@ -11,9 +11,12 @@ class ExploreRepositoryImpl implements ExploreRepository {
   ExploreRepositoryImpl(this._apiService);
 
   @override
-  Future<ExploreResultModel> explore({String? query}) async {
+  Future<ExploreResultModel> explore({
+    String? query,
+    String? zipCode,
+  }) async {
     try {
-      final response = await _apiService.explore(query);
+      final response = await _apiService.explore(query, zipCode);
       final map = response as Map<String, dynamic>;
       if (map['status'] == true) {
         return ExploreResultModel.fromJson(map);

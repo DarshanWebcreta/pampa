@@ -12,13 +12,18 @@ abstract class BookingRepository {
 
   Future<ServiceModel> getServiceDetail(int id);
 
-  Future<List<ProviderModel>> getProviders(String zipCode);
+  Future<List<ProviderModel>> getProviders(String? zipCode, {int? serviceId});
 
   Future<List<ProviderModel>> getAvailableProviders({
     required List<int> serviceIds,
     required String zipCode,
     required String date,
     required String time,
+  });
+
+  Future<dynamic> getDistanceCharge({
+    required int providerId,
+    required String customerZip,
   });
 
 

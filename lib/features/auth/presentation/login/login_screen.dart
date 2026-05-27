@@ -306,7 +306,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Expanded(
                       child: _SocialButton(
-                        icon: const _GoogleLogo(),
+
+                        icon: Image.asset(ImageStrings.googleLogo,height: 20,width: 20,),
                         label: 'Google',
                         onTap: auth.isLoading ? null : _onGoogleSignIn,
                       ),
@@ -387,8 +388,8 @@ class _SocialButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(width: 20, height: 20, child: icon),
-            const SizedBox(width: 8),
+            SizedBox(width: 30, height: 25, child: icon),
+            const SizedBox(width: 6),
             AppText(
               label,
               fontSize: 13,
@@ -400,45 +401,6 @@ class _SocialButton extends StatelessWidget {
       ),
     );
   }
-}
-
-// ── Google logo painter ────────────────────────────────────────────────────────
-class _GoogleLogo extends StatelessWidget {
-  const _GoogleLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    return const CustomPaint(painter: _GoogleLogoPainter());
-  }
-}
-
-class _GoogleLogoPainter extends CustomPainter {
-  const _GoogleLogoPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-
-    canvas.drawArc(rect, -0.52, 1.57, false,
-        Paint()..color = const Color(0xFFEA4335)..style = PaintingStyle.stroke..strokeWidth = size.width * 0.22..strokeCap = StrokeCap.butt);
-    canvas.drawArc(rect, 1.05, 1.57, false,
-        Paint()..color = const Color(0xFF4285F4)..style = PaintingStyle.stroke..strokeWidth = size.width * 0.22..strokeCap = StrokeCap.butt);
-    canvas.drawArc(rect, 2.62, 0.8, false,
-        Paint()..color = const Color(0xFFFBBC05)..style = PaintingStyle.stroke..strokeWidth = size.width * 0.22..strokeCap = StrokeCap.butt);
-    canvas.drawArc(rect, 3.42, 0.77, false,
-        Paint()..color = const Color(0xFF34A853)..style = PaintingStyle.stroke..strokeWidth = size.width * 0.22..strokeCap = StrokeCap.butt);
-
-    canvas.drawLine(
-      Offset(center.dx, center.dy),
-      Offset(center.dx + radius, center.dy),
-      Paint()..color = AppColor.white..strokeWidth = size.width * 0.24..strokeCap = StrokeCap.butt,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // ─── Account Pending Dialog ────────────────────────────────────────────────────
