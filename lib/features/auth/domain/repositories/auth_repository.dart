@@ -14,6 +14,7 @@ abstract class AuthRepository {
     required String passwordConfirmation,
     required String mobile,
     required String type,
+    String? referralCode,
   });
 
   /// Social login — calls customer/social-login with Google profile data.

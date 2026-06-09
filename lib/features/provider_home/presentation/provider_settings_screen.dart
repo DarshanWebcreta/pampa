@@ -29,6 +29,8 @@ import 'package:pampa/features/provider_home/presentation/provider/provider_mess
 import 'package:pampa/features/provider_home/presentation/provider/provider_bank_detail_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider_bank_detail_screen.dart';
 import 'package:pampa/features/auth/presentation/change_password/change_password_screen.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_referral_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider_referral_screen.dart';
 
 class ProviderSettingsScreen extends StatelessWidget {
   const ProviderSettingsScreen({super.key});
@@ -136,6 +138,18 @@ class ProviderSettingsScreen extends StatelessWidget {
                     builder: (_) => ChangeNotifierProvider.value(
                       value: getIt<ProviderPayoutMethodProvider>(),
                       child: const ProviderPayoutMethodScreen(),
+                    ),
+                  ),
+                ),
+              ),
+              _SettingsItemData(
+                icon: Icons.card_giftcard_rounded,
+                label: 'Referrals',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: getIt<ProviderReferralProvider>(),
+                      child: const ProviderReferralScreen(),
                     ),
                   ),
                 ),

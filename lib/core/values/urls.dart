@@ -108,6 +108,7 @@ class ApiPath {
   static String providerBookingDetail(int id) => "provider/bookings/$id";
   static String providerBookingStatus(int id) => "provider/bookings/$id/status";
   static String providerCancelBooking(int id) => "provider/bookings/$id/cancel";
+  static const String providerReferralsStats = "provider/referrals/stats";
 
   /// ==============================
   /// PROVIDER WALLET

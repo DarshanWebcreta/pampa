@@ -111,6 +111,7 @@ class ProviderProfileModel {
   final List<String> zipCodes;
   final List<ProviderGalleryImage> gallery;
   final List<ProviderAvailability> availabilities;
+  final String? referralCode;
 
   // Optional — returned by future API endpoints
   final int totalReviews;
@@ -149,6 +150,7 @@ class ProviderProfileModel {
     this.cancellationRate = 0,
     this.services = const [],
     this.recentReviews = const [],
+    this.referralCode,
   });
 
   factory ProviderProfileModel.fromMap(Map<String, dynamic> m) =>
@@ -204,6 +206,7 @@ class ProviderProfileModel {
                     ProviderReview.fromMap(e as Map<String, dynamic>))
                 .toList() ??
             [],
+        referralCode: m['referral_code'] as String?,
       );
 
   ProviderProfileModel copyWith({
@@ -212,6 +215,7 @@ class ProviderProfileModel {
     String? photoUrl,
     List<ProviderGalleryImage>? gallery,
     List<ProviderAvailability>? availabilities,
+    String? referralCode,
   }) =>
       ProviderProfileModel(
         id: id,
@@ -243,6 +247,7 @@ class ProviderProfileModel {
         cancellationRate: cancellationRate,
         services: services,
         recentReviews: recentReviews,
+        referralCode: referralCode ?? this.referralCode,
       );
 }
 

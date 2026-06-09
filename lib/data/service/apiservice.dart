@@ -213,6 +213,9 @@ abstract class ApiService {
   @GET(ApiPath.providerProfile)
   Future<dynamic> getProviderProfile();
 
+  @GET(ApiPath.providerReferralsStats)
+  Future<dynamic> getProviderReferralsStats();
+
   @PUT(ApiPath.providerProfileUpdate)
   Future<dynamic> updateProviderProfile(@Body() Map<String, dynamic> body);
 

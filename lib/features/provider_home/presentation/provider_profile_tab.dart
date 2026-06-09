@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:pampa/core/utils/functional_component.dart';
 import 'package:pampa/core/values/app_text_value.dart';
@@ -9,6 +11,8 @@ import 'package:pampa/data/service/di.dart';
 import 'package:pampa/features/provider_home/data/models/provider_profile_model.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_profile_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider_edit_profile_screen.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_referral_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider_referral_screen.dart';
 
 double _kmToMiles(num km) => km * 0.621371;
 String _milesLabelFromKm(num km) {
@@ -275,6 +279,10 @@ class _ProfileBody extends StatelessWidget {
             ],
           ),
         ),
+        if (profile.referralCode != null && profile.referralCode!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _ReferralCard(referralCode: profile.referralCode!),
+        ],
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(14),
@@ -978,6 +986,187 @@ class _ErrorView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ReferralCard extends StatelessWidget {
+  final String referralCode;
+
+  const _ReferralCard({required this.referralCode});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFF1E3E8)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.authButton.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColor.authButton.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.card_giftcard_rounded,
+                  size: 20,
+                  color: AppColor.authButton,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Referral Program',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColor.darkGrey,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Share your code to join Pampa',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColor.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ChangeNotifierProvider.value(
+                        value: getIt<ProviderReferralProvider>(),
+                        child: const ProviderReferralScreen(),
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColor.authButton.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.history_rounded, size: 13, color: AppColor.authButton),
+                      SizedBox(width: 4),
+                      Text(
+                        'History',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColor.authButton,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFDF8F9),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColor.authButton.withValues(alpha: 0.15),
+                style: BorderStyle.solid,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: SelectableText(
+                    referralCode,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: AppColor.authButton,
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: referralCode));
+                        FunctionalComponent.showSnackBar(
+                          context: context,
+                          title: 'Referral code copied to clipboard!',
+                          success: true,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColor.authButton.withValues(alpha: 0.12),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.copy_rounded,
+                          size: 16,
+                          color: AppColor.authButton,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        final shareText =
+                            "Hey! Join Pampa as a provider using my referral code: $referralCode. Grow your business and manage bookings easily! Download the app now.";
+                        Share.share(shareText, subject: "Join Pampa");
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColor.authButton,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.share_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

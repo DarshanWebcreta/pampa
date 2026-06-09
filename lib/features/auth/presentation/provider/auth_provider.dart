@@ -17,6 +17,7 @@ import 'package:pampa/features/provider_home/presentation/provider/provider_dash
 import 'package:pampa/features/provider_home/presentation/provider/provider_earnings_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_messaging_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_profile_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_referral_provider.dart';
 
 enum AuthStatus { initial, loading, success, pendingApproval, error }
 
@@ -81,6 +82,7 @@ class AuthProvider extends ChangeNotifier {
     required String password,
     required String passwordConfirmation,
     required String mobile,
+    String? referralCode,
   }) async {
     _setLoading();
 
@@ -92,6 +94,7 @@ class AuthProvider extends ChangeNotifier {
         passwordConfirmation: passwordConfirmation,
         mobile: mobile,
         type: _userType,
+        referralCode: referralCode,
       );
 
       StorageManager.saveData(StoreKeys.token, response.accessToken);
@@ -205,6 +208,9 @@ class AuthProvider extends ChangeNotifier {
     }
     if (getIt.isRegistered<ProviderProfileProvider>()) {
       getIt<ProviderProfileProvider>().clearSession();
+    }
+    if (getIt.isRegistered<ProviderReferralProvider>()) {
+      getIt<ProviderReferralProvider>().clearSession();
     }
   }
 

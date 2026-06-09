@@ -45,6 +45,7 @@ import 'package:pampa/features/provider_home/presentation/provider/provider_payo
 import 'package:pampa/features/provider_home/presentation/provider/provider_pricing_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_service_management_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_bank_detail_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_referral_provider.dart';
 
 import 'package:pampa/features/support/data/repositories/support_repository_impl.dart';
 import 'package:pampa/features/support/domain/repositories/support_repository.dart';
@@ -206,6 +207,11 @@ void setup() {
   // Provider Bank Details
   getIt.registerLazySingleton<ProviderBankDetailProvider>(
     () => ProviderBankDetailProvider(getIt<ApiService>()),
+  );
+
+  // Provider Referral stats
+  getIt.registerLazySingleton<ProviderReferralProvider>(
+    () => ProviderReferralProvider(getIt<ApiService>()),
   );
 
   // Support

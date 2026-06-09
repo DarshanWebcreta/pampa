@@ -47,6 +47,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String passwordConfirmation,
     required String mobile,
     required String type,
+    String? referralCode,
   }) async {
     try {
       final response = await _apiService.register({
@@ -56,6 +57,7 @@ class AuthRepositoryImpl implements AuthRepository {
         'password_confirmation': passwordConfirmation,
         'mobile': mobile,
         'type': type,
+        if (referralCode != null && referralCode.isNotEmpty) 'referral_code': referralCode,
       });
 
       final map = response as Map<String, dynamic>;

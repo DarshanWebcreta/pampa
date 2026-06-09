@@ -29,6 +29,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _referralCodeController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -41,6 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _mobileController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _referralCodeController.dispose();
     super.dispose();
   }
 
@@ -55,6 +57,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       password: _passwordController.text,
       passwordConfirmation: _confirmPasswordController.text,
       mobile: '${_selectedCountry.dial}${_mobileController.text.trim()}',
+      referralCode: _referralCodeController.text.trim().isNotEmpty
+          ? _referralCodeController.text.trim()
+          : null,
     );
 
     if (!mounted) return;
@@ -346,6 +351,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 return null;
               },
             ),
+            if (context.read<AuthProvider>().userType == 'provider') ...[
+              const SizedBox(height: 18),
+              _buildLabel('Referral Code (Optional)'),
+              const SizedBox(height: 8),
+              CustomTextFormField(
+                controller: _referralCodeController,
+                hintText: 'Enter referral code (e.g. REF-ABCDEF)',
+                fillColor: AppColor.authBg,
+                textInput: TextInputType.text,
+                textCapitalization: TextCapitalization.characters,
+                focusColor: AppColor.authButton,
+                enableColor: AppColor.mediumGrey,
+                radius: 12,
+                fieldHeight: 14,
+                errorDisplay: true,
+                autovalidate: true,
+                prefix: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Icon(Icons.card_giftcard_rounded, color: AppColor.grey, size: 20),
+                ),
+              ),
+            ],
             const SizedBox(height: 30),
             Consumer<AuthProvider>(
               builder: (context, auth, _) {
