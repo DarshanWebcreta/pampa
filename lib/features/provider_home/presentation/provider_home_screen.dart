@@ -273,7 +273,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     BuildContext context,
     ProviderDashboardProvider dashProv,
   ) {
-    showModalBottomSheet<bool>(
+    showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -286,11 +286,11 @@ class _DashboardTabState extends State<_DashboardTab> {
           );
         },
       ),
-    ).then((success) {
-      if (success == true && context.mounted) {
+    ).then((message) {
+      if (message != null && context.mounted) {
         FunctionalComponent.showSnackBar(
           context: context,
-          title: 'You are now offline.',
+          title: message,
           success: true,
         );
       }
@@ -330,7 +330,10 @@ class _DashboardTabState extends State<_DashboardTab> {
                   ),
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const ProviderSettingsScreen(),
+                      builder: (_) => ChangeNotifierProvider.value(
+                        value: getIt<ProviderDashboardProvider>(),
+                        child: const ProviderSettingsScreen(),
+                      ),
                     ),
                   ),
                 ),
@@ -404,22 +407,23 @@ class _DashboardTabState extends State<_DashboardTab> {
                       // ── Online toggle card ──────────────────────────────
                       _OnlineToggleCard(
                         isOnline: dashProv.isOnline,
+                        offlineMessage: dashProv.dashboard?.offlineMessage,
                         loading: dashProv.toggleLoading,
                         onToggle: () async {
                           if (dashProv.isOnline) {
                             _showOfflineBottomSheet(context, dashProv);
                           } else {
-                            final error = await dashProv.toggleOnline();
-                            if (error != null && context.mounted) {
+                            final result = await dashProv.toggleOnline();
+                            if (!result.success && context.mounted) {
                               FunctionalComponent.showSnackBar(
                                 context: context,
-                                title: error,
+                                title: result.message,
                                 success: false,
                               );
                             } else if (context.mounted) {
                               FunctionalComponent.showSnackBar(
                                 context: context,
-                                title: 'You are now online.',
+                                title: result.message,
                                 success: true,
                               );
                             }
@@ -483,11 +487,13 @@ class _DashboardTabState extends State<_DashboardTab> {
 
 class _OnlineToggleCard extends StatelessWidget {
   final bool isOnline;
+  final String? offlineMessage;
   final bool loading;
   final VoidCallback onToggle;
 
   const _OnlineToggleCard({
     required this.isOnline,
+    this.offlineMessage,
     required this.loading,
     required this.onToggle,
   });
@@ -509,15 +515,19 @@ class _OnlineToggleCard extends StatelessWidget {
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              color: isOnline
-                  ? const Color(0xFF4CAF50)
-                  : const Color(0xFFFF9800),
-              shape: BoxShape.circle,
+          Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: isOnline
+                    ? const Color(0xFF4CAF50)
+                    : const Color(0xFFFF9800),
+                shape: BoxShape.circle,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -538,18 +548,52 @@ class _OnlineToggleCard extends StatelessWidget {
                   fontSize: 12,
                   color: AppColor.grey,
                 ),
+                if (offlineMessage != null && offlineMessage!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1),
+                        child: Icon(
+                          Icons.info_outline_rounded,
+                          size: 13,
+                          color: isOnline
+                              ? const Color(0xFF4CAF50)
+                              : const Color(0xFFE65100),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: AppText(
+                          offlineMessage!,
+                          fontSize: 11,
+                          color: isOnline
+                              ? const Color(0xFF2E7D32)
+                              : const Color(0xFFD84315),
+                          fontWeight: FontWeights.medium,
+                          maxLines: 3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
+          const SizedBox(width: 10),
           loading
-              ? const SizedBox(
-                  width: 36,
-                  height: 22,
-                  child: Center(
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+              ? const Padding(
+                  padding: EdgeInsets.only(top: 3),
+                  child: SizedBox(
+                    width: 36,
+                    height: 22,
+                    child: Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                     ),
                   ),
                 )

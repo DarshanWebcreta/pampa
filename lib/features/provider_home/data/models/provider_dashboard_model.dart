@@ -172,6 +172,9 @@ class ServiceMixItem {
 
 class ProviderDashboardModel {
   final bool isOnline;
+  final String? offlineMessage;
+  final String? unavailableFrom;
+  final String? unavailableTo;
   final int pendingCount;
   final List<ProviderDashboardBooking> pendingRequests;
   final List<ProviderDashboardBooking> upcomingBookings;
@@ -181,6 +184,9 @@ class ProviderDashboardModel {
 
   ProviderDashboardModel({
     required this.isOnline,
+    this.offlineMessage,
+    this.unavailableFrom,
+    this.unavailableTo,
     required this.pendingCount,
     required this.pendingRequests,
     required this.upcomingBookings,
@@ -194,6 +200,9 @@ class ProviderDashboardModel {
         json['pending_requests'] as Map<String, dynamic>? ?? {};
     return ProviderDashboardModel(
       isOnline: json['is_online'] as bool? ?? false,
+      offlineMessage: json['offline_message'] as String?,
+      unavailableFrom: json['unavailable_from'] as String?,
+      unavailableTo: json['unavailable_to'] as String?,
       pendingCount: pendingMap['count'] as int? ?? 0,
       pendingRequests: (pendingMap['data'] as List<dynamic>? ?? [])
           .map((b) => ProviderDashboardBooking.fromJson(

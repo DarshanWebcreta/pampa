@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_dashboard_provider.dart';
 
 class UnavailabilityBottomSheet extends StatefulWidget {
-  final Future<String?> Function(int duration, DateTime startDate) onConfirm;
+  final Future<ToggleResult> Function(int duration, DateTime startDate) onConfirm;
   final String title;
   final String description;
 
@@ -61,18 +62,18 @@ class _UnavailabilityBottomSheetState extends State<UnavailabilityBottomSheet> {
       _errorMsg = null;
     });
 
-    final error = await widget.onConfirm(_duration, _startDate);
+    final result = await widget.onConfirm(_duration, _startDate);
 
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
-      if (error != null) {
+      if (!result.success) {
         setState(() {
-          _errorMsg = error;
+          _errorMsg = result.message;
         });
       } else {
-        Navigator.pop(context, true);
+        Navigator.pop(context, result.message);
       }
     }
   }

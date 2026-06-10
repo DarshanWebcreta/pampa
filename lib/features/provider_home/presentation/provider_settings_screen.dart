@@ -286,7 +286,7 @@ class ProviderSettingsScreen extends StatelessWidget {
     ProviderDashboardProvider dashProv,
   ) {
     if (dashProv.isOnline) {
-      showModalBottomSheet<bool>(
+      showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
@@ -302,11 +302,11 @@ class ProviderSettingsScreen extends StatelessWidget {
             );
           },
         ),
-      ).then((success) {
-        if (success == true && context.mounted) {
+      ).then((message) {
+        if (message != null && context.mounted) {
           FunctionalComponent.showSnackBar(
             context: context,
-            title: 'Your profile has been paused.',
+            title: message,
             success: true,
           );
         }
@@ -343,17 +343,17 @@ class ProviderSettingsScreen extends StatelessWidget {
     );
 
     if (shouldResume == true && context.mounted) {
-      final error = await dashProv.toggleStatus(isOnline: true);
-      if (error != null && context.mounted) {
+      final result = await dashProv.toggleStatus(isOnline: true);
+      if (!result.success && context.mounted) {
         FunctionalComponent.showSnackBar(
           context: context,
-          title: error,
+          title: result.message,
           success: false,
         );
       } else if (context.mounted) {
         FunctionalComponent.showSnackBar(
           context: context,
-          title: 'Your profile is now active.',
+          title: result.message,
           success: true,
         );
       }

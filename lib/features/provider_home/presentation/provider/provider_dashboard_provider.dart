@@ -41,8 +41,8 @@ class ProviderDashboardProvider extends ChangeNotifier {
     }
   }
 
-  Future<String?> toggleOnline({int? duration, DateTime? startDate}) async {
-    if (_toggleLoading) return 'Already loading';
+  Future<ToggleResult> toggleOnline({int? duration, DateTime? startDate}) async {
+    if (_toggleLoading) return ToggleResult(success: false, message: 'Already loading');
     _toggleLoading = true;
     final prev = _dashboard?.isOnline ?? false;
     final targetOnline = !prev;
@@ -51,6 +51,9 @@ class ProviderDashboardProvider extends ChangeNotifier {
     if (_dashboard != null) {
       _dashboard = ProviderDashboardModel(
         isOnline: targetOnline,
+        offlineMessage: targetOnline ? null : _dashboard!.offlineMessage,
+        unavailableFrom: targetOnline ? null : _dashboard!.unavailableFrom,
+        unavailableTo: targetOnline ? null : _dashboard!.unavailableTo,
         pendingCount: _dashboard!.pendingCount,
         pendingRequests: _dashboard!.pendingRequests,
         upcomingBookings: _dashboard!.upcomingBookings,
@@ -74,10 +77,17 @@ class ProviderDashboardProvider extends ChangeNotifier {
       final response = await _api.providerToggleOnline(body);
       final map = response as Map<String, dynamic>;
       if (map['status'] == true) {
-        final newOnline = (map['data'] as Map<String, dynamic>?)?['is_online'] as bool? ?? targetOnline;
+        final dataMap = map['data'] as Map<String, dynamic>?;
+        final newOnline = dataMap?['is_online'] as bool? ?? targetOnline;
+        final newOfflineMsg = dataMap?['offline_message'] as String?;
+        final newUnavailableFrom = dataMap?['unavailable_from'] as String?;
+        final newUnavailableTo = dataMap?['unavailable_to'] as String?;
         if (_dashboard != null) {
           _dashboard = ProviderDashboardModel(
             isOnline: newOnline,
+            offlineMessage: newOfflineMsg,
+            unavailableFrom: newUnavailableFrom,
+            unavailableTo: newUnavailableTo,
             pendingCount: _dashboard!.pendingCount,
             pendingRequests: _dashboard!.pendingRequests,
             upcomingBookings: _dashboard!.upcomingBookings,
@@ -86,12 +96,18 @@ class ProviderDashboardProvider extends ChangeNotifier {
             serviceMix: _dashboard!.serviceMix,
           );
         }
-        return null;
+        return ToggleResult(
+          success: true,
+          message: map['message'] as String? ?? 'Status updated successfully.',
+        );
       } else {
         // Rollback
         if (_dashboard != null) {
           _dashboard = ProviderDashboardModel(
             isOnline: prev,
+            offlineMessage: _dashboard!.offlineMessage,
+            unavailableFrom: _dashboard!.unavailableFrom,
+            unavailableTo: _dashboard!.unavailableTo,
             pendingCount: _dashboard!.pendingCount,
             pendingRequests: _dashboard!.pendingRequests,
             upcomingBookings: _dashboard!.upcomingBookings,
@@ -100,13 +116,19 @@ class ProviderDashboardProvider extends ChangeNotifier {
             serviceMix: _dashboard!.serviceMix,
           );
         }
-        return map['message'] as String? ?? 'Failed to toggle status.';
+        return ToggleResult(
+          success: false,
+          message: map['message'] as String? ?? 'Failed to toggle status.',
+        );
       }
     } catch (e) {
       // Rollback
       if (_dashboard != null) {
         _dashboard = ProviderDashboardModel(
           isOnline: prev,
+          offlineMessage: _dashboard!.offlineMessage,
+          unavailableFrom: _dashboard!.unavailableFrom,
+          unavailableTo: _dashboard!.unavailableTo,
           pendingCount: _dashboard!.pendingCount,
           pendingRequests: _dashboard!.pendingRequests,
           upcomingBookings: _dashboard!.upcomingBookings,
@@ -115,36 +137,41 @@ class ProviderDashboardProvider extends ChangeNotifier {
           serviceMix: _dashboard!.serviceMix,
         );
       }
+      String? firstError;
       if (e is DioException && e.response?.data != null) {
         final resData = e.response!.data;
         if (resData is Map) {
           if (resData['message'] != null) {
-            return resData['message'].toString();
+            firstError = resData['message'].toString();
           } else if (resData['errors'] != null) {
             final errors = resData['errors'];
             if (errors is Map && errors.isNotEmpty) {
-              final firstError = errors.values.first;
-              if (firstError is List && firstError.isNotEmpty) {
-                return firstError.first.toString();
+              final val = errors.values.first;
+              if (val is List && val.isNotEmpty) {
+                firstError = val.first.toString();
+              } else {
+                firstError = val.toString();
               }
-              return firstError.toString();
             }
           }
         }
       }
-      return 'Failed to toggle status. Please try again.';
+      return ToggleResult(
+        success: false,
+        message: firstError ?? 'Failed to toggle status. Please try again.',
+      );
     } finally {
       _toggleLoading = false;
       notifyListeners();
     }
   }
 
-  Future<String?> toggleStatus({
+  Future<ToggleResult> toggleStatus({
     required bool isOnline,
     int? duration,
     DateTime? startDate,
   }) async {
-    if (_toggleLoading) return 'Already loading';
+    if (_toggleLoading) return ToggleResult(success: false, message: 'Already loading');
     _toggleLoading = true;
     final prev = _dashboard?.isOnline ?? false;
 
@@ -152,6 +179,9 @@ class ProviderDashboardProvider extends ChangeNotifier {
     if (_dashboard != null) {
       _dashboard = ProviderDashboardModel(
         isOnline: isOnline,
+        offlineMessage: isOnline ? null : _dashboard!.offlineMessage,
+        unavailableFrom: isOnline ? null : _dashboard!.unavailableFrom,
+        unavailableTo: isOnline ? null : _dashboard!.unavailableTo,
         pendingCount: _dashboard!.pendingCount,
         pendingRequests: _dashboard!.pendingRequests,
         upcomingBookings: _dashboard!.upcomingBookings,
@@ -177,10 +207,17 @@ class ProviderDashboardProvider extends ChangeNotifier {
       final response = await _api.providerToggleStatus(body);
       final map = response as Map<String, dynamic>;
       if (map['status'] == true) {
-        final returnedOnline = (map['data'] as Map<String, dynamic>?)?['is_online'] as bool? ?? isOnline;
+        final dataMap = map['data'] as Map<String, dynamic>?;
+        final returnedOnline = dataMap?['is_online'] as bool? ?? isOnline;
+        final newOfflineMsg = dataMap?['offline_message'] as String?;
+        final newUnavailableFrom = dataMap?['unavailable_from'] as String?;
+        final newUnavailableTo = dataMap?['unavailable_to'] as String?;
         if (_dashboard != null) {
           _dashboard = ProviderDashboardModel(
             isOnline: returnedOnline,
+            offlineMessage: newOfflineMsg,
+            unavailableFrom: newUnavailableFrom,
+            unavailableTo: newUnavailableTo,
             pendingCount: _dashboard!.pendingCount,
             pendingRequests: _dashboard!.pendingRequests,
             upcomingBookings: _dashboard!.upcomingBookings,
@@ -189,12 +226,18 @@ class ProviderDashboardProvider extends ChangeNotifier {
             serviceMix: _dashboard!.serviceMix,
           );
         }
-        return null;
+        return ToggleResult(
+          success: true,
+          message: map['message'] as String? ?? 'Status updated successfully.',
+        );
       } else {
         // Rollback
         if (_dashboard != null) {
           _dashboard = ProviderDashboardModel(
             isOnline: prev,
+            offlineMessage: _dashboard!.offlineMessage,
+            unavailableFrom: _dashboard!.unavailableFrom,
+            unavailableTo: _dashboard!.unavailableTo,
             pendingCount: _dashboard!.pendingCount,
             pendingRequests: _dashboard!.pendingRequests,
             upcomingBookings: _dashboard!.upcomingBookings,
@@ -203,13 +246,19 @@ class ProviderDashboardProvider extends ChangeNotifier {
             serviceMix: _dashboard!.serviceMix,
           );
         }
-        return map['message'] as String? ?? 'Failed to update status';
+        return ToggleResult(
+          success: false,
+          message: map['message'] as String? ?? 'Failed to update status.',
+        );
       }
     } catch (e) {
       // Rollback
       if (_dashboard != null) {
         _dashboard = ProviderDashboardModel(
           isOnline: prev,
+          offlineMessage: _dashboard!.offlineMessage,
+          unavailableFrom: _dashboard!.unavailableFrom,
+          unavailableTo: _dashboard!.unavailableTo,
           pendingCount: _dashboard!.pendingCount,
           pendingRequests: _dashboard!.pendingRequests,
           upcomingBookings: _dashboard!.upcomingBookings,
@@ -218,24 +267,29 @@ class ProviderDashboardProvider extends ChangeNotifier {
           serviceMix: _dashboard!.serviceMix,
         );
       }
+      String? firstError;
       if (e is DioException && e.response?.data != null) {
         final resData = e.response!.data;
         if (resData is Map) {
           if (resData['message'] != null) {
-            return resData['message'].toString();
+            firstError = resData['message'].toString();
           } else if (resData['errors'] != null) {
             final errors = resData['errors'];
             if (errors is Map && errors.isNotEmpty) {
-              final firstError = errors.values.first;
-              if (firstError is List && firstError.isNotEmpty) {
-                return firstError.first.toString();
+              final val = errors.values.first;
+              if (val is List && val.isNotEmpty) {
+                firstError = val.first.toString();
+              } else {
+                firstError = val.toString();
               }
-              return firstError.toString();
             }
           }
         }
       }
-      return 'Failed to update status. Please try again.';
+      return ToggleResult(
+        success: false,
+        message: firstError ?? 'Failed to update status. Please try again.',
+      );
     } finally {
       _toggleLoading = false;
       notifyListeners();
@@ -249,4 +303,11 @@ class ProviderDashboardProvider extends ChangeNotifier {
     _error = '';
     notifyListeners();
   }
+}
+
+class ToggleResult {
+  final bool success;
+  final String message;
+
+  ToggleResult({required this.success, required this.message});
 }
