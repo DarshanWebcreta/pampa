@@ -104,6 +104,7 @@ class ApiPath {
   static const String providerGallery = "providers/gallery";
   static String deleteProviderGallery(int id) => "providers/gallery/$id";
   static const String providerToggleOnline = "providers/toggle-online";
+  static const String providerToggleStatus = "provider/settings/toggle-status";
   static const String providerBookings = "provider/bookings";
   static String providerBookingDetail(int id) => "provider/bookings/$id";
   static String providerBookingStatus(int id) => "provider/bookings/$id/status";

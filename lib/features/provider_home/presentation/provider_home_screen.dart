@@ -23,6 +23,7 @@ import 'package:pampa/features/provider_home/presentation/provider_earnings_tab.
 import 'package:pampa/features/provider_home/presentation/provider/provider_earnings_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider_profile_tab.dart';
 import 'package:pampa/features/provider_home/presentation/provider_settings_screen.dart';
+import 'package:pampa/features/provider_home/presentation/unavailability_bottom_sheet.dart';
 import 'package:pampa/features/home/presentation/home_screen.dart';
 
 // ─── Tab switcher notifier ────────────────────────────────────────────────────
@@ -268,6 +269,34 @@ class _DashboardTabState extends State<_DashboardTab> {
     });
   }
 
+  void _showOfflineBottomSheet(
+    BuildContext context,
+    ProviderDashboardProvider dashProv,
+  ) {
+    showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => UnavailabilityBottomSheet(
+        title: 'Go Offline',
+        onConfirm: (duration, startDate) async {
+          return await dashProv.toggleOnline(
+            duration: duration,
+            startDate: startDate,
+          );
+        },
+      ),
+    ).then((success) {
+      if (success == true && context.mounted) {
+        FunctionalComponent.showSnackBar(
+          context: context,
+          title: 'You are now offline.',
+          success: true,
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ProviderDashboardProvider>(
@@ -376,7 +405,26 @@ class _DashboardTabState extends State<_DashboardTab> {
                       _OnlineToggleCard(
                         isOnline: dashProv.isOnline,
                         loading: dashProv.toggleLoading,
-                        onToggle: () => dashProv.toggleOnline(),
+                        onToggle: () async {
+                          if (dashProv.isOnline) {
+                            _showOfflineBottomSheet(context, dashProv);
+                          } else {
+                            final error = await dashProv.toggleOnline();
+                            if (error != null && context.mounted) {
+                              FunctionalComponent.showSnackBar(
+                                context: context,
+                                title: error,
+                                success: false,
+                              );
+                            } else if (context.mounted) {
+                              FunctionalComponent.showSnackBar(
+                                context: context,
+                                title: 'You are now online.',
+                                success: true,
+                              );
+                            }
+                          }
+                        },
                       ),
                       const SizedBox(height: 16),
 

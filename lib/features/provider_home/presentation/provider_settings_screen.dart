@@ -17,6 +17,7 @@ import 'package:pampa/features/provider_home/presentation/provider/provider_payo
 import 'package:pampa/features/provider_home/presentation/provider/provider_pricing_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_service_management_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_availability_provider.dart';
+import 'package:pampa/features/provider_home/presentation/provider/provider_dashboard_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider_availability_screen.dart';
 import 'package:pampa/features/provider_home/presentation/provider_category_management_screen.dart';
 import 'package:pampa/features/provider_home/presentation/provider_credentials_screen.dart';
@@ -31,6 +32,7 @@ import 'package:pampa/features/provider_home/presentation/provider_bank_detail_s
 import 'package:pampa/features/auth/presentation/change_password/change_password_screen.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_referral_provider.dart';
 import 'package:pampa/features/provider_home/presentation/provider_referral_screen.dart';
+import 'package:pampa/features/provider_home/presentation/unavailability_bottom_sheet.dart';
 
 class ProviderSettingsScreen extends StatelessWidget {
   const ProviderSettingsScreen({super.key});
@@ -51,187 +53,194 @@ class ProviderSettingsScreen extends StatelessWidget {
           color: AppColor.darkGrey,
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-        children: [
-          const _SectionLabel('Account'),
-          const SizedBox(height: 8),
-          _SettingsGroup(
-            items: [
-              // _SettingsItemData(
-              //   icon: Icons.category_outlined,
-              //   label: 'Category',
-              //   onTap: () => Navigator.of(context).push(
-              //     MaterialPageRoute(
-              //       builder: (_) => ChangeNotifierProvider.value(
-              //         value: getIt<ProviderCategoryManagementProvider>(),
-              //         child: const ProviderCategoryManagementScreen(),
-              //       ),
-              //     ),
-              //   ),
-              // ),
-              _SettingsItemData(
-                icon: Icons.design_services_outlined,
-                label: 'Service',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ChangeNotifierProvider.value(
-                      value: getIt<ProviderServiceManagementProvider>(),
-                      child: const ProviderServiceManagementScreen(),
+      body: Consumer<ProviderDashboardProvider>(
+        builder: (context, dashProv, _) {
+          final isOnline = dashProv.isOnline;
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+            children: [
+              const _SectionLabel('Account'),
+              const SizedBox(height: 8),
+              _SettingsGroup(
+                items: [
+                  // _SettingsItemData(
+                  //   icon: Icons.category_outlined,
+                  //   label: 'Category',
+                  //   onTap: () => Navigator.of(context).push(
+                  //     MaterialPageRoute(
+                  //       builder: (_) => ChangeNotifierProvider.value(
+                  //         value: getIt<ProviderCategoryManagementProvider>(),
+                  //         child: const ProviderCategoryManagementScreen(),
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
+                  _SettingsItemData(
+                    icon: Icons.design_services_outlined,
+                    label: 'Service',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChangeNotifierProvider.value(
+                          value: getIt<ProviderServiceManagementProvider>(),
+                          child: const ProviderServiceManagementScreen(),
+                        ),
+                      ),
                     ),
                   ),
+                  _SettingsItemData(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'Availability',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChangeNotifierProvider.value(
+                          value: getIt<ProviderAvailabilityProvider>(),
+                          child: const ProviderAvailabilityScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                  _SettingsItemData(
+                    icon: Icons.attach_money_rounded,
+                    label: 'Pricing',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChangeNotifierProvider.value(
+                          value: getIt<ProviderPricingProvider>(),
+                          child: const ProviderPricingScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                  _SettingsItemData(
+                    icon: Icons.verified_user_outlined,
+                    label: 'Credentials',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChangeNotifierProvider.value(
+                          value: getIt<ProviderCredentialsProvider>(),
+                          child: const ProviderCredentialsScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                  _SettingsItemData(
+                    icon: Icons.account_balance_rounded,
+                    label: 'Bank Details',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChangeNotifierProvider.value(
+                          value: getIt<ProviderBankDetailProvider>(),
+                          child: const ProviderBankDetailScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                  _SettingsItemData(
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: 'Wallet',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChangeNotifierProvider.value(
+                          value: getIt<ProviderPayoutMethodProvider>(),
+                          child: const ProviderPayoutMethodScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                  _SettingsItemData(
+                    icon: Icons.card_giftcard_rounded,
+                    label: 'Referrals',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChangeNotifierProvider.value(
+                          value: getIt<ProviderReferralProvider>(),
+                          child: const ProviderReferralScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const _SectionLabel('Preferences'),
+              const SizedBox(height: 8),
+              _SettingsGroup(
+                items: [
+                  _SettingsItemData(
+                    icon: Icons.notifications_none_rounded,
+                    label: 'Notifications',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationsScreen(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const _SectionLabel('Security'),
+              const SizedBox(height: 8),
+              _SettingsGroup(
+                items: [
+                  _SettingsItemData(
+                    icon: Icons.lock_outline_rounded,
+                    label: 'Change Password',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ChangePasswordScreen(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const _SectionLabel('Support'),
+              const SizedBox(height: 8),
+              _SettingsGroup(
+                items: [
+                  _SettingsItemData(
+                    icon: Icons.help_outline_rounded,
+                    label: 'Help Center',
+                    onTap: () => _openSupportChat(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const _SectionLabel('Account Actions'),
+              const SizedBox(height: 8),
+              _SettingsGroup(
+                items: [
+                  _SettingsItemData(
+                    icon: isOnline
+                        ? Icons.pause_circle_outline_rounded
+                        : Icons.play_circle_outline_rounded,
+                    label: isOnline ? 'Temporarily Pause Profile' : 'Resume Profile',
+                    isDestructive: isOnline,
+                    onTap: () => _handlePauseResume(context, dashProv),
+                  ),
+                  _SettingsItemData(
+                    icon: Icons.logout_rounded,
+                    label: 'Sign Out',
+                    isDestructive: true,
+                    onTap: () => _confirmLogout(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+              Center(
+                child: AppText(
+                  'Pampa Providers v1.0.0',
+                  fontSize: 11,
+                  color: AppColor.grey,
                 ),
               ),
-              _SettingsItemData(
-                icon: Icons.calendar_today_outlined,
-                label: 'Availability',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ChangeNotifierProvider.value(
-                      value: getIt<ProviderAvailabilityProvider>(),
-                      child: const ProviderAvailabilityScreen(),
-                    ),
-                  ),
-                ),
-              ),
-              _SettingsItemData(
-                icon: Icons.attach_money_rounded,
-                label: 'Pricing',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ChangeNotifierProvider.value(
-                      value: getIt<ProviderPricingProvider>(),
-                      child: const ProviderPricingScreen(),
-                    ),
-                  ),
-                ),
-              ),
-              _SettingsItemData(
-                icon: Icons.verified_user_outlined,
-                label: 'Credentials',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ChangeNotifierProvider.value(
-                      value: getIt<ProviderCredentialsProvider>(),
-                      child: const ProviderCredentialsScreen(),
-                    ),
-                  ),
-                ),
-              ),
-              _SettingsItemData(
-                icon: Icons.account_balance_rounded,
-                label: 'Bank Details',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ChangeNotifierProvider.value(
-                      value: getIt<ProviderBankDetailProvider>(),
-                      child: const ProviderBankDetailScreen(),
-                    ),
-                  ),
-                ),
-              ),
-              _SettingsItemData(
-                icon: Icons.account_balance_wallet_outlined,
-                label: 'Wallet',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ChangeNotifierProvider.value(
-                      value: getIt<ProviderPayoutMethodProvider>(),
-                      child: const ProviderPayoutMethodScreen(),
-                    ),
-                  ),
-                ),
-              ),
-              _SettingsItemData(
-                icon: Icons.card_giftcard_rounded,
-                label: 'Referrals',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ChangeNotifierProvider.value(
-                      value: getIt<ProviderReferralProvider>(),
-                      child: const ProviderReferralScreen(),
-                    ),
-                  ),
-                ),
+              const SizedBox(height: 4),
+              Center(
+                child: AppText('© 2026 Pampa', fontSize: 11, color: AppColor.grey),
               ),
             ],
-          ),
-          const SizedBox(height: 20),
-          const _SectionLabel('Preferences'),
-          const SizedBox(height: 8),
-          _SettingsGroup(
-            items: [
-              _SettingsItemData(
-                icon: Icons.notifications_none_rounded,
-                label: 'Notifications',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const NotificationsScreen(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const _SectionLabel('Security'),
-          const SizedBox(height: 8),
-          _SettingsGroup(
-            items: [
-              _SettingsItemData(
-                icon: Icons.lock_outline_rounded,
-                label: 'Change Password',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const ChangePasswordScreen(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const _SectionLabel('Support'),
-          const SizedBox(height: 8),
-          _SettingsGroup(
-            items: [
-              _SettingsItemData(
-                icon: Icons.help_outline_rounded,
-                label: 'Help Center',
-                onTap: () => _openSupportChat(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const _SectionLabel('Account Actions'),
-          const SizedBox(height: 8),
-          _SettingsGroup(
-            items: [
-              _SettingsItemData(
-                icon: Icons.pause_circle_outline_rounded,
-                label: 'Temporarily Pause Profile',
-                isDestructive: true,
-                onTap: () => _showPauseDialog(context),
-              ),
-              _SettingsItemData(
-                icon: Icons.logout_rounded,
-                label: 'Sign Out',
-                isDestructive: true,
-                onTap: () => _confirmLogout(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 28),
-          Center(
-            child: AppText(
-              'Pampa Providers v1.0.0',
-              fontSize: 11,
-              color: AppColor.grey,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Center(
-            child: AppText('© 2026 Pampa', fontSize: 11, color: AppColor.grey),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -272,29 +281,82 @@ class ProviderSettingsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _showPauseDialog(BuildContext context) async {
-    final shouldPause = await showDialog<bool>(
+  void _handlePauseResume(
+    BuildContext context,
+    ProviderDashboardProvider dashProv,
+  ) {
+    if (dashProv.isOnline) {
+      showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => UnavailabilityBottomSheet(
+          title: 'Pause Profile',
+          description:
+              'Select when you want to start being unavailable and for how long. During this period, your profile will be paused.',
+          onConfirm: (duration, startDate) async {
+            return await dashProv.toggleStatus(
+              isOnline: false,
+              duration: duration,
+              startDate: startDate,
+            );
+          },
+        ),
+      ).then((success) {
+        if (success == true && context.mounted) {
+          FunctionalComponent.showSnackBar(
+            context: context,
+            title: 'Your profile has been paused.',
+            success: true,
+          );
+        }
+      });
+    } else {
+      _showResumeDialog(context, dashProv);
+    }
+  }
+
+  Future<void> _showResumeDialog(
+    BuildContext context,
+    ProviderDashboardProvider dashProv,
+  ) async {
+    final shouldResume = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Pause Profile'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Resume Profile'),
         content: const Text(
-          'This action is not connected yet. Add the pause profile API here when ready.',
+          'Are you sure you want to resume your profile and make yourself available for bookings?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Close'),
+            child: Text('Cancel', style: TextStyle(color: AppColor.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Resume',
+                style: TextStyle(color: AppColor.authButton)),
           ),
         ],
       ),
     );
 
-    if (shouldPause == true && context.mounted) {
-      FunctionalComponent.showSnackBar(
-        context: context,
-        title: 'Profile pause requested.',
-        success: true,
-      );
+    if (shouldResume == true && context.mounted) {
+      final error = await dashProv.toggleStatus(isOnline: true);
+      if (error != null && context.mounted) {
+        FunctionalComponent.showSnackBar(
+          context: context,
+          title: error,
+          success: false,
+        );
+      } else if (context.mounted) {
+        FunctionalComponent.showSnackBar(
+          context: context,
+          title: 'Your profile is now active.',
+          success: true,
+        );
+      }
     }
   }
 

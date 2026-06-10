@@ -243,7 +243,10 @@ abstract class ApiService {
   Future<dynamic> updateProviderCredentials(@Body() FormData body);
 
   @POST(ApiPath.providerToggleOnline)
-  Future<dynamic> providerToggleOnline();
+  Future<dynamic> providerToggleOnline(@Body() Map<String, dynamic> body);
+
+  @POST(ApiPath.providerToggleStatus)
+  Future<dynamic> providerToggleStatus(@Body() Map<String, dynamic> body);
 
   @GET(ApiPath.providerBookings)
   Future<dynamic> getProviderBookings({
