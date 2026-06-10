@@ -2247,6 +2247,51 @@ class _UpcomingBookingCard extends StatelessWidget {
                     ],
                   ),
                 ],
+                if (booking.rescheduleBook) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          context.push(RouteNames.bookingDetail, extra: {
+                            'serviceId': booking.service.id,
+                            'preSelectedProvider': booking.provider,
+                            'rescheduleBookingId': booking.id,
+                            'rescheduleAddressId': booking.addressId,
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFfff4e5),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.edit_calendar_rounded,
+                                size: 12,
+                                color: Color(0xFFe65100),
+                              ),
+                              const SizedBox(width: 4),
+                              AppText(
+                                'Reschedule',
+                                fontSize: 12,
+                                fontWeight: FontWeights.semiBold,
+                                color: const Color(0xFFe65100),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

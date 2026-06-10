@@ -13,6 +13,7 @@ import 'package:pampa/features/auth/presentation/forgot_password/forgot_password
 import 'package:pampa/features/auth/presentation/verify_otp/verify_otp_screen.dart';
 import 'package:pampa/features/auth/presentation/reset_password/reset_password_screen.dart';
 import 'package:pampa/features/auth/presentation/change_password/change_password_screen.dart';
+import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/categories/presentation/category_list_screen.dart';
 import 'package:pampa/features/home/presentation/home_screen.dart';
 import 'package:pampa/features/services/presentation/provider/service_provider.dart';
@@ -149,10 +150,29 @@ class AppRouter {
         path: RouteNames.bookingDetail,
         name: RouteNames.bookingDetail,
         builder: (context, state) {
-          final serviceId = state.extra as int;
+          final extra = state.extra;
+          int serviceId;
+          ProviderModel? preSelectedProvider;
+          int? rescheduleBookingId;
+          int? rescheduleAddressId;
+
+          if (extra is Map<String, dynamic>) {
+            serviceId = extra['serviceId'] as int;
+            preSelectedProvider = extra['preSelectedProvider'] as ProviderModel?;
+            rescheduleBookingId = extra['rescheduleBookingId'] as int?;
+            rescheduleAddressId = extra['rescheduleAddressId'] as int?;
+          } else {
+            serviceId = extra as int;
+          }
+
           return ChangeNotifierProvider(
             create: (_) => getIt<BookingProvider>(),
-            child: BookingScreen(serviceId: serviceId),
+            child: BookingScreen(
+              serviceId: serviceId,
+              preSelectedProvider: preSelectedProvider,
+              rescheduleBookingId: rescheduleBookingId,
+              rescheduleAddressId: rescheduleAddressId,
+            ),
           );
         },
       ),

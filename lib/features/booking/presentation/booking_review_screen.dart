@@ -19,11 +19,13 @@ import 'package:pampa/features/webview/webview.dart';
 class BookingReviewScreen extends StatefulWidget {
   final AddressModel address;
   final List<int> serviceIds;
+  final int? rescheduleBookingId;
 
   const BookingReviewScreen({
     super.key,
     required this.address,
     this.serviceIds = const [],
+    this.rescheduleBookingId,
   });
 
   @override
@@ -36,6 +38,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
   final _picker = ImagePicker();
   XFile? _pickedPhoto;
   bool _isOpeningPayment = false;
+  bool _isRescheduling = false;
 
   @override
   void initState() {
@@ -155,6 +158,48 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
     _completeBookingFlow(context, bookingProvider);
   }
 
+  Future<void> _reschedule(BuildContext context) async {
+    if (_isRescheduling) return;
+    final bookingProvider = context.read<BookingProvider>();
+    final appointmentTime = bookingProvider.selectedTime;
+    if (appointmentTime == null) return;
+
+    final dateStr = DateFormat('yyyy-MM-dd').format(bookingProvider.selectedDate);
+    final timeStr = appointmentTime.length == 5 ? '$appointmentTime:00' : appointmentTime;
+
+    setState(() => _isRescheduling = true);
+
+    final bookingsProvider = context.read<MyBookingsProvider>();
+    final success = await bookingsProvider.rescheduleBooking(
+      bookingId: widget.rescheduleBookingId!,
+      date: dateStr,
+      time: timeStr,
+    );
+
+    if (!mounted) return;
+    setState(() => _isRescheduling = false);
+
+    if (success) {
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: 'Appointment rescheduled successfully!',
+        success: true,
+      );
+      bookingsProvider.fetchBookingDetail(widget.rescheduleBookingId!);
+      bookingsProvider.fetchBookings();
+      Navigator.of(context).pop();
+      Navigator.of(context).pop();
+    } else {
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: bookingsProvider.rescheduleError.isNotEmpty
+            ? bookingsProvider.rescheduleError
+            : 'Failed to reschedule booking.',
+        success: false,
+      );
+    }
+  }
+
   void _completeBookingFlow(
     BuildContext context,
     BookingProvider bookingProvider,
@@ -242,30 +287,33 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                   ),
                   onPressed: bookingProvider.isSubmitting ||
                           _isOpeningPayment ||
+                          _isRescheduling ||
                           bookingProvider.withinRange == false
                       ? null
-                      : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
-                              bookingProvider.paymentLink != null)
-                          ? () async {
-                              if (_isOpeningPayment) return;
-                              setState(() => _isOpeningPayment = true);
-                              final paid = await Navigator.of(context).push<bool>(
-                                MaterialPageRoute(
-                                  builder: (_) => CustomWebView(
-                                    checkoutUrl: bookingProvider.paymentLink!,
-                                    title: 'Complete Payment',
-                                  ),
-                                ),
-                              );
-                              if (!context.mounted) return;
-                              if (paid == true) {
-                                _completeBookingFlow(context, bookingProvider);
-                                return;
-                              }
-                              setState(() => _isOpeningPayment = false);
-                            }
-                          : () => _submit(context),
-                  child: bookingProvider.isSubmitting || _isOpeningPayment
+                      : widget.rescheduleBookingId != null
+                          ? () => _reschedule(context)
+                          : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
+                                  bookingProvider.paymentLink != null)
+                              ? () async {
+                                  if (_isOpeningPayment) return;
+                                  setState(() => _isOpeningPayment = true);
+                                  final paid = await Navigator.of(context).push<bool>(
+                                    MaterialPageRoute(
+                                      builder: (_) => CustomWebView(
+                                        checkoutUrl: bookingProvider.paymentLink!,
+                                        title: 'Complete Payment',
+                                      ),
+                                    ),
+                                  );
+                                  if (!context.mounted) return;
+                                  if (paid == true) {
+                                    _completeBookingFlow(context, bookingProvider);
+                                    return;
+                                  }
+                                  setState(() => _isOpeningPayment = false);
+                                }
+                              : () => _submit(context),
+                  child: bookingProvider.isSubmitting || _isOpeningPayment || _isRescheduling
                       ? const SizedBox(
                           width: 22,
                           height: 22,
@@ -277,10 +325,12 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                       : AppText(
                           bookingProvider.withinRange == false
                               ? 'Out of Service Range'
-                              : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
-                                      bookingProvider.paymentLink != null)
-                                  ? 'Retry Payment'
-                                  : 'Submit Booking',
+                              : widget.rescheduleBookingId != null
+                                  ? 'Schedule'
+                                  : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
+                                          bookingProvider.paymentLink != null)
+                                      ? 'Retry Payment'
+                                      : 'Submit Booking',
                           color: AppColor.white,
                           fontWeight: FontWeights.semiBold,
                           fontSize: FontSizes.regular,

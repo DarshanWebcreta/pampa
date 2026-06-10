@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:pampa/core/routes/routes.dart';
 import 'package:pampa/core/values/urls.dart';
 import 'package:provider/provider.dart';
 
@@ -296,6 +298,10 @@ class _BookingDetailContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (booking.rescheduleBook) ...[
+            _RescheduleWarningBanner(booking: booking),
+            const SizedBox(height: 16),
+          ],
           // Section 1: Status Banner
           _StatusBanner(booking: booking),
           const SizedBox(height: 16),
@@ -343,6 +349,56 @@ class _BookingDetailContent extends StatelessWidget {
                 child: _InspirationContent(booking: booking),
               ),
             ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RescheduleWarningBanner extends StatelessWidget {
+  final MyBookingModel booking;
+
+  const _RescheduleWarningBanner({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFfff4e5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFffe0b2)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: Color(0xFFe65100),
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText(
+                  'Action Required: Reschedule Needed',
+                  fontSize: 13,
+                  fontWeight: FontWeights.bold,
+                  color: const Color(0xFFe65100),
+                ),
+                const SizedBox(height: 4),
+                AppText(
+                  'The provider is unavailable on your selected slot. Please reschedule your appointment.',
+                  fontSize: 12,
+                  color: const Color(0xFFe65100),
+                  maxLines: 4,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -848,6 +904,86 @@ class _BottomBar extends StatelessWidget {
     final isPayLoading = provider.payStatus == BookingActionStatus.loading;
     final isCancelLoading =
         provider.cancelStatus == BookingActionStatus.loading;
+
+    if (booking.rescheduleBook) {
+      return Container(
+        decoration: const BoxDecoration(
+          color: AppColor.white,
+          border: Border(top: BorderSide(color: AppColor.lightGrey)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.authButton,
+                      foregroundColor: AppColor.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      context.push(RouteNames.bookingDetail, extra: {
+                        'serviceId': booking.service.id,
+                        'preSelectedProvider': booking.provider,
+                        'rescheduleBookingId': booking.id,
+                        'rescheduleAddressId': booking.addressId,
+                      });
+                    },
+                    child: AppText(
+                      'Reschedule',
+                      fontSize: FontSizes.regular,
+                      fontWeight: FontWeights.semiBold,
+                      color: AppColor.white,
+                    ),
+                  ),
+                ),
+                if (_showCancel) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFf1416c)),
+                        foregroundColor: const Color(0xFFf1416c),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: isCancelLoading
+                          ? null
+                          : () => _handleCancel(context),
+                      child: isCancelLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Color(0xFFf1416c),
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : AppText(
+                              'Cancel Booking',
+                              fontSize: FontSizes.regular,
+                              fontWeight: FontWeights.semiBold,
+                              color: const Color(0xFFf1416c),
+                            ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     if (!_showCancel && !_showPay) return const SizedBox.shrink();
 

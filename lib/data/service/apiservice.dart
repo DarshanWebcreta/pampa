@@ -182,6 +182,12 @@ abstract class ApiService {
   @POST("${ApiPath.bookings}/{id}/cancel")
   Future<dynamic> cancelBooking(@Path("id") int id);
 
+  @POST("${ApiPath.bookings}/{id}/reschedule")
+  Future<dynamic> rescheduleBooking(
+    @Path("id") int id,
+    @Body() Map<String, dynamic> body,
+  );
+
   /// PAYMENTS
 
   @GET(ApiPath.stripeConfig)

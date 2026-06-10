@@ -55,6 +55,7 @@ class MyBookingModel {
   final String? inspirationPhoto;
   final BookingServiceModel service;
   final ProviderModel? provider;
+  final bool rescheduleBook;
 
   const MyBookingModel({
     required this.id,
@@ -77,6 +78,7 @@ class MyBookingModel {
     this.inspirationPhoto,
     required this.service,
     this.provider,
+    this.rescheduleBook = false,
   });
 
   bool get isPending => status.toLowerCase() == 'pending';
@@ -117,6 +119,7 @@ class MyBookingModel {
       provider: json['provider'] != null
           ? ProviderModel.fromJson(json['provider'])
           : null,
+      rescheduleBook: json['reschedule_book'] as bool? ?? false,
     );
   }
 }

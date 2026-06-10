@@ -32,12 +32,16 @@ class BookingScreen extends StatefulWidget {
   final int serviceId;
   final ProviderModel? preSelectedProvider;
   final List<int> preSelectedServiceIds;
+  final int? rescheduleBookingId;
+  final int? rescheduleAddressId;
 
   const BookingScreen({
     super.key,
     required this.serviceId,
     this.preSelectedProvider,
     this.preSelectedServiceIds = const [],
+    this.rescheduleBookingId,
+    this.rescheduleAddressId,
   });
 
   @override
@@ -70,10 +74,18 @@ class _BookingScreenState extends State<BookingScreen> {
 
       if (!mounted) return;
       if (ap.hasAddresses) {
-        final def = ap.addresses.firstWhere(
-          (a) => a.isDefault,
-          orElse: () => ap.addresses.first,
-        );
+        final def = widget.rescheduleAddressId != null
+            ? ap.addresses.firstWhere(
+                (a) => a.id == widget.rescheduleAddressId,
+                orElse: () => ap.addresses.firstWhere(
+                  (a) => a.isDefault,
+                  orElse: () => ap.addresses.first,
+                ),
+              )
+            : ap.addresses.firstWhere(
+                (a) => a.isDefault,
+                orElse: () => ap.addresses.first,
+              );
         setState(() => _selectedAddress = def);
       }
     });
@@ -149,6 +161,7 @@ class _BookingScreenState extends State<BookingScreen> {
             child: BookingReviewScreen(
               address: _selectedAddress!,
               serviceIds: ids,
+              rescheduleBookingId: widget.rescheduleBookingId,
             ),
           ),
         ),

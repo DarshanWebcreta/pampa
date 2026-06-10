@@ -111,4 +111,32 @@ class MyBookingsRepositoryImpl implements MyBookingsRepository {
       throw Exception('Something went wrong. Please try again.');
     }
   }
+
+  @override
+  Future<bool> rescheduleBooking(int id, String date, String time) async {
+    try {
+      final body = {
+        'appointment_date': date,
+        'appointment_time': time,
+      };
+      final response = await _apiService.rescheduleBooking(id, body);
+      final map = response as Map<String, dynamic>;
+      if (map['status'] == true) {
+        return true;
+      }
+      throw Exception(map['message'] ?? 'Failed to reschedule booking.');
+    } on DioException catch (e) {
+      if (e.response?.data != null) {
+        final resData = e.response!.data;
+        if (resData is Map && resData['message'] != null) {
+          throw Exception(resData['message'].toString());
+        }
+      }
+      throw Exception(HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    } catch (_) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
 }

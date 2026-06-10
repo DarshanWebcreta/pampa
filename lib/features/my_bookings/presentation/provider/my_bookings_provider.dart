@@ -112,6 +112,9 @@ class MyBookingsProvider extends ChangeNotifier {
   String _payError = '';
   int? _activePayTargetId;
 
+  BookingActionStatus _rescheduleStatus = BookingActionStatus.idle;
+  String _rescheduleError = '';
+
   BookingDetailStatus get detailStatus => _detailStatus;
   MyBookingModel? get detailBooking => _detailBooking;
   String get detailError => _detailError;
@@ -120,6 +123,8 @@ class MyBookingsProvider extends ChangeNotifier {
   BookingActionStatus get payStatus => _payStatus;
   String get payError => _payError;
   int? get activePayTargetId => _activePayTargetId;
+  BookingActionStatus get rescheduleStatus => _rescheduleStatus;
+  String get rescheduleError => _rescheduleError;
 
   Future<void> fetchBookingDetail(int id) async {
     _detailStatus = BookingDetailStatus.loading;
@@ -194,6 +199,34 @@ class MyBookingsProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> rescheduleBooking({
+    required int bookingId,
+    required String date,
+    required String time,
+  }) async {
+    _rescheduleStatus = BookingActionStatus.loading;
+    _rescheduleError = '';
+    notifyListeners();
+
+    try {
+      final success = await _repository.rescheduleBooking(bookingId, date, time);
+      if (success) {
+        _rescheduleStatus = BookingActionStatus.done;
+        notifyListeners();
+        return true;
+      }
+      _rescheduleError = 'Failed to reschedule booking.';
+      _rescheduleStatus = BookingActionStatus.failed;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _rescheduleError = e.toString().replaceFirst('Exception: ', '');
+      _rescheduleStatus = BookingActionStatus.failed;
+      notifyListeners();
+      return false;
+    }
+  }
+
   void resetDetailStatus() {
     _detailStatus = BookingDetailStatus.initial;
     _detailBooking = null;
@@ -229,6 +262,9 @@ class MyBookingsProvider extends ChangeNotifier {
     _payStatus = BookingActionStatus.idle;
     _payError = '';
     _activePayTargetId = null;
+
+    _rescheduleStatus = BookingActionStatus.idle;
+    _rescheduleError = '';
     notifyListeners();
   }
 }

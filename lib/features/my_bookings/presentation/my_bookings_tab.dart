@@ -593,10 +593,51 @@ class _AppointmentCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                  if (booking.rescheduleBook) ...[
+                    if (_showRetryPayment || (booking.isConfirmed && booking.providerId != null))
+                      const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        context.push(RouteNames.bookingDetail, extra: {
+                          'serviceId': booking.service.id,
+                          'preSelectedProvider': booking.provider,
+                          'rescheduleBookingId': booking.id,
+                          'rescheduleAddressId': booking.addressId,
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFfff4e5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.edit_calendar_rounded,
+                              size: 12,
+                              color: Color(0xFFe65100),
+                            ),
+                            const SizedBox(width: 4),
+                            AppText(
+                              'Reschedule',
+                              fontSize: 12,
+                              fontWeight: FontWeights.semiBold,
+                              color: const Color(0xFFe65100),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   if (showBookAgain)
                     Row(
                       children: [
-                        SizedBox(width: 10,),
+                        const SizedBox(width: 10,),
                         GestureDetector(
                           onTap: () => context.push(
                             RouteNames.bookingDetail,
