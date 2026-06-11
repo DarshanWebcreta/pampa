@@ -116,6 +116,7 @@ class ApiPath {
   /// ==============================
 
   static const String providerSettings = "provider/settings";
+  static const String providerCancelOffline = "provider/settings/cancel-offline";
   static const String providerSettingsAvailability =
       "provider/settings/availability";
   static const String providerSettingsPricing = "provider/settings/pricing";

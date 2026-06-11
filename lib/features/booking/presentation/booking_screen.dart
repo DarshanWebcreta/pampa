@@ -379,10 +379,20 @@ class _BookingScreenState extends State<BookingScreen> {
                     provider.selectDate(date);
                     _loadSlots(date);
                   },
-                  onMonthChanged: (delta) => setState(() {
-                    _visibleMonth = DateTime(
-                        _visibleMonth.year, _visibleMonth.month + delta);
-                  }),
+                  onMonthChanged: (delta) {
+                    final today = DateTime.now();
+                    final maxDate = today.add(const Duration(days: 90));
+                    final minMonth = DateTime(today.year, today.month);
+                    final maxMonthLimit = DateTime(maxDate.year, maxDate.month);
+                    final targetMonth = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
+                    
+                    if ((targetMonth.isAfter(minMonth) || targetMonth.isAtSameMomentAs(minMonth)) &&
+                        (targetMonth.isBefore(maxMonthLimit) || targetMonth.isAtSameMomentAs(maxMonthLimit))) {
+                      setState(() {
+                        _visibleMonth = targetMonth;
+                      });
+                    }
+                  },
                 ),
                 const SizedBox(height: 24),
                 AppText('Select Time',
@@ -865,6 +875,15 @@ class _CalendarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final maxDate = today.add(const Duration(days: 90));
+    final minMonth = DateTime(today.year, today.month);
+    final maxMonthLimit = DateTime(maxDate.year, maxDate.month);
+
+    final currentMonth = DateTime(visibleMonth.year, visibleMonth.month);
+    final isLeftDisabled = currentMonth.isBefore(minMonth) || currentMonth.isAtSameMomentAs(minMonth);
+    final isRightDisabled = currentMonth.isAfter(maxMonthLimit) || currentMonth.isAtSameMomentAs(maxMonthLimit);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -875,11 +894,11 @@ class _CalendarCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               GestureDetector(
-                onTap: () => onMonthChanged(-1),
-                child: const Padding(
-                  padding: EdgeInsets.all(6),
+                onTap: isLeftDisabled ? null : () => onMonthChanged(-1),
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
                   child: Icon(Icons.chevron_left_rounded,
-                      color: AppColor.darkGrey, size: 22),
+                      color: isLeftDisabled ? AppColor.mediumGrey : AppColor.darkGrey, size: 22),
                 ),
               ),
               AppText(DateFormat('MMMM yyyy').format(visibleMonth),
@@ -887,11 +906,11 @@ class _CalendarCard extends StatelessWidget {
                   fontWeight: FontWeights.semiBold,
                   color: AppColor.darkGrey),
               GestureDetector(
-                onTap: () => onMonthChanged(1),
-                child: const Padding(
-                  padding: EdgeInsets.all(6),
+                onTap: isRightDisabled ? null : () => onMonthChanged(1),
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
                   child: Icon(Icons.chevron_right_rounded,
-                      color: AppColor.darkGrey, size: 22),
+                      color: isRightDisabled ? AppColor.mediumGrey : AppColor.darkGrey, size: 22),
                 ),
               ),
             ],
@@ -921,6 +940,8 @@ class _CalendarCard extends StatelessWidget {
     final lastDay = DateTime(visibleMonth.year, visibleMonth.month + 1, 0);
     final startPadding = firstDay.weekday % 7;
     final today = DateTime.now();
+    final todayMidnight = DateTime(today.year, today.month, today.day);
+    final maxDateMidnight = todayMidnight.add(const Duration(days: 90));
     final cells = <Widget>[];
 
     for (int i = 0; i < startPadding; i++) {
@@ -928,8 +949,10 @@ class _CalendarCard extends StatelessWidget {
     }
     for (int day = 1; day <= lastDay.day; day++) {
       final date = DateTime(visibleMonth.year, visibleMonth.month, day);
-      final isPast =
-          date.isBefore(DateTime(today.year, today.month, today.day));
+      final isPast = date.isBefore(todayMidnight);
+      final isAfterLimit = date.isAfter(maxDateMidnight);
+      final isDisabled = isPast || isAfterLimit;
+      
       final isSelected = date.year == selectedDate.year &&
           date.month == selectedDate.month &&
           date.day == selectedDate.day;
@@ -938,7 +961,7 @@ class _CalendarCard extends StatelessWidget {
           date.day == today.day;
 
       cells.add(GestureDetector(
-        onTap: isPast ? null : () => onDateSelected(date),
+        onTap: isDisabled ? null : () => onDateSelected(date),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           margin: const EdgeInsets.all(3),
@@ -957,7 +980,7 @@ class _CalendarCard extends StatelessWidget {
                     : FontWeights.regular,
                 color: isSelected
                     ? AppColor.white
-                    : isPast
+                    : isDisabled
                         ? AppColor.mediumGrey
                         : AppColor.darkGrey),
           ),

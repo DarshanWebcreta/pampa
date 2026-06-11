@@ -81,9 +81,8 @@ abstract class ApiService {
 
   @GET(ApiPath.services)
   Future<dynamic> getServices(
-    @Query("category_id") int? categoryId, [
-    @Query("zip_code") String? zipCode,
-  ]);
+    @Query("category_id") int? categoryId,
+  );
 
   @POST(ApiPath.categories)
   @MultiPart()
@@ -253,6 +252,9 @@ abstract class ApiService {
 
   @POST(ApiPath.providerToggleStatus)
   Future<dynamic> providerToggleStatus(@Body() Map<String, dynamic> body);
+
+  @POST(ApiPath.providerCancelOffline)
+  Future<dynamic> providerCancelOffline();
 
   @GET(ApiPath.providerBookings)
   Future<dynamic> getProviderBookings({

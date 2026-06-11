@@ -296,6 +296,75 @@ class ProviderDashboardProvider extends ChangeNotifier {
     }
   }
 
+  Future<ToggleResult> cancelOffline() async {
+    if (_toggleLoading) return ToggleResult(success: false, message: 'Already loading');
+    _toggleLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _api.providerCancelOffline();
+      final map = response as Map<String, dynamic>;
+      if (map['status'] == true) {
+        final dataMap = map['data'] as Map<String, dynamic>?;
+        final returnedOnline = dataMap?['is_online'] as bool? ?? true;
+        final newOfflineMsg = dataMap?['offline_message'] as String?;
+        final newUnavailableFrom = dataMap?['unavailable_from'] as String?;
+        final newUnavailableTo = dataMap?['unavailable_to'] as String?;
+        
+        if (_dashboard != null) {
+          _dashboard = ProviderDashboardModel(
+            isOnline: returnedOnline,
+            offlineMessage: newOfflineMsg,
+            unavailableFrom: newUnavailableFrom,
+            unavailableTo: newUnavailableTo,
+            pendingCount: _dashboard!.pendingCount,
+            pendingRequests: _dashboard!.pendingRequests,
+            upcomingBookings: _dashboard!.upcomingBookings,
+            weeklyEarnings: _dashboard!.weeklyEarnings,
+            ratingSnapshot: _dashboard!.ratingSnapshot,
+            serviceMix: _dashboard!.serviceMix,
+          );
+        }
+        return ToggleResult(
+          success: true,
+          message: map['message'] as String? ?? 'Status updated successfully.',
+        );
+      } else {
+        return ToggleResult(
+          success: false,
+          message: map['message'] as String? ?? 'Failed to cancel offline status.',
+        );
+      }
+    } catch (e) {
+      String? firstError;
+      if (e is DioException && e.response?.data != null) {
+        final resData = e.response!.data;
+        if (resData is Map) {
+          if (resData['message'] != null) {
+            firstError = resData['message'].toString();
+          } else if (resData['errors'] != null) {
+            final errors = resData['errors'];
+            if (errors is Map && errors.isNotEmpty) {
+              final val = errors.values.first;
+              if (val is List && val.isNotEmpty) {
+                firstError = val.first.toString();
+              } else {
+                firstError = val.toString();
+              }
+            }
+          }
+        }
+      }
+      return ToggleResult(
+        success: false,
+        message: firstError ?? 'Failed to cancel offline status. Please try again.',
+      );
+    } finally {
+      _toggleLoading = false;
+      notifyListeners();
+    }
+  }
+
   void clearSession() {
     _dashboard = null;
     _loading = false;

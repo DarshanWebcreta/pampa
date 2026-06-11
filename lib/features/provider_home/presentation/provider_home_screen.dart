@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:pampa/core/routes/pages.dart';
 import 'package:provider/provider.dart';
 
@@ -405,9 +406,13 @@ class _DashboardTabState extends State<_DashboardTab> {
                   child: Column(
                     children: [
                       // ── Online toggle card ──────────────────────────────
+                       // ── Online toggle card ──────────────────────────────
                       _OnlineToggleCard(
                         isOnline: dashProv.isOnline,
-                        offlineMessage: dashProv.dashboard?.offlineMessage,
+                        offlineMessage: (dashProv.dashboard?.unavailableFrom == null || 
+                                         dashProv.dashboard!.unavailableFrom!.isEmpty)
+                            ? dashProv.dashboard?.offlineMessage 
+                            : null, // Only show offlineMessage inside toggle card if there's no vacation scheduled
                         loading: dashProv.toggleLoading,
                         onToggle: () async {
                           if (dashProv.isOnline) {
@@ -430,6 +435,54 @@ class _DashboardTabState extends State<_DashboardTab> {
                           }
                         },
                       ),
+
+                      // ── Scheduled vacation card ─────────────────────────
+                      if ((dashProv.dashboard?.unavailableFrom != null && dashProv.dashboard!.unavailableFrom!.isNotEmpty) ||
+                          (dashProv.dashboard?.unavailableTo != null && dashProv.dashboard!.unavailableTo!.isNotEmpty))
+                        _ScheduledOfflineCard(
+                          unavailableFrom: dashProv.dashboard?.unavailableFrom ?? '',
+                          unavailableTo: dashProv.dashboard?.unavailableTo ?? '',
+                          offlineMessage: dashProv.dashboard?.offlineMessage,
+                          onCancel: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20)),
+                                title: const Text('Cancel Vacation'),
+                                content: const Text(
+                                    'Are you sure you want to cancel your scheduled vacation status?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: Text('No',
+                                        style: TextStyle(color: AppColor.grey)),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    child: const Text('Yes, Cancel',
+                                        style: TextStyle(color: AppColor.authButton)),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm != true || !context.mounted) return;
+                            final result = await dashProv.cancelOffline();
+                            if (!result.success && context.mounted) {
+                              FunctionalComponent.showSnackBar(
+                                context: context,
+                                title: result.message,
+                                success: false,
+                              );
+                            } else if (context.mounted) {
+                              FunctionalComponent.showSnackBar(
+                                context: context,
+                                title: result.message,
+                                success: true,
+                              );
+                            }
+                          },
+                        ),
                       const SizedBox(height: 16),
 
                       // ── Pending Requests ────────────────────────────────
@@ -603,6 +656,153 @@ class _OnlineToggleCard extends StatelessWidget {
                   activeThumbColor: const Color(0xFF4CAF50),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScheduledOfflineCard extends StatelessWidget {
+  final String unavailableFrom;
+  final String unavailableTo;
+  final String? offlineMessage;
+  final VoidCallback onCancel;
+
+  const _ScheduledOfflineCard({
+    required this.unavailableFrom,
+    required this.unavailableTo,
+    this.offlineMessage,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    String formattedRange = '';
+    try {
+      final fromDate = DateTime.tryParse(unavailableFrom);
+      final toDate = DateTime.tryParse(unavailableTo);
+      final formatter = DateFormat('MMM dd, yyyy');
+      if (fromDate != null && toDate != null) {
+        formattedRange = '${formatter.format(fromDate)} - ${formatter.format(toDate)}';
+      } else if (fromDate != null) {
+        formattedRange = 'From ${formatter.format(fromDate)}';
+      } else if (toDate != null) {
+        formattedRange = 'Until ${formatter.format(toDate)}';
+      }
+    } catch (_) {
+      formattedRange = '$unavailableFrom - $unavailableTo';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColor.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: AppColor.authButton.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColor.authButton.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.beach_access_rounded,
+                  color: AppColor.authButton,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText(
+                      'Scheduled Vacation',
+                      fontSize: FontSizes.regular,
+                      fontWeight: FontWeights.bold,
+                      color: AppColor.darkGrey,
+                    ),
+                    const SizedBox(height: 2),
+                    AppText(
+                      formattedRange,
+                      fontSize: 12,
+                      color: AppColor.grey,
+                      fontWeight: FontWeights.medium,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (offlineMessage != null && offlineMessage!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9F9FA),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 14,
+                    color: AppColor.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: AppText(
+                      offlineMessage!,
+                      fontSize: 11,
+                      color: AppColor.darkGrey,
+                      maxLines: 4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: OutlinedButton.icon(
+              onPressed: onCancel,
+              icon: const Icon(Icons.cancel_outlined, size: 16, color: Colors.red),
+              label: const Text(
+                'Cancel Vacation Period',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.red, width: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

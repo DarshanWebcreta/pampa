@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pampa/features/services/data/models/service_model.dart';
 import 'package:pampa/features/services/domain/repositories/service_repository.dart';
-import 'package:pampa/data/service/di.dart';
-import 'package:pampa/features/address/presentation/provider/address_provider.dart';
 
 enum ServiceStatus { initial, loading, success, empty, error }
 
@@ -40,12 +38,8 @@ class ServiceProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final addressProvider = getIt<AddressProvider>();
-      final zipCode = addressProvider.selectedAddress?.zipCode;
-
       final result = await _repository.getServices(
         categoryId: categoryId,
-        zipCode: zipCode,
       );
 
       _allServices = result;

@@ -210,12 +210,14 @@ class _UnavailabilityBottomSheetState extends State<UnavailabilityBottomSheet> {
               return ChoiceChip(
                 label: Text('$d ${d == 1 ? 'Day' : 'Days'}'),
                 selected: isSelected,
+
                 labelStyle: TextStyle(
                   color: isSelected ? Colors.white : AppColor.darkGrey,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   fontSize: 12,
                 ),
                 selectedColor: AppColor.authButton,
+                checkmarkColor: Colors.white,
                 backgroundColor: Colors.grey[100],
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
