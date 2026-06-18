@@ -58,6 +58,13 @@ class BookingProvider extends ChangeNotifier {
   List<SlotModel> get availableSlots => _availableSlots;
   bool get slotsLoading => _slotsLoading;
 
+  // ── Unavailable Dates ──────────────────────────────────────────────────────
+  List<String> _unavailableDates = [];
+  bool _unavailableDatesLoading = false;
+
+  List<String> get unavailableDates => _unavailableDates;
+  bool get unavailableDatesLoading => _unavailableDatesLoading;
+
   bool get canBook =>
       _selectedTime != null &&
       _selectedProvider != null &&
@@ -247,6 +254,21 @@ class BookingProvider extends ChangeNotifier {
 
   Future<void> fetchAvailableSlots(int providerId, {required int serviceId}) async {
     return _fetchSlotsInternal(providerId, serviceId);
+  }
+
+  Future<void> fetchUnavailableDates(int providerId) async {
+    _unavailableDatesLoading = true;
+    _unavailableDates = [];
+    notifyListeners();
+
+    try {
+      _unavailableDates = await _repository.getUnavailableDates(providerId);
+    } catch (_) {
+      _unavailableDates = [];
+    } finally {
+      _unavailableDatesLoading = false;
+      notifyListeners();
+    }
   }
 
   void generateStaticSlots() {

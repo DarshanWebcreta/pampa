@@ -172,6 +172,9 @@ abstract class ApiService {
     @Query("customer_zip") String customerZip,
   );
 
+  @GET("providers/{id}/unavailable-dates")
+  Future<dynamic> getUnavailableDates(@Path("id") int providerId);
+
   @GET(ApiPath.bookings)
   Future<dynamic> getBookings();
 
@@ -255,6 +258,12 @@ abstract class ApiService {
 
   @POST(ApiPath.providerCancelOffline)
   Future<dynamic> providerCancelOffline();
+
+  @GET(ApiPath.providerVacations)
+  Future<dynamic> getProviderVacations();
+
+  @DELETE("provider/vacations/{id}")
+  Future<dynamic> deleteProviderVacation(@Path("id") int id);
 
   @GET(ApiPath.providerBookings)
   Future<dynamic> getProviderBookings({

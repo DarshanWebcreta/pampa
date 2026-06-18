@@ -371,10 +371,76 @@ class ProviderDashboardProvider extends ChangeNotifier {
     }
   }
 
+  List<VacationModel> _vacations = [];
+  List<VacationModel> get vacations => _vacations;
+  bool _vacationsLoading = false;
+  bool get vacationsLoading => _vacationsLoading;
+  int? _deletingVacationId;
+  int? get deletingVacationId => _deletingVacationId;
+
+  Future<void> fetchVacations() async {
+    _vacationsLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _api.getProviderVacations();
+      final map = response as Map<String, dynamic>;
+      if (map['status'] == true && map['data'] != null) {
+        final list = map['data'] as List<dynamic>;
+        _vacations = list
+            .map((e) => VacationModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        _vacations = [];
+      }
+    } catch (_) {
+      _vacations = [];
+    } finally {
+      _vacationsLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<ToggleResult> deleteVacation(int id) async {
+    if (_toggleLoading) return ToggleResult(success: false, message: 'Already loading');
+    _toggleLoading = true;
+    _deletingVacationId = id;
+    notifyListeners();
+
+    try {
+      final response = await _api.deleteProviderVacation(id);
+      final map = response as Map<String, dynamic>;
+      if (map['status'] == true) {
+        _vacations.removeWhere((v) => v.id == id);
+        return ToggleResult(
+          success: true,
+          message: map['message'] as String? ?? 'Vacation deleted successfully.',
+        );
+      } else {
+        return ToggleResult(
+          success: false,
+          message: map['message'] as String? ?? 'Failed to delete vacation.',
+        );
+      }
+    } catch (e) {
+      return ToggleResult(
+        success: false,
+        message: 'Failed to delete vacation. Please try again.',
+      );
+    } finally {
+      _toggleLoading = false;
+      _deletingVacationId = null;
+      notifyListeners();
+    }
+  }
+
   void clearSession() {
     _dashboard = null;
+    _vacations = [];
     _loading = false;
     _toggleLoading = false;
+    _vacationsLoading = false;
+    _deletingVacationId = null;
     _error = '';
     notifyListeners();
   }

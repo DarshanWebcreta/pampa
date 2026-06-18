@@ -70,6 +70,12 @@ class _BookingScreenState extends State<BookingScreen> {
       final ap = context.read<AddressProvider>();
 
       bp.fetchServiceDetail(widget.serviceId);
+      
+      final provider = widget.preSelectedProvider;
+      if (provider != null) {
+        bp.fetchUnavailableDates(provider.id);
+      }
+
       await ap.fetchAddresses();
 
       if (!mounted) return;
@@ -375,6 +381,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 _CalendarCard(
                   visibleMonth: _visibleMonth,
                   selectedDate: provider.selectedDate,
+                  unavailableDates: provider.unavailableDates,
                   onDateSelected: (date) {
                     provider.selectDate(date);
                     _loadSlots(date);
@@ -863,12 +870,14 @@ class _BottomBar extends StatelessWidget {
 class _CalendarCard extends StatelessWidget {
   final DateTime visibleMonth;
   final DateTime selectedDate;
+  final List<String> unavailableDates;
   final void Function(DateTime) onDateSelected;
   final void Function(int delta) onMonthChanged;
 
   const _CalendarCard({
     required this.visibleMonth,
     required this.selectedDate,
+    this.unavailableDates = const [],
     required this.onDateSelected,
     required this.onMonthChanged,
   });
@@ -951,7 +960,11 @@ class _CalendarCard extends StatelessWidget {
       final date = DateTime(visibleMonth.year, visibleMonth.month, day);
       final isPast = date.isBefore(todayMidnight);
       final isAfterLimit = date.isAfter(maxDateMidnight);
-      final isDisabled = isPast || isAfterLimit;
+      
+      final dateStr = DateFormat('yyyy-MM-dd').format(date);
+      final isUnavailable = unavailableDates.contains(dateStr);
+      
+      final isDisabled = isPast || isAfterLimit || isUnavailable;
       
       final isSelected = date.year == selectedDate.year &&
           date.month == selectedDate.month &&

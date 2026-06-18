@@ -292,6 +292,7 @@ class ProviderSettingsScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         builder: (ctx) => UnavailabilityBottomSheet(
           title: 'Pause Profile',
+          existingVacations: dashProv.vacations,
           description:
               'Select when you want to start being unavailable and the end date. During this period, your profile will be paused.',
           onConfirm: (endDate, startDate) async {

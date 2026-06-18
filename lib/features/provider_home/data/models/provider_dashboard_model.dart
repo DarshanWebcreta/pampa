@@ -224,3 +224,32 @@ class ProviderDashboardModel {
     );
   }
 }
+
+class VacationModel {
+  final int id;
+  final int providerId;
+  final String startDate;
+  final String endDate;
+  final String? createdAt;
+  final String? updatedAt;
+
+  VacationModel({
+    required this.id,
+    required this.providerId,
+    required this.startDate,
+    required this.endDate,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  factory VacationModel.fromJson(Map<String, dynamic> json) {
+    return VacationModel(
+      id: json['id'] as int? ?? 0,
+      providerId: json['provider_id'] as int? ?? 0,
+      startDate: json['start_date'] as String? ?? '',
+      endDate: json['end_date'] as String? ?? '',
+      createdAt: json['created_at'] as String?,
+      updatedAt: json['updated_at'] as String?,
+    );
+  }
+}

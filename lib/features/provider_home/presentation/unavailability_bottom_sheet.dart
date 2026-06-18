@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pampa/core/values/colors.dart';
 import 'package:pampa/core/widgets/text_widget.dart';
+import 'package:pampa/features/provider_home/data/models/provider_dashboard_model.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_dashboard_provider.dart';
 
 class UnavailabilityBottomSheet extends StatefulWidget {
   final Future<ToggleResult> Function(DateTime endDate, DateTime startDate) onConfirm;
   final String title;
   final String description;
+  final List<VacationModel> existingVacations;
 
   const UnavailabilityBottomSheet({
     super.key,
@@ -15,6 +17,7 @@ class UnavailabilityBottomSheet extends StatefulWidget {
     this.title = 'Set Unavailability',
     this.description =
         'Select when you want to start being unavailable and the end date. You won\'t receive new bookings during this period.',
+    this.existingVacations = const [],
   });
 
   @override
@@ -32,8 +35,66 @@ class _UnavailabilityBottomSheetState extends State<UnavailabilityBottomSheet> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _startDate = DateTime(now.year, now.month, now.day);
+    final today = DateTime(now.year, now.month, now.day);
+    _startDate = _firstSelectableDate(today);
     _endDate = _startDate;
+  }
+
+  bool _isSelectableDate(DateTime date) {
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    for (final v in widget.existingVacations) {
+      final start = DateTime.tryParse(v.startDate);
+      final end = DateTime.tryParse(v.endDate);
+      if (start != null && end != null) {
+        final startOnly = DateTime(start.year, start.month, start.day);
+        final endOnly = DateTime(end.year, end.month, end.day);
+        if (dateOnly.isAtSameMomentAs(startOnly) ||
+            dateOnly.isAtSameMomentAs(endOnly) ||
+            (dateOnly.isAfter(startOnly) && dateOnly.isBefore(endOnly))) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  DateTime _firstSelectableDate(DateTime startFrom) {
+    DateTime check = startFrom;
+    while (!_isSelectableDate(check)) {
+      check = check.add(const Duration(days: 1));
+    }
+    return check;
+  }
+
+  bool _hasOverlappingVacation() {
+    final s1 = DateTime(_startDate.year, _startDate.month, _startDate.day);
+    final e1 = DateTime(_endDate.year, _endDate.month, _endDate.day);
+
+    for (final v in widget.existingVacations) {
+      final start = DateTime.tryParse(v.startDate);
+      final end = DateTime.tryParse(v.endDate);
+      if (start != null && end != null) {
+        final s2 = DateTime(start.year, start.month, start.day);
+        final e2 = DateTime(end.year, end.month, end.day);
+
+        if (!s1.isAfter(e2) && !e1.isBefore(s2)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  void _checkOverlapRealtime() {
+    if (_hasOverlappingVacation()) {
+      setState(() {
+        _errorMsg = 'Selected date range overlaps with an existing scheduled vacation.';
+      });
+    } else {
+      setState(() {
+        _errorMsg = null;
+      });
+    }
   }
 
   int get _totalOfflineDays {
@@ -41,11 +102,13 @@ class _UnavailabilityBottomSheetState extends State<UnavailabilityBottomSheet> {
   }
 
   Future<void> _selectStartDate() async {
+    final initial = _firstSelectableDate(_startDate);
     final date = await showDatePicker(
       context: context,
-      initialDate: _startDate,
+      initialDate: initial,
       firstDate: DateTime.now().subtract(const Duration(minutes: 5)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      selectableDayPredicate: _isSelectableDate,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -68,16 +131,24 @@ class _UnavailabilityBottomSheetState extends State<UnavailabilityBottomSheet> {
           _endDate = _startDate.add(const Duration(days: 29));
         }
       });
+      _checkOverlapRealtime();
     }
   }
 
   Future<void> _selectEndDate() async {
     final maxEndDate = _startDate.add(const Duration(days: 29));
+    DateTime initial = _endDate.isBefore(_startDate) ? _startDate : (_endDate.isAfter(maxEndDate) ? maxEndDate : _endDate);
+    initial = _firstSelectableDate(initial);
+    if (initial.isAfter(maxEndDate)) {
+      initial = _firstSelectableDate(_startDate);
+    }
+
     final date = await showDatePicker(
       context: context,
-      initialDate: _endDate.isBefore(_startDate) ? _startDate : (_endDate.isAfter(maxEndDate) ? maxEndDate : _endDate),
+      initialDate: initial,
       firstDate: _startDate,
       lastDate: maxEndDate,
+      selectableDayPredicate: _isSelectableDate,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -95,10 +166,18 @@ class _UnavailabilityBottomSheetState extends State<UnavailabilityBottomSheet> {
       setState(() {
         _endDate = date;
       });
+      _checkOverlapRealtime();
     }
   }
 
   void _confirm() async {
+    if (_hasOverlappingVacation()) {
+      setState(() {
+        _errorMsg = 'Selected date range overlaps with an existing scheduled vacation.';
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMsg = null;

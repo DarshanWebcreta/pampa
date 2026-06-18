@@ -91,6 +91,7 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> with RouteAware
     if (!mounted) return;
     // Refresh the currently active tab's data
     getIt<ProviderDashboardProvider>().fetchDashboard();
+    getIt<ProviderDashboardProvider>().fetchVacations();
     getIt<ProviderBookingsProvider>().fetch();
     getIt<ProviderEarningsProvider>().fetchEarnings();
     getIt<ProviderMessagingProvider>().refreshConversations();
@@ -267,6 +268,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProviderDashboardProvider>().fetchDashboard();
+      context.read<ProviderDashboardProvider>().fetchVacations();
     });
   }
 
@@ -280,6 +282,7 @@ class _DashboardTabState extends State<_DashboardTab> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => UnavailabilityBottomSheet(
         title: 'Go Offline',
+        existingVacations: dashProv.vacations,
         onConfirm: (endDate, startDate) async {
           return await dashProv.toggleOnline(
             endDate: endDate,
@@ -298,12 +301,36 @@ class _DashboardTabState extends State<_DashboardTab> {
     });
   }
 
+  void _showVacationsBottomSheet(
+    BuildContext context,
+    ProviderDashboardProvider prov,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (dialogContext) {
+        return ChangeNotifierProvider.value(
+          value: prov,
+          child: _VacationsBottomSheet(
+            onAddVacation: () {
+              _showOfflineBottomSheet(context, prov);
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ProviderDashboardProvider>(
       builder: (context, dashProv, _) {
         return RefreshIndicator(
-          onRefresh: dashProv.fetchDashboard,
+          onRefresh: () async {
+            await dashProv.fetchDashboard();
+            await dashProv.fetchVacations();
+          },
           color: AppColor.authButton,
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -437,51 +464,10 @@ class _DashboardTabState extends State<_DashboardTab> {
                       ),
 
                       // ── Scheduled vacation card ─────────────────────────
-                      if ((dashProv.dashboard?.unavailableFrom != null && dashProv.dashboard!.unavailableFrom!.isNotEmpty) ||
-                          (dashProv.dashboard?.unavailableTo != null && dashProv.dashboard!.unavailableTo!.isNotEmpty))
+                      if (dashProv.vacations.isNotEmpty)
                         _ScheduledOfflineCard(
-                          unavailableFrom: dashProv.dashboard?.unavailableFrom ?? '',
-                          unavailableTo: dashProv.dashboard?.unavailableTo ?? '',
-                          offlineMessage: dashProv.dashboard?.offlineMessage,
-                          onCancel: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20)),
-                                title: const Text('Cancel Vacation'),
-                                content: const Text(
-                                    'Are you sure you want to cancel your scheduled vacation status?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: Text('No',
-                                        style: TextStyle(color: AppColor.grey)),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Yes, Cancel',
-                                        style: TextStyle(color: AppColor.authButton)),
-                                  ),
-                                ],
-                              ),
-                            );
-                            if (confirm != true || !context.mounted) return;
-                            final result = await dashProv.cancelOffline();
-                            if (!result.success && context.mounted) {
-                              FunctionalComponent.showSnackBar(
-                                context: context,
-                                title: result.message,
-                                success: false,
-                              );
-                            } else if (context.mounted) {
-                              FunctionalComponent.showSnackBar(
-                                context: context,
-                                title: result.message,
-                                success: true,
-                              );
-                            }
-                          },
+                          vacations: dashProv.vacations,
+                          onTap: () => _showVacationsBottomSheet(context, dashProv),
                         ),
                       const SizedBox(height: 16),
 
@@ -663,24 +649,22 @@ class _OnlineToggleCard extends StatelessWidget {
 }
 
 class _ScheduledOfflineCard extends StatelessWidget {
-  final String unavailableFrom;
-  final String unavailableTo;
-  final String? offlineMessage;
-  final VoidCallback onCancel;
+  final List<VacationModel> vacations;
+  final VoidCallback onTap;
 
   const _ScheduledOfflineCard({
-    required this.unavailableFrom,
-    required this.unavailableTo,
-    this.offlineMessage,
-    required this.onCancel,
+    required this.vacations,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (vacations.isEmpty) return const SizedBox.shrink();
+    final firstVacation = vacations.first;
     String formattedRange = '';
     try {
-      final fromDate = DateTime.tryParse(unavailableFrom);
-      final toDate = DateTime.tryParse(unavailableTo);
+      final fromDate = DateTime.tryParse(firstVacation.startDate);
+      final toDate = DateTime.tryParse(firstVacation.endDate);
       final formatter = DateFormat('MMM dd, yyyy');
       if (fromDate != null && toDate != null) {
         formattedRange = '${formatter.format(fromDate)} - ${formatter.format(toDate)}';
@@ -690,121 +674,294 @@ class _ScheduledOfflineCard extends StatelessWidget {
         formattedRange = 'Until ${formatter.format(toDate)}';
       }
     } catch (_) {
-      formattedRange = '$unavailableFrom - $unavailableTo';
+      formattedRange = '${firstVacation.startDate} - ${firstVacation.endDate}';
     }
 
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColor.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    if (vacations.length > 1) {
+      formattedRange += ' (+${vacations.length - 1} more)';
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColor.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: AppColor.authButton.withValues(alpha: 0.15),
+            width: 1,
           ),
-        ],
-        border: Border.all(
-          color: AppColor.authButton.withValues(alpha: 0.15),
-          width: 1,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColor.authButton.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.beach_access_rounded,
+                    color: AppColor.authButton,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText(
+                        'Scheduled Vacation',
+                        fontSize: FontSizes.regular,
+                        fontWeight: FontWeights.bold,
+                        color: AppColor.darkGrey,
+                      ),
+                      const SizedBox(height: 2),
+                      AppText(
+                        formattedRange,
+                        fontSize: 12,
+                        color: AppColor.grey,
+                        fontWeight: FontWeights.medium,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: AppColor.grey,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    );
+  }
+}
+
+class _VacationsBottomSheet extends StatelessWidget {
+  final VoidCallback onAddVacation;
+
+  const _VacationsBottomSheet({
+    required this.onAddVacation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ProviderDashboardProvider>(
+      builder: (context, dashProv, _) {
+        if (dashProv.vacations.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (Navigator.of(context).canPop()) {
+              Navigator.pop(context);
+            }
+          });
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          padding: EdgeInsets.only(
+            top: 8,
+            left: 20,
+            right: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColor.authButton.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.beach_access_rounded,
-                  color: AppColor.authButton,
-                  size: 20,
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText(
-                      'Scheduled Vacation',
-                      fontSize: FontSizes.regular,
-                      fontWeight: FontWeights.bold,
-                      color: AppColor.darkGrey,
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AppText(
+                    'Scheduled Vacations',
+                    fontSize: 18,
+                    fontWeight: FontWeights.bold,
+                    color: AppColor.darkGrey,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 22),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.4,
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: dashProv.vacations.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (ctx, index) {
+                    final vacation = dashProv.vacations[index];
+                    String rangeStr = '';
+                    try {
+                      final fromDate = DateTime.tryParse(vacation.startDate);
+                      final toDate = DateTime.tryParse(vacation.endDate);
+                      final formatter = DateFormat('MMM dd, yyyy');
+                      if (fromDate != null && toDate != null) {
+                        rangeStr = '${formatter.format(fromDate)} - ${formatter.format(toDate)}';
+                      } else {
+                        rangeStr = '${vacation.startDate} - ${vacation.endDate}';
+                      }
+                    } catch (_) {
+                      rangeStr = '${vacation.startDate} - ${vacation.endDate}';
+                    }
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9F9FA),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFF0E4E8),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColor.authButton.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.beach_access_rounded,
+                              color: AppColor.authButton,
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: AppText(
+                              rangeStr,
+                              fontSize: 13,
+                              fontWeight: FontWeights.medium,
+                              color: AppColor.darkGrey,
+                            ),
+                          ),
+                          (dashProv.toggleLoading && dashProv.deletingVacationId == vacation.id)
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.red,
+                                  ),
+                                )
+                              : IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (confirmCtx) => AlertDialog(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        title: const Text('Delete Vacation'),
+                                        content: const Text(
+                                            'Are you sure you want to delete this scheduled vacation period?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(confirmCtx, false),
+                                            child: Text('Cancel', style: TextStyle(color: AppColor.grey)),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(confirmCtx, true),
+                                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm != true) return;
+
+                                    final result = await dashProv.deleteVacation(vacation.id);
+                                    if (context.mounted) {
+                                      FunctionalComponent.showSnackBar(
+                                        context: context,
+                                        title: result.message,
+                                        success: result.success,
+                                      );
+                                    }
+                                  },
+                                ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onAddVacation();
+                  },
+                  icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                  label: const Text(
+                    'Add Vacation',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 2),
-                    AppText(
-                      formattedRange,
-                      fontSize: 12,
-                      color: AppColor.grey,
-                      fontWeight: FontWeights.medium,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColor.authButton,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],
           ),
-          if (offlineMessage != null && offlineMessage!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9F9FA),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.info_outline_rounded,
-                    size: 14,
-                    color: AppColor.grey,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: AppText(
-                      offlineMessage!,
-                      fontSize: 11,
-                      color: AppColor.darkGrey,
-                      maxLines: 4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            height: 40,
-            child: OutlinedButton.icon(
-              onPressed: onCancel,
-              icon: const Icon(Icons.cancel_outlined, size: 16, color: Colors.red),
-              label: const Text(
-                'Cancel Vacation Period',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.red, width: 1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

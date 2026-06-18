@@ -252,6 +252,24 @@ class BookingRepositoryImpl implements BookingRepository {
     }
   }
 
+  @override
+  Future<List<String>> getUnavailableDates(int providerId) async {
+    try {
+      final response = await _apiService.getUnavailableDates(providerId);
+      final map = response as Map<String, dynamic>;
+      if (map['status'] == true && map['data'] != null) {
+        final data = map['data'] as Map<String, dynamic>;
+        final dates = data['unavailable_dates'] as List<dynamic>? ?? [];
+        return dates.map((e) => e.toString()).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw Exception(_extractServerMessage(e) ?? HandleExeption.handleError(e));
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
   String? _flattenMessage(dynamic msg) {
     try {
       if (msg is Map) {
