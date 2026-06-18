@@ -256,13 +256,13 @@ class BookingProvider extends ChangeNotifier {
     return _fetchSlotsInternal(providerId, serviceId);
   }
 
-  Future<void> fetchUnavailableDates(int providerId) async {
+  Future<void> fetchUnavailableDates(int providerId, int categoryId) async {
     _unavailableDatesLoading = true;
     _unavailableDates = [];
     notifyListeners();
 
     try {
-      _unavailableDates = await _repository.getUnavailableDates(providerId);
+      _unavailableDates = await _repository.getUnavailableDates(providerId, categoryId);
     } catch (_) {
       _unavailableDates = [];
     } finally {

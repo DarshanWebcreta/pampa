@@ -69,11 +69,21 @@ class _BookingScreenState extends State<BookingScreen> {
       final bp = context.read<BookingProvider>();
       final ap = context.read<AddressProvider>();
 
-      bp.fetchServiceDetail(widget.serviceId);
+      if (bp.service == null && bp.fetchStatus == BookingFetchStatus.loading) {
+        await Future.doWhile(() async {
+          if (bp.fetchStatus == BookingFetchStatus.loading) {
+            await Future.delayed(const Duration(milliseconds: 50));
+            return true;
+          }
+          return false;
+        });
+      } else if (bp.service == null) {
+        await bp.fetchServiceDetail(widget.serviceId);
+      }
       
       final provider = widget.preSelectedProvider;
-      if (provider != null) {
-        bp.fetchUnavailableDates(provider.id);
+      if (provider != null && bp.service != null) {
+        bp.fetchUnavailableDates(provider.id, bp.service!.categoryId);
       }
 
       await ap.fetchAddresses();

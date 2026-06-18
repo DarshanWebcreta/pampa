@@ -49,5 +49,5 @@ abstract class BookingRepository {
     required String appointmentTime,
   });
 
-  Future<List<String>> getUnavailableDates(int providerId);
+  Future<List<String>> getUnavailableDates(int providerId, int categoryId);
 }

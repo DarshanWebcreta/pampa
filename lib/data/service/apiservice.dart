@@ -7,6 +7,8 @@ import 'package:pampa/core/values/urls.dart';
 
 import 'package:pampa/data/interceptor/interceptor.dart';
 
+import 'package:pampa/features/booking/data/models/unavailable_dates_response.dart';
+
 part 'apiservice.g.dart';
 
 @RestApi(baseUrl: ApiStrings.baseUrl)
@@ -173,7 +175,10 @@ abstract class ApiService {
   );
 
   @GET("providers/{id}/unavailable-dates")
-  Future<dynamic> getUnavailableDates(@Path("id") int providerId);
+  Future<UnavailableDatesResponse> getUnavailableDates(
+    @Path("id") int providerId,
+    @Query("category_id") int categoryId,
+  );
 
   @GET(ApiPath.bookings)
   Future<dynamic> getBookings();

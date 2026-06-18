@@ -4,6 +4,7 @@ import 'package:pampa/data/service/apiservice.dart';
 import 'package:pampa/features/booking/data/models/available_slots_response.dart';
 import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/booking/data/models/slot_model.dart';
+import 'package:pampa/features/booking/data/models/unavailable_dates_response.dart';
 import 'package:pampa/features/booking/domain/repositories/booking_repository.dart';
 import 'package:pampa/features/services/data/models/service_model.dart';
 
@@ -253,14 +254,11 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
-  Future<List<String>> getUnavailableDates(int providerId) async {
+  Future<List<String>> getUnavailableDates(int providerId, int categoryId) async {
     try {
-      final response = await _apiService.getUnavailableDates(providerId);
-      final map = response as Map<String, dynamic>;
-      if (map['status'] == true && map['data'] != null) {
-        final data = map['data'] as Map<String, dynamic>;
-        final dates = data['unavailable_dates'] as List<dynamic>? ?? [];
-        return dates.map((e) => e.toString()).toList();
+      final UnavailableDatesResponse response = await _apiService.getUnavailableDates(providerId, categoryId);
+      if (response.status) {
+        return response.unavailableDates;
       }
       return [];
     } on DioException catch (e) {
