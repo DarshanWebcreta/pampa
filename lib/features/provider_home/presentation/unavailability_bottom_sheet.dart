@@ -5,7 +5,7 @@ import 'package:pampa/core/widgets/text_widget.dart';
 import 'package:pampa/features/provider_home/presentation/provider/provider_dashboard_provider.dart';
 
 class UnavailabilityBottomSheet extends StatefulWidget {
-  final Future<ToggleResult> Function(int duration, DateTime startDate) onConfirm;
+  final Future<ToggleResult> Function(DateTime endDate, DateTime startDate) onConfirm;
   final String title;
   final String description;
 
@@ -14,7 +14,7 @@ class UnavailabilityBottomSheet extends StatefulWidget {
     required this.onConfirm,
     this.title = 'Set Unavailability',
     this.description =
-        'Select when you want to start being unavailable and for how long. You won\'t receive new bookings during this period.',
+        'Select when you want to start being unavailable and the end date. You won\'t receive new bookings during this period.',
   });
 
   @override
@@ -23,18 +23,28 @@ class UnavailabilityBottomSheet extends StatefulWidget {
 }
 
 class _UnavailabilityBottomSheetState extends State<UnavailabilityBottomSheet> {
-  DateTime _startDate = DateTime.now();
-  int _duration = 1;
+  late DateTime _startDate;
+  late DateTime _endDate;
   bool _isLoading = false;
   String? _errorMsg;
 
-  final List<int> _quickDurations = [1, 3, 7, 14, 30];
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _startDate = DateTime(now.year, now.month, now.day);
+    _endDate = _startDate;
+  }
+
+  int get _totalOfflineDays {
+    return _endDate.difference(_startDate).inDays + 1;
+  }
 
   Future<void> _selectStartDate() async {
     final date = await showDatePicker(
       context: context,
       initialDate: _startDate,
-      firstDate: DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(minutes: 5)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
@@ -52,6 +62,38 @@ class _UnavailabilityBottomSheetState extends State<UnavailabilityBottomSheet> {
     if (date != null) {
       setState(() {
         _startDate = date;
+        if (_endDate.isBefore(_startDate)) {
+          _endDate = _startDate;
+        } else if (_endDate.difference(_startDate).inDays > 29) {
+          _endDate = _startDate.add(const Duration(days: 29));
+        }
+      });
+    }
+  }
+
+  Future<void> _selectEndDate() async {
+    final maxEndDate = _startDate.add(const Duration(days: 29));
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _endDate.isBefore(_startDate) ? _startDate : (_endDate.isAfter(maxEndDate) ? maxEndDate : _endDate),
+      firstDate: _startDate,
+      lastDate: maxEndDate,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColor.authButton,
+              onPrimary: Colors.white,
+              onSurface: AppColor.darkGrey,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (date != null) {
+      setState(() {
+        _endDate = date;
       });
     }
   }
@@ -62,7 +104,7 @@ class _UnavailabilityBottomSheetState extends State<UnavailabilityBottomSheet> {
       _errorMsg = null;
     });
 
-    final result = await widget.onConfirm(_duration, _startDate);
+    final result = await widget.onConfirm(_endDate, _startDate);
 
     if (mounted) {
       setState(() {
@@ -190,95 +232,106 @@ class _UnavailabilityBottomSheetState extends State<UnavailabilityBottomSheet> {
           ),
           const SizedBox(height: 20),
 
-          // Duration Section
+          // End Date Selection
           const Text(
-            'Duration (Days)',
+            'End Date',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
               color: AppColor.darkGrey,
             ),
           ),
-          const SizedBox(height: 10),
-
-          // Quick selection chips
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _quickDurations.map((d) {
-              final isSelected = _duration == d;
-              return ChoiceChip(
-                label: Text('$d ${d == 1 ? 'Day' : 'Days'}'),
-                selected: isSelected,
-
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppColor.darkGrey,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  fontSize: 12,
-                ),
-                selectedColor: AppColor.authButton,
-                checkmarkColor: Colors.white,
-                backgroundColor: Colors.grey[100],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    color: isSelected ? AppColor.authButton : Colors.transparent,
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: _isLoading ? null : _selectEndDate,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              height: 52,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFF0E4E8)),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_month_outlined,
+                        color: AppColor.authButton,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        DateFormat('EEEE, MMMM dd, yyyy').format(_endDate),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColor.darkGrey,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                onSelected: _isLoading
-                    ? null
-                    : (selected) {
-                        if (selected) {
-                          setState(() {
-                            _duration = d;
-                          });
-                        }
-                      },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 14),
-
-          // Custom select dropdown
-          DropdownButtonFormField<int>(
-            key: ValueKey(_duration),
-            initialValue: _duration,
-            decoration: InputDecoration(
-              labelText: 'Custom Duration',
-              labelStyle: const TextStyle(color: AppColor.grey, fontSize: 13),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFF0E4E8)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFF0E4E8)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    const BorderSide(color: AppColor.authButton, width: 1.5),
+                  const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppColor.grey,
+                  ),
+                ],
               ),
             ),
-            dropdownColor: Colors.white,
-            items: List.generate(30, (index) {
-              final val = index + 1;
-              return DropdownMenuItem<int>(
-                value: val,
-                child: Text('$val ${val == 1 ? 'Day' : 'Days'}'),
-              );
-            }),
-            onChanged: _isLoading
-                ? null
-                : (val) {
-                    if (val != null) {
-                      setState(() {
-                        _duration = val;
-                      });
-                    }
-                  },
+          ),
+          const SizedBox(height: 20),
+
+          // Total Offline Days Summary Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9F9FA),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFF0E4E8)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColor.authButton.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.date_range_rounded,
+                    color: AppColor.authButton,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Total Offline Days',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColor.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$_totalOfflineDays ${_totalOfflineDays == 1 ? 'Day' : 'Days'}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColor.darkGrey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
 

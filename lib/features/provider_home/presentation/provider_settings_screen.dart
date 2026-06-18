@@ -293,11 +293,11 @@ class ProviderSettingsScreen extends StatelessWidget {
         builder: (ctx) => UnavailabilityBottomSheet(
           title: 'Pause Profile',
           description:
-              'Select when you want to start being unavailable and for how long. During this period, your profile will be paused.',
-          onConfirm: (duration, startDate) async {
+              'Select when you want to start being unavailable and the end date. During this period, your profile will be paused.',
+          onConfirm: (endDate, startDate) async {
             return await dashProv.toggleStatus(
               isOnline: false,
-              duration: duration,
+              endDate: endDate,
               startDate: startDate,
             );
           },

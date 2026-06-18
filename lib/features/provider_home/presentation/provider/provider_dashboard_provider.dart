@@ -41,7 +41,7 @@ class ProviderDashboardProvider extends ChangeNotifier {
     }
   }
 
-  Future<ToggleResult> toggleOnline({int? duration, DateTime? startDate}) async {
+  Future<ToggleResult> toggleOnline({DateTime? endDate, DateTime? startDate}) async {
     if (_toggleLoading) return ToggleResult(success: false, message: 'Already loading');
     _toggleLoading = true;
     final prev = _dashboard?.isOnline ?? false;
@@ -66,8 +66,9 @@ class ProviderDashboardProvider extends ChangeNotifier {
 
     try {
       final body = <String, dynamic>{};
-      if (duration != null) {
-        body['duration'] = duration;
+      if (endDate != null) {
+        body['end_date'] =
+            "${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}";
       }
       if (startDate != null) {
         body['start_date'] =
@@ -168,7 +169,7 @@ class ProviderDashboardProvider extends ChangeNotifier {
 
   Future<ToggleResult> toggleStatus({
     required bool isOnline,
-    int? duration,
+    DateTime? endDate,
     DateTime? startDate,
   }) async {
     if (_toggleLoading) return ToggleResult(success: false, message: 'Already loading');
@@ -196,8 +197,13 @@ class ProviderDashboardProvider extends ChangeNotifier {
       final body = <String, dynamic>{
         'is_online': isOnline,
       };
-      if (duration != null) {
-        body['duration'] = duration;
+      if (endDate != null) {
+        body['end_date'] =
+            "${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}";
+        if (startDate != null) {
+          final calculatedDuration = endDate.difference(startDate).inDays + 1;
+          body['duration'] = calculatedDuration;
+        }
       }
       if (startDate != null) {
         body['start_date'] =

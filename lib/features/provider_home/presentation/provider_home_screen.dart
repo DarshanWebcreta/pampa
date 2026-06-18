@@ -280,9 +280,9 @@ class _DashboardTabState extends State<_DashboardTab> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => UnavailabilityBottomSheet(
         title: 'Go Offline',
-        onConfirm: (duration, startDate) async {
+        onConfirm: (endDate, startDate) async {
           return await dashProv.toggleOnline(
-            duration: duration,
+            endDate: endDate,
             startDate: startDate,
           );
         },
