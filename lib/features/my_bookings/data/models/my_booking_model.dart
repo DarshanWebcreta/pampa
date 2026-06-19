@@ -56,6 +56,8 @@ class MyBookingModel {
   final BookingServiceModel service;
   final ProviderModel? provider;
   final bool rescheduleBook;
+  final String? distanceKm;
+  final String? distanceCharge;
 
   const MyBookingModel({
     required this.id,
@@ -79,6 +81,8 @@ class MyBookingModel {
     required this.service,
     this.provider,
     this.rescheduleBook = false,
+    this.distanceKm,
+    this.distanceCharge,
   });
 
   bool get isPending => status.toLowerCase() == 'pending';
@@ -120,6 +124,8 @@ class MyBookingModel {
           ? ProviderModel.fromJson(json['provider'])
           : null,
       rescheduleBook: json['reschedule_book'] as bool? ?? false,
+      distanceKm: json['distance_km']?.toString(),
+      distanceCharge: json['distance_charge']?.toString(),
     );
   }
 }

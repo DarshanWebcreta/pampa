@@ -702,33 +702,59 @@ class _AppointmentContent extends StatelessWidget {
         DateFormat('EEEE, MMM d yyyy').format(booking.appointmentDate);
     final formattedTime = _formatTime(booking.appointmentTime);
 
-    return IntrinsicHeight(
-      child: Row(
-        children: [
-          Expanded(
-            child: _InfoTile(
-              icon: Icons.calendar_today_rounded,
-              label: 'Date',
-              value: formattedDate,
-            ),
-          ),
-          const VerticalDivider(
-            color: AppColor.lightGrey,
-            width: 1,
-            thickness: 1,
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 12),
-              child: _InfoTile(
-                icon: Icons.access_time_rounded,
-                label: 'Time',
-                value: formattedTime,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        IntrinsicHeight(
+          child: Row(
+            children: [
+              Expanded(
+                child: _InfoTile(
+                  icon: Icons.calendar_today_rounded,
+                  label: 'Date',
+                  value: formattedDate,
+                ),
               ),
-            ),
+              const VerticalDivider(
+                color: AppColor.lightGrey,
+                width: 1,
+                thickness: 1,
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: _InfoTile(
+                    icon: Icons.access_time_rounded,
+                    label: 'Time',
+                    value: formattedTime,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (booking.distanceKm != null && booking.distanceKm!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: AppColor.lightGrey),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(
+                Icons.directions_car_rounded,
+                color: AppColor.authButton,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              AppText(
+                'Distance: ${booking.distanceKm} km',
+                fontSize: FontSizes.regular,
+                fontWeight: FontWeights.semiBold,
+                color: AppColor.darkGrey,
+              ),
+            ],
           ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -750,6 +776,13 @@ class _PaymentSummaryContent extends StatelessWidget {
           value: '\$${booking.price.toStringAsFixed(2)}',
         ),
         const SizedBox(height: 8),
+        if (booking.distanceCharge != null && booking.distanceCharge!.isNotEmpty) ...[
+          _PayRow(
+            label: 'Distance Charge (added)',
+            value: '\$${double.tryParse(booking.distanceCharge!)?.toStringAsFixed(2) ?? booking.distanceCharge}',
+          ),
+          const SizedBox(height: 8),
+        ],
         _PayRow(
           label: 'Deposit Paid',
           value: '\$${booking.depositAmount}',
