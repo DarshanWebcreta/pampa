@@ -113,11 +113,12 @@ class MyBookingsRepositoryImpl implements MyBookingsRepository {
   }
 
   @override
-  Future<bool> rescheduleBooking(int id, String date, String time) async {
+  Future<bool> rescheduleBooking(int id, String date, String time, {int? providerId}) async {
     try {
       final body = {
         'appointment_date': date,
         'appointment_time': time,
+        if (providerId != null) 'provider_id': providerId,
       };
       final response = await _apiService.rescheduleBooking(id, body);
       final map = response as Map<String, dynamic>;

@@ -34,8 +34,8 @@ class _FavoriteProviderModel {
     final user = json['user'] as Map<String, dynamic>? ?? {};
     return _FavoriteProviderModel(
       id: json['id'] as int? ?? 0,
-      name: user['name'] as String? ?? '',
-      photoUrl: json['photo_url'] as String?,
+      name: user['name'] as String? ?? json['name'] as String? ?? '',
+      photoUrl: json['photo_url'] as String? ?? json['photo'] as String?,
       rating: ((json['rating'] ?? 0) as num).toDouble(),
       city: json['city'] as String?,
       bio: json['bio'] as String?,

@@ -174,6 +174,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
       bookingId: widget.rescheduleBookingId!,
       date: dateStr,
       time: timeStr,
+      providerId: bookingProvider.selectedProvider?.id,
     );
 
     if (!mounted) return;
@@ -185,10 +186,9 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
         title: 'Appointment rescheduled successfully!',
         success: true,
       );
-      bookingsProvider.fetchBookingDetail(widget.rescheduleBookingId!);
       bookingsProvider.fetchBookings();
-      Navigator.of(context).pop();
-      Navigator.of(context).pop();
+      homeTabNotifier.value = 2;
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } else {
       FunctionalComponent.showSnackBar(
         context: context,

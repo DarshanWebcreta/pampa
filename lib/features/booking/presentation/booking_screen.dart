@@ -18,6 +18,7 @@ import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/booking/presentation/booking_review_screen.dart';
 import 'package:pampa/features/booking/presentation/choose_provider_screen.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
+import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
 
 // ─── Icon helper for address name ─────────────────────────────────────────────
 IconData _iconForAddress(String name) {
@@ -61,6 +62,7 @@ class _BookingScreenState extends State<BookingScreen> {
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
   String? _selectedTimeDisplay;
   String? _selectedPeriod; // 'Morning' | 'Afternoon' | 'Evening'
+  bool _changeProviderMode = false;
 
   @override
   void initState() {
@@ -132,7 +134,7 @@ class _BookingScreenState extends State<BookingScreen> {
     });
 
     final bp = context.read<BookingProvider>();
-    final provider = widget.preSelectedProvider;
+    final provider = _changeProviderMode ? null : widget.preSelectedProvider;
 
     if (provider != null) {
       await bp.fetchAvailableSlots(provider.id, serviceId: widget.serviceId);
@@ -157,7 +159,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   void _onConfirm() {
     final bp = context.read<BookingProvider>();
-    final preProvider = widget.preSelectedProvider;
+    final preProvider = _changeProviderMode ? null : widget.preSelectedProvider;
 
     if (preProvider != null) {
       bp.selectProvider(preProvider);
@@ -193,7 +195,10 @@ class _BookingScreenState extends State<BookingScreen> {
             ChangeNotifierProvider.value(
                 value: context.read<AddressProvider>()),
           ],
-          child: ChooseProviderScreen(address: _selectedAddress!),
+          child: ChooseProviderScreen(
+            address: _selectedAddress!,
+            rescheduleBookingId: widget.rescheduleBookingId,
+          ),
         ),
       ),
     );
@@ -392,6 +397,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   visibleMonth: _visibleMonth,
                   selectedDate: provider.selectedDate,
                   unavailableDates: provider.unavailableDates,
+                  isRescheduling: widget.rescheduleBookingId != null,
                   onDateSelected: (date) {
                     provider.selectDate(date);
                     _loadSlots(date);
@@ -524,6 +530,17 @@ class _BookingScreenState extends State<BookingScreen> {
           label: 'Continue',
           enabled: hasTime,
           onTap: _onConfirm,
+          onChangeProvider: (provider.availableSlots.isEmpty &&
+                  !provider.slotsLoading &&
+                  !_changeProviderMode &&
+                  widget.rescheduleBookingId != null)
+              ? () {
+                  setState(() {
+                    _changeProviderMode = true;
+                  });
+                  _loadSlots(provider.selectedDate);
+                }
+              : null,
         ),
       ],
     );
@@ -845,8 +862,14 @@ class _BottomBar extends StatelessWidget {
   final String label;
   final bool enabled;
   final VoidCallback onTap;
-  const _BottomBar(
-      {required this.label, required this.enabled, required this.onTap});
+  final VoidCallback? onChangeProvider;
+
+  const _BottomBar({
+    required this.label,
+    required this.enabled,
+    required this.onTap,
+    this.onChangeProvider,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -854,23 +877,51 @@ class _BottomBar extends StatelessWidget {
       color: AppColor.authBg,
       padding: EdgeInsets.fromLTRB(
           20, 12, 20, MediaQuery.of(context).padding.bottom + 16),
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor:
-                enabled ? AppColor.authButton : AppColor.mediumGrey,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    enabled ? AppColor.authButton : AppColor.mediumGrey,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              onPressed: enabled ? onTap : null,
+              child: AppText(label,
+                  fontSize: FontSizes.regular,
+                  fontWeight: FontWeights.semiBold,
+                  color: AppColor.white),
+            ),
           ),
-          onPressed: enabled ? onTap : null,
-          child: AppText(label,
-              fontSize: FontSizes.regular,
-              fontWeight: FontWeights.semiBold,
-              color: AppColor.white),
-        ),
+          if (onChangeProvider != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColor.authButton),
+                  foregroundColor: AppColor.authButton,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: onChangeProvider,
+                child: AppText(
+                  'Change Provider',
+                  fontSize: FontSizes.regular,
+                  fontWeight: FontWeights.semiBold,
+                  color: AppColor.authButton,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -883,6 +934,7 @@ class _CalendarCard extends StatelessWidget {
   final List<String> unavailableDates;
   final void Function(DateTime) onDateSelected;
   final void Function(int delta) onMonthChanged;
+  final bool isRescheduling;
 
   const _CalendarCard({
     required this.visibleMonth,
@@ -890,6 +942,7 @@ class _CalendarCard extends StatelessWidget {
     this.unavailableDates = const [],
     required this.onDateSelected,
     required this.onMonthChanged,
+    this.isRescheduling = false,
   });
 
   @override
@@ -975,6 +1028,7 @@ class _CalendarCard extends StatelessWidget {
       final isUnavailable = unavailableDates.contains(dateStr);
       
       final isDisabled = isPast || isAfterLimit || isUnavailable;
+      final isTapEnabled = !isPast && !isAfterLimit && (!isUnavailable || isRescheduling);
       
       final isSelected = date.year == selectedDate.year &&
           date.month == selectedDate.month &&
@@ -984,7 +1038,7 @@ class _CalendarCard extends StatelessWidget {
           date.day == today.day;
 
       cells.add(GestureDetector(
-        onTap: isDisabled ? null : () => onDateSelected(date),
+        onTap: isTapEnabled ? () => onDateSelected(date) : null,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           margin: const EdgeInsets.all(3),

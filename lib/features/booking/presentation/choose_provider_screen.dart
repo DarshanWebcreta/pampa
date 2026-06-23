@@ -11,11 +11,18 @@ import 'package:pampa/features/address/presentation/provider/address_provider.da
 import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/booking/presentation/booking_review_screen.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
+import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
+import 'package:pampa/core/utils/functional_component.dart';
 
 class ChooseProviderScreen extends StatefulWidget {
   final AddressModel address;
+  final int? rescheduleBookingId;
 
-  const ChooseProviderScreen({super.key, required this.address});
+  const ChooseProviderScreen({
+    super.key,
+    required this.address,
+    this.rescheduleBookingId,
+  });
 
   @override
   State<ChooseProviderScreen> createState() => _ChooseProviderScreenState();
@@ -52,101 +59,194 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
           child: BookingReviewScreen(
             address: widget.address,
             serviceIds: serviceIds,
+            rescheduleBookingId: widget.rescheduleBookingId,
           ),
         ),
       ),
     );
   }
 
+  Future<void> _handleCancel(BuildContext context) async {
+    final myBookingsProvider = context.read<MyBookingsProvider>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Booking'),
+        content: const Text(
+          'Are you sure you want to cancel this booking? This action cannot be undone.',
+        ),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep Booking'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFf1416c),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!context.mounted) return;
+
+    // Show a loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: CircularProgressIndicator(color: AppColor.authButton),
+      ),
+    );
+
+    final success = await myBookingsProvider.cancelBooking(widget.rescheduleBookingId!);
+    if (!context.mounted) return;
+
+    // Dismiss the loading dialog
+    Navigator.of(context).pop();
+
+    if (success) {
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: 'Booking cancelled successfully.',
+        success: true,
+      );
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } else {
+      FunctionalComponent.showSnackBar(
+        context: context,
+        title: myBookingsProvider.cancelError,
+        success: false,
+      );
+      myBookingsProvider.resetCancelStatus();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F1F4),
-      body: Consumer<BookingProvider>(
-        builder: (context, bookingProvider, _) {
-          final service = bookingProvider.service;
-          if (service == null) return const SizedBox.shrink();
+    return Consumer<BookingProvider>(
+      builder: (context, bookingProvider, _) {
+        final service = bookingProvider.service;
+        final showCancelButton = widget.rescheduleBookingId != null &&
+            bookingProvider.providerFetchStatus == ProviderFetchStatus.success &&
+            bookingProvider.providers.isEmpty;
 
-          return CustomScrollView(
-            slivers: [
-              // ── Sticky gradient header ────────────────────────────────
-              SliverAppBar(
-                pinned: true,
-                expandedHeight: 200,
-                backgroundColor: AppColor.authButton,
-                surfaceTintColor: Colors.transparent,
-                leading: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Material(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    shape: const CircleBorder(),
-                    clipBehavior: Clip.antiAlias,
-                    child: IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white, size: 18),
-                    ),
-                  ),
-                ),
-                flexibleSpace: FlexibleSpaceBar(
-                  collapseMode: CollapseMode.pin,
-                  background: _HeaderBanner(
-                    address: widget.address,
-                    date: bookingProvider.selectedDate,
-                    time: bookingProvider.selectedTime ?? '',
-                    serviceName: service.serviceName,
-                  ),
-                ),
-              ),
-
-              // ── Provider count subheader ──────────────────────────────
-              if (bookingProvider.providerFetchStatus ==
-                  ProviderFetchStatus.success &&
-                  bookingProvider.providers.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(20, 20, 20, 4),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AppColor.authButton.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: AppText(
-                            '${bookingProvider.providers.length} available',
-                            fontSize: 12,
-                            fontWeight: FontWeights.semiBold,
-                            color: AppColor.authButton,
+        return Scaffold(
+          backgroundColor: const Color(0xFFF7F1F4),
+          body: service == null
+              ? const SizedBox.shrink()
+              : CustomScrollView(
+                  slivers: [
+                    // ── Sticky gradient header ────────────────────────────────
+                    SliverAppBar(
+                      pinned: true,
+                      expandedHeight: 200,
+                      backgroundColor: AppColor.authButton,
+                      surfaceTintColor: Colors.transparent,
+                      leading: Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Material(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          shape: const CircleBorder(),
+                          clipBehavior: Clip.antiAlias,
+                          child: IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                color: Colors.white, size: 18),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: AppText(
-                            'for ${service.serviceName}',
-                            fontSize: 13,
-                            color: AppColor.grey,
-                            maxLines: 1,
+                      ),
+                      flexibleSpace: FlexibleSpaceBar(
+                        collapseMode: CollapseMode.pin,
+                        background: _HeaderBanner(
+                          address: widget.address,
+                          date: bookingProvider.selectedDate,
+                          time: bookingProvider.selectedTime ?? '',
+                          serviceName: service.serviceName,
+                        ),
+                      ),
+                    ),
+
+                    // ── Provider count subheader ──────────────────────────────
+                    if (bookingProvider.providerFetchStatus ==
+                        ProviderFetchStatus.success &&
+                        bookingProvider.providers.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding:
+                              const EdgeInsets.fromLTRB(20, 20, 20, 4),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: AppColor.authButton.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: AppText(
+                                  '${bookingProvider.providers.length} available',
+                                  fontSize: 12,
+                                  fontWeight: FontWeights.semiBold,
+                                  color: AppColor.authButton,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: AppText(
+                                  'for ${service.serviceName}',
+                                  fontSize: 13,
+                                  color: AppColor.grey,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
+
+                    // ── Body ─────────────────────────────────────────────────
+                    SliverToBoxAdapter(
+                      child: _buildBody(bookingProvider),
+                    ),
+
+                    const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                  ],
+                ),
+          bottomNavigationBar: showCancelButton
+              ? Container(
+                  color: const Color(0xFFF7F1F4),
+                  padding: EdgeInsets.fromLTRB(
+                      20, 12, 20, MediaQuery.of(context).padding.bottom + 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFf1416c)),
+                        foregroundColor: const Color(0xFFf1416c),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () => _handleCancel(context),
+                      child: AppText(
+                        'Cancel Booking',
+                        fontSize: FontSizes.regular,
+                        fontWeight: FontWeights.semiBold,
+                        color: const Color(0xFFf1416c),
+                      ),
                     ),
                   ),
-                ),
-
-              // ── Body ─────────────────────────────────────────────────
-              SliverToBoxAdapter(
-                child: _buildBody(bookingProvider),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 32)),
-            ],
-          );
-        },
-      ),
+                )
+              : null,
+        );
+      },
     );
   }
 

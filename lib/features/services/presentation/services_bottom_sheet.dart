@@ -220,19 +220,19 @@ class _ServiceSheetTile extends StatelessWidget {
             ),
 
             // Price + arrow
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                AppText(
-                  service.formattedPrice,
-                  fontSize: FontSizes.medium,
-                  fontWeight: FontWeights.bold,
-                  color: AppColor.darkGrey,
-                ),
-                const SizedBox(height: 4),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColor.grey),
-              ],
-            ),
+            // Column(
+            //   crossAxisAlignment: CrossAxisAlignment.end,
+            //   children: [
+            //     AppText(
+            //       service.formattedPrice,
+            //       fontSize: FontSizes.medium,
+            //       fontWeight: FontWeights.bold,
+            //       color: AppColor.darkGrey,
+            //     ),
+            //     const SizedBox(height: 4),
+            //     const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColor.grey),
+            //   ],
+            // ),
           ],
         ),
       ),

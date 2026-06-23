@@ -44,6 +44,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   final _api = getIt<ApiService>();
   final _dio = getIt<Dio>();
 
+  bool _pushNotifications = true;
+  bool _smsNotifications = true;
+  bool _emailNotifications = true;
   List<_NotificationPref> _prefs = [];
   bool _loading = true;
   bool _saving = false;
@@ -64,11 +67,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final response = await _api.getNotificationPreferences();
       final map = response as Map<String, dynamic>;
       if (map['status'] == true) {
-        final data = map['data'] as List<dynamic>;
+        final rawData = map['data'];
         setState(() {
-          _prefs = data
-              .map((e) => _NotificationPref.fromJson(e as Map<String, dynamic>))
-              .toList();
+          if (rawData is List) {
+            _prefs = rawData
+                .map((e) => _NotificationPref.fromJson(e as Map<String, dynamic>))
+                .toList();
+          } else if (rawData is Map<String, dynamic>) {
+            _pushNotifications = rawData['push_notifications'] as bool? ?? false;
+            _smsNotifications = rawData['sms_notifications'] as bool? ?? false;
+            _emailNotifications = rawData['email_notifications'] as bool? ?? false;
+            
+            final types = rawData['types'] as List<dynamic>? ?? [];
+            _prefs = types
+                .map((e) => _NotificationPref.fromJson(e as Map<String, dynamic>))
+                .toList();
+          }
           _loading = false;
         });
       } else {
@@ -85,15 +99,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Future<void> _togglePref(int index, bool newValue) async {
-    // Optimistic update
-    setState(() => _prefs[index].value = newValue);
-
+  Future<void> _toggleChannel(String channel, bool newValue) async {
     if (_saving) return;
-    setState(() => _saving = true);
+
+    final oldPush = _pushNotifications;
+    final oldSms = _smsNotifications;
+    final oldEmail = _emailNotifications;
+
+    setState(() {
+      _saving = true;
+      if (channel == 'push') _pushNotifications = newValue;
+      if (channel == 'sms') _smsNotifications = newValue;
+      if (channel == 'email') _emailNotifications = newValue;
+    });
 
     try {
       final body = <String, dynamic>{
+        'push_notifications': _pushNotifications,
+        'sms_notifications': _smsNotifications,
+        'email_notifications': _emailNotifications,
         for (final p in _prefs) p.id: p.value,
       };
       await _dio.post(
@@ -104,8 +128,45 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
       );
     } catch (_) {
-      // Revert on failure
-      setState(() => _prefs[index].value = !newValue);
+      if (mounted) {
+        setState(() {
+          _pushNotifications = oldPush;
+          _smsNotifications = oldSms;
+          _emailNotifications = oldEmail;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _togglePref(int index, bool newValue) async {
+    if (_saving) return;
+
+    final oldVal = _prefs[index].value;
+    setState(() {
+      _saving = true;
+      _prefs[index].value = newValue;
+    });
+
+    try {
+      final body = <String, dynamic>{
+        'push_notifications': _pushNotifications,
+        'sms_notifications': _smsNotifications,
+        'email_notifications': _emailNotifications,
+        for (final p in _prefs) p.id: p.value,
+      };
+      await _dio.post(
+        '${ApiStrings.baseUrl}${ApiPath.notificationPreferences}',
+        data: body,
+        options: Options(
+          headers: {ApiStrings.contentType: ApiStrings.applicationJson},
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() => _prefs[index].value = oldVal);
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -152,20 +213,61 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ? const _LoadingShimmer()
           : _error.isNotEmpty
               ? _ErrorView(message: _error, onRetry: _fetchPreferences)
-              : ListView.separated(
+              : ListView(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                  itemCount: _prefs.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) {
-                    final pref = _prefs[i];
-                    return _PrefTile(
-                      icon: _iconFor(pref.icon),
-                      title: pref.title,
-                      description: pref.description,
-                      value: pref.value,
-                      onChanged: (v) => _togglePref(i, v),
-                    );
-                  },
+                  children: [
+                    AppText(
+                      'Notification Channels',
+                      fontSize: FontSizes.regular,
+                      fontWeight: FontWeights.bold,
+                      color: AppColor.darkGrey,
+                    ),
+                    const SizedBox(height: 12),
+                    _PrefTile(
+                      icon: Icons.notifications_active_outlined,
+                      title: 'Push Notifications',
+                      description: 'Receive notifications directly on your device',
+                      value: _pushNotifications,
+                      onChanged: (v) => _toggleChannel('push', v),
+                    ),
+                    const SizedBox(height: 10),
+                    _PrefTile(
+                      icon: Icons.textsms_outlined,
+                      title: 'SMS Notifications',
+                      description: 'Receive text message updates',
+                      value: _smsNotifications,
+                      onChanged: (v) => _toggleChannel('sms', v),
+                    ),
+                    const SizedBox(height: 10),
+                    _PrefTile(
+                      icon: Icons.mail_outline_rounded,
+                      title: 'Email Notifications',
+                      description: 'Receive email alerts and updates',
+                      value: _emailNotifications,
+                      onChanged: (v) => _toggleChannel('email', v),
+                    ),
+                    const SizedBox(height: 24),
+                    AppText(
+                      'Notification Preferences',
+                      fontSize: FontSizes.regular,
+                      fontWeight: FontWeights.bold,
+                      color: AppColor.darkGrey,
+                    ),
+                    const SizedBox(height: 12),
+                    ...List.generate(_prefs.length, (i) {
+                      final pref = _prefs[i];
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: i == _prefs.length - 1 ? 0 : 10),
+                        child: _PrefTile(
+                          icon: _iconFor(pref.icon),
+                          title: pref.title,
+                          description: pref.description,
+                          value: pref.value,
+                          onChanged: (v) => _togglePref(i, v),
+                        ),
+                      );
+                    }),
+                  ],
                 ),
     );
   }

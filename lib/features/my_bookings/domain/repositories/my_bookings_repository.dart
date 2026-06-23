@@ -6,5 +6,5 @@ abstract class MyBookingsRepository {
   Future<String> cancelBooking(int id);
   Future<String> payBalance(int bookingId);
   Future<String> retryPayment(int paymentId);
-  Future<bool> rescheduleBooking(int id, String date, String time);
+  Future<bool> rescheduleBooking(int id, String date, String time, {int? providerId});
 }

@@ -56,12 +56,12 @@ class ExploreProviderModel {
         : (ratingRaw is double ? ratingRaw : 0.0);
     final user = json['user'] as Map<String, dynamic>? ?? {};
 
-    final distanceRaw = json['distance_miles'];
+    final distanceRaw = json['distance_miles'] ?? json['distance_km'];
     final distanceMiles = distanceRaw is num
         ? distanceRaw.toDouble()
         : double.tryParse(distanceRaw?.toString() ?? '');
 
-    final travelRaw = json['travel_fee'];
+    final travelRaw = json['travel_fee'] ?? json['travel_charge'];
     final travelFee = travelRaw is num
         ? travelRaw.toDouble()
         : double.tryParse(travelRaw?.toString() ?? '');
@@ -73,7 +73,7 @@ class ExploreProviderModel {
       bio: json['bio'] as String?,
       city: json['city'] as String?,
       state: json['state'] as String?,
-      name: user['name'] as String? ?? '',
+      name: user['name'] as String? ?? json['name'] as String? ?? '',
       distanceMiles: distanceMiles,
       travelFee: travelFee,
     );

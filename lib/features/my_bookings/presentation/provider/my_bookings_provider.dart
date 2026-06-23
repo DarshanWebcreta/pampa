@@ -203,13 +203,14 @@ class MyBookingsProvider extends ChangeNotifier {
     required int bookingId,
     required String date,
     required String time,
+    int? providerId,
   }) async {
     _rescheduleStatus = BookingActionStatus.loading;
     _rescheduleError = '';
     notifyListeners();
 
     try {
-      final success = await _repository.rescheduleBooking(bookingId, date, time);
+      final success = await _repository.rescheduleBooking(bookingId, date, time, providerId: providerId);
       if (success) {
         _rescheduleStatus = BookingActionStatus.done;
         notifyListeners();

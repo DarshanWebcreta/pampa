@@ -724,7 +724,7 @@ class _ScheduledOfflineCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AppText(
-                        'Scheduled Vacation',
+                        'Scheduled Time Off',
                         fontSize: FontSizes.regular,
                         fontWeight: FontWeights.bold,
                         color: AppColor.darkGrey,

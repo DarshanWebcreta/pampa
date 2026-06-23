@@ -15,7 +15,7 @@ class ProviderUserModel {
 
   factory ProviderUserModel.fromJson(Map<String, dynamic> json) {
     return ProviderUserModel(
-      id: json['id'] as int,
+      id: json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       mobile: json['mobile'] as String? ?? '',
@@ -38,6 +38,10 @@ class ProviderModel {
   final List<ProviderGalleryImageModel> images;
   final List<ProviderServiceSummaryModel> services;
   final ProviderUserModel user;
+  final double? maxServiceDistance;
+  final double? perKmCharge;
+  final double? distanceKm;
+  final double? travelCharge;
 
   const ProviderModel({
     required this.id,
@@ -54,6 +58,10 @@ class ProviderModel {
     required this.images,
     required this.services,
     required this.user,
+    this.maxServiceDistance,
+    this.perKmCharge,
+    this.distanceKm,
+    this.travelCharge,
   });
 
   String get displayName => user.name;
@@ -90,7 +98,7 @@ class ProviderModel {
       zipCode: json['zip_code'] as String?,
       city: json['city'] as String?,
       state: json['state'] as String?,
-      status: json['status'] as String? ?? '',
+      status: json['status'] as String? ?? 'active',
       cancellationPolicy: json['cancellation_policy'] as String?,
       images: (json['images'] as List<dynamic>? ?? [])
           .map((e) =>
@@ -100,8 +108,18 @@ class ProviderModel {
           .map((e) =>
               ProviderServiceSummaryModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      user: ProviderUserModel.fromJson(
-          json['user'] as Map<String, dynamic>? ?? {}),
+      user: json['user'] != null
+          ? ProviderUserModel.fromJson(json['user'] as Map<String, dynamic>)
+          : ProviderUserModel(
+              id: json['user_id'] as int? ?? json['id'] as int? ?? 0,
+              name: json['name'] as String? ?? '',
+              email: '',
+              mobile: '',
+            ),
+      maxServiceDistance: _toDoubleNullable(json['max_service_distance']),
+      perKmCharge: _toDoubleNullable(json['per_km_charge']),
+      distanceKm: _toDoubleNullable(json['distance_km']),
+      travelCharge: _toDoubleNullable(json['travel_charge']),
     );
   }
 
@@ -148,6 +166,7 @@ class ProviderServiceSummaryModel {
   final String? imageUrl;
   final int? categoryId;
   final String? categoryName;
+  final String? description;
 
   const ProviderServiceSummaryModel({
     required this.id,
@@ -158,6 +177,7 @@ class ProviderServiceSummaryModel {
     required this.imageUrl,
     this.categoryId,
     this.categoryName,
+    this.description,
   });
 
   double get priceAsDouble => double.tryParse(price) ?? 0.0;
@@ -168,7 +188,7 @@ class ProviderServiceSummaryModel {
     final category = json['category'] as Map<String, dynamic>?;
     return ProviderServiceSummaryModel(
       id: json['id'] as int? ?? 0,
-      serviceName: json['service_name'] as String? ?? '',
+      serviceName: json['service_name'] as String? ?? json['name'] as String? ?? '',
       price: json['price']?.toString() ?? '0.00',
       duration: json['duration'] as int? ?? 0,
       deposit: _toDouble(json['deposit']),
@@ -178,6 +198,7 @@ class ProviderServiceSummaryModel {
       categoryName: (json['category_name'] as String?) ??
           (category?['category_name'] as String?) ??
           (category?['name'] as String?),
+      description: json['description'] as String?,
     );
   }
 }
@@ -200,4 +221,10 @@ double _toDouble(dynamic val) {
   if (val == null) return 0.0;
   if (val is num) return val.toDouble();
   return double.tryParse(val.toString()) ?? 0.0;
+}
+
+double? _toDoubleNullable(dynamic val) {
+  if (val == null) return null;
+  if (val is num) return val.toDouble();
+  return double.tryParse(val.toString());
 }
