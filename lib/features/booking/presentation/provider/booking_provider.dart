@@ -125,16 +125,21 @@ class BookingProvider extends ChangeNotifier {
       final map = response as Map<String, dynamic>;
       if (map['status'] == true && map['data'] != null) {
         final data = map['data'] as Map<String, dynamic>;
-        
+
         final distanceRaw = data['distance_miles'];
-        _distanceMiles = distanceRaw is num ? distanceRaw.toDouble() : double.tryParse(distanceRaw?.toString() ?? '');
-        
+        _distanceMiles = distanceRaw is num
+            ? distanceRaw.toDouble()
+            : double.tryParse(distanceRaw?.toString() ?? '');
+
         final chargeRaw = data['distance_charge'];
-        _travelFee = chargeRaw is num ? chargeRaw.toDouble() : double.tryParse(chargeRaw?.toString() ?? '');
-        
+        _travelFee = chargeRaw is num
+            ? chargeRaw.toDouble()
+            : double.tryParse(chargeRaw?.toString() ?? '');
+
         _withinRange = data['within_range'] as bool?;
       } else {
-        _distanceChargeError = map['message'] ?? 'Failed to get distance charge';
+        _distanceChargeError =
+            map['message'] ?? 'Failed to get distance charge';
       }
     } catch (e) {
       _distanceChargeError = e.toString().replaceFirst('Exception: ', '');
@@ -173,7 +178,10 @@ class BookingProvider extends ChangeNotifier {
 
     try {
       final serviceId = _service?.id;
-      _providers = await _repository.getProviders(zipCode, serviceId: serviceId);
+      _providers = await _repository.getProviders(
+        zipCode,
+        serviceId: serviceId,
+      );
       _providerFetchStatus = ProviderFetchStatus.success;
     } catch (e) {
       _providerFetchError = e.toString().replaceFirst('Exception: ', '');
@@ -239,11 +247,33 @@ class BookingProvider extends ChangeNotifier {
 
     try {
       final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-      _availableSlots = await _repository.getAvailableSlots(
+      final fetchedSlots = await _repository.getAvailableSlots(
         providerId: providerId,
         date: dateStr,
         serviceId: serviceId,
       );
+
+      final now = DateTime.now();
+      final isToday =
+          _selectedDate.year == now.year &&
+          _selectedDate.month == now.month &&
+          _selectedDate.day == now.day;
+
+      if (isToday) {
+        final nowMins = now.hour * 60 + now.minute;
+        _availableSlots = fetchedSlots.where((slot) {
+          if (slot.time.isEmpty) return false;
+          try {
+            final parts = slot.time.split(':');
+            final mins = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+            return mins > nowMins;
+          } catch (_) {
+            return false;
+          }
+        }).toList();
+      } else {
+        _availableSlots = fetchedSlots;
+      }
     } catch (e) {
       // In case of error, slots stay empty
     } finally {
@@ -252,7 +282,10 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> fetchAvailableSlots(int providerId, {required int serviceId}) async {
+  Future<void> fetchAvailableSlots(
+    int providerId, {
+    required int serviceId,
+  }) async {
     return _fetchSlotsInternal(providerId, serviceId);
   }
 
@@ -262,7 +295,10 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _unavailableDates = await _repository.getUnavailableDates(providerId, categoryId);
+      _unavailableDates = await _repository.getUnavailableDates(
+        providerId,
+        categoryId,
+      );
     } catch (_) {
       _unavailableDates = [];
     } finally {
@@ -285,7 +321,8 @@ class BookingProvider extends ChangeNotifier {
     }
 
     final now = DateTime.now();
-    final isToday = _selectedDate.year == now.year &&
+    final isToday =
+        _selectedDate.year == now.year &&
         _selectedDate.month == now.month &&
         _selectedDate.day == now.day;
     final nowMins = now.hour * 60 + now.minute;
@@ -299,20 +336,19 @@ class BookingProvider extends ChangeNotifier {
 
       final h = mins ~/ 60;
       final m = mins % 60;
-      final startTimeStr = '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+      final startTimeStr =
+          '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
 
       final endTotalMins = mins + service.duration;
       final eh = endTotalMins ~/ 60;
       final em = endTotalMins % 60;
-      final endTimeStr = '${eh.toString().padLeft(2, '0')}:${em.toString().padLeft(2, '0')}';
+      final endTimeStr =
+          '${eh.toString().padLeft(2, '0')}:${em.toString().padLeft(2, '0')}';
 
-      staticSlots.add(SlotModel(
-        time: startTimeStr,
-        endTime: endTimeStr,
-        available: true,
-      ));
+      staticSlots.add(
+        SlotModel(time: startTimeStr, endTime: endTimeStr, available: true),
+      );
     }
-
 
     _availableSlots = staticSlots;
     _slotsLoading = false;
@@ -438,8 +474,7 @@ class BookingProvider extends ChangeNotifier {
       StorageManager.saveData(AppStorageKeys.pendingBookingId, _lastBookingId);
     }
     if (_paymentLink != null) {
-      StorageManager.saveData(
-          AppStorageKeys.pendingPaymentLink, _paymentLink);
+      StorageManager.saveData(AppStorageKeys.pendingPaymentLink, _paymentLink);
     }
   }
 
