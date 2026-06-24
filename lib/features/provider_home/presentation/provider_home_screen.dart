@@ -806,7 +806,7 @@ class _VacationsBottomSheet extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   AppText(
-                    'Scheduled Vacations',
+                    'Scheduled Time Off',
                     fontSize: 18,
                     fontWeight: FontWeights.bold,
                     color: AppColor.darkGrey,

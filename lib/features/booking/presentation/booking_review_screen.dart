@@ -208,7 +208,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
     bookingProvider.clearPendingBooking();
     homeTabNotifier.value = 2;
     homeSuccessMessageNotifier.value = bookingProvider.successMessage.isEmpty
-        ? 'Booking created successfully!'
+        ? 'Booking Requested successfully!'
         : bookingProvider.successMessage;
     Navigator.of(context).popUntil((route) => route.isFirst);
     // Refresh asynchronously so we don't keep users waiting on this screen.

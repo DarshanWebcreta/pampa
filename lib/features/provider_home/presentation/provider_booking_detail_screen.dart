@@ -104,9 +104,9 @@ class _ProviderBookingDetailScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => _ConfirmDialog(
-        title: 'Decline Booking',
-        message: 'Are you sure you want to decline this booking?',
-        confirmLabel: 'Decline',
+        title: 'Cancel Booking',
+        message: 'Are you sure you want to cancel this booking?',
+        confirmLabel: 'Cancel',
         confirmColor: const Color(0xFFEF4444),
       ),
     );
@@ -431,7 +431,7 @@ class _ProviderBookingDetailScreenState
                 ),
                 onPressed: _cancel,
                 child: AppText(
-                  'Decline',
+                  'Cancel',
                   fontSize: FontSizes.regular,
                   fontWeight: FontWeights.semiBold,
                   color: const Color(0xFFEF4444),

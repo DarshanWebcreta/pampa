@@ -197,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 ),
                 const SizedBox(height: 20),
                 AppText(
-                  'Booking Created',
+                  'Booking Request Submitted',
                   fontSize: FontSizes.large,
                   fontWeight: FontWeights.bold,
                   color: AppColor.darkGrey,
