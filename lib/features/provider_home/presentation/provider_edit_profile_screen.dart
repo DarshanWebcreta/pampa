@@ -274,7 +274,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _SectionLabel('Bio'),
+                      _SectionLabel('Bio', showAsterisk: true),
                       const SizedBox(height: 8),
                       _InputField(
                         controller: _bioCtrl,
@@ -319,6 +319,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                     children: [
                       _InputGroup(
                         label: 'Street Address',
+                        isRequired: true,
                         child: _InputField(
                           controller: _streetCtrl,
                           hint: '123 Main St',
@@ -331,6 +332,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                           Expanded(
                             child: _InputGroup(
                               label: 'City',
+                              isRequired: true,
                               child: _InputField(
                                 controller: _cityCtrl,
                                 hint: 'Los Angeles',
@@ -342,6 +344,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                           Expanded(
                             child: _InputGroup(
                               label: 'State',
+                              isRequired: true,
                               child: _InputField(
                                 controller: _stateCtrl,
                                 hint: 'CA',
@@ -357,6 +360,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                           Expanded(
                             child: _InputGroup(
                               label: 'ZIP Code',
+                              isRequired: true,
                               child: _InputField(
                                 controller: _zipCtrl,
                                 hint: '90015',
@@ -369,6 +373,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                           Expanded(
                             child: _InputGroup(
                               label: 'Country',
+                              isRequired: true,
                               child: _InputField(
                                 controller: _countryCtrl,
                                 hint: 'United States',
@@ -391,6 +396,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                           Expanded(
                             child: _InputGroup(
                               label: 'Max Service Distance',
+                              isRequired: true,
                               child: _InputField(
                                 controller: _distanceCtrl,
                                 hint: '25',
@@ -415,6 +421,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                           Expanded(
                             child: _InputGroup(
                               label: 'Per Mile Charge',
+                              isRequired: true,
                               child: _InputField(
                                 controller: _perKmCtrl,
                                 hint: '1.50',
@@ -440,6 +447,7 @@ class _ProviderEditProfileScreenState extends State<ProviderEditProfileScreen> {
                       const SizedBox(height: 14),
                       _InputGroup(
                         label: 'Service ZIP Codes',
+                        isRequired: true,
                         helper:
                             'Comma-separated list, for example: 90015, 90016, 90017',
                         child: _InputField(
@@ -754,11 +762,13 @@ class _InputGroup extends StatelessWidget {
   final String label;
   final String? helper;
   final Widget child;
+  final bool isRequired;
 
   const _InputGroup({
     required this.label,
     required this.child,
     this.helper,
+    this.isRequired = false,
   });
 
   @override
@@ -766,7 +776,7 @@ class _InputGroup extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionLabel(label),
+        _SectionLabel(label, showAsterisk: isRequired),
         const SizedBox(height: 8),
         child,
         if (helper != null && helper!.isNotEmpty) ...[
@@ -834,11 +844,33 @@ class _ChoiceTile extends StatelessWidget {
 
 class _SectionLabel extends StatelessWidget {
   final String text;
+  final bool showAsterisk;
 
-  const _SectionLabel(this.text);
+  const _SectionLabel(this.text, {this.showAsterisk = false});
 
   @override
   Widget build(BuildContext context) {
+    if (showAsterisk) {
+      return Text.rich(
+        TextSpan(
+          text: text,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColor.darkGrey,
+          ),
+          children: const [
+            TextSpan(
+              text: ' *',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return Text(
       text,
       style: const TextStyle(

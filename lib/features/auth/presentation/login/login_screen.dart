@@ -118,25 +118,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColor.authBg,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        context.go(RouteNames.userType);
+      },
+      child: Scaffold(
         backgroundColor: AppColor.authBg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          onPressed: () => context.go(RouteNames.userType),
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 18,
-            color: AppColor.darkGrey,
+        appBar: AppBar(
+          backgroundColor: AppColor.authBg,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            onPressed: () => context.go(RouteNames.userType),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: AppColor.darkGrey,
+            ),
           ),
         ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [_buildHeader(context), _buildFormCard(context)],
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [_buildHeader(context), _buildFormCard(context)],
+            ),
           ),
         ),
       ),

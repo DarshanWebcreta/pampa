@@ -75,6 +75,9 @@ class MyBookingsTab extends StatefulWidget {
 }
 
 class _MyBookingsTabState extends State<MyBookingsTab> {
+  final Set<String> _expandedDates = {};
+  AppointmentTab? _prevTab;
+
   @override
   void initState() {
     super.initState();
@@ -233,6 +236,11 @@ class _MyBookingsTabState extends State<MyBookingsTab> {
   }
 
   Widget _buildContent(MyBookingsProvider provider) {
+    if (_prevTab != provider.activeTab) {
+      _expandedDates.clear();
+      _prevTab = provider.activeTab;
+    }
+
     switch (provider.status) {
       case MyBookingsFetchStatus.loading:
         return ListView.builder(
@@ -261,17 +269,54 @@ class _MyBookingsTabState extends State<MyBookingsTab> {
                 : 'No past appointments.',
           );
         }
+
+        // Group bookings by normalized date
+        final Map<DateTime, List<MyBookingModel>> grouped = {};
+        for (final booking in list) {
+          final date = booking.appointmentDate;
+          final key = DateTime(date.year, date.month, date.day);
+          (grouped[key] ??= []).add(booking);
+        }
+
+        // Sort keys depending on the active tab
+        final sortedKeys = grouped.keys.toList();
+        if (provider.activeTab == AppointmentTab.upcoming) {
+          sortedKeys.sort((a, b) => a.compareTo(b));
+        } else {
+          sortedKeys.sort((a, b) => b.compareTo(a));
+        }
+
+
+
         return RefreshIndicator(
           color: AppColor.authButton,
           onRefresh: provider.refresh,
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-            itemCount: list.length,
-            itemBuilder: (_, i) => _AppointmentCard(
-              booking: list[i],
-              showBookAgain: provider.activeTab == AppointmentTab.past,
-            ),
+            itemCount: sortedKeys.length,
+            itemBuilder: (context, index) {
+              final dateKey = sortedKeys[index];
+              final dateStr = DateFormat('yyyy-MM-dd').format(dateKey);
+              final isExpanded = _expandedDates.contains(dateStr);
+              final dayBookings = grouped[dateKey] ?? [];
+
+              return _DateGroupCard(
+                dateKey: dateKey,
+                bookings: dayBookings,
+                isExpanded: isExpanded,
+                showBookAgain: provider.activeTab == AppointmentTab.past,
+                onToggle: () {
+                  setState(() {
+                    if (isExpanded) {
+                      _expandedDates.remove(dateStr);
+                    } else {
+                      _expandedDates.add(dateStr);
+                    }
+                  });
+                },
+              );
+            },
           ),
         );
     }
@@ -357,13 +402,206 @@ class _TabItem extends StatelessWidget {
   }
 }
 
-// ─── Appointment card ─────────────────────────────────────────────────────────
+// ─── Grouped Date Card ────────────────────────────────────────────────────────
 
-class _AppointmentCard extends StatelessWidget {
+String _formatHeaderDate(DateTime date) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final dateMidnight = DateTime(date.year, date.month, date.day);
+
+  final difference = dateMidnight.difference(today).inDays;
+  if (difference == 0) {
+    return 'Today, ${DateFormat('MMM d').format(date)}';
+  } else if (difference == 1) {
+    return 'Tomorrow, ${DateFormat('MMM d').format(date)}';
+  } else if (difference == -1) {
+    return 'Yesterday, ${DateFormat('MMM d').format(date)}';
+  } else {
+    return DateFormat('EEEE, MMM d, yyyy').format(date);
+  }
+}
+
+class _DateGroupCard extends StatelessWidget {
+  final DateTime dateKey;
+  final List<MyBookingModel> bookings;
+  final bool isExpanded;
+  final bool showBookAgain;
+  final VoidCallback onToggle;
+
+  const _DateGroupCard({
+    required this.dateKey,
+    required this.bookings,
+    required this.isExpanded,
+    required this.showBookAgain,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final count = bookings.length;
+    final dateText = _formatHeaderDate(dateKey);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColor.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColor.authButton.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.calendar_month_rounded,
+                      color: AppColor.authButton,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          dateText,
+                          fontSize: 15,
+                          fontWeight: FontWeights.bold,
+                          color: AppColor.darkGrey,
+                        ),
+                        const SizedBox(height: 2),
+                        AppText(
+                          '$count appointment${count > 1 ? 's' : ''}',
+                          fontSize: 11,
+                          color: AppColor.grey,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: AppColor.grey,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Body Content (Collapsible)
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isExpanded) ...[
+                  // Collapsed view: list of titles
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Divider(height: 1, color: Colors.black.withValues(alpha: 0.06)),
+                        const SizedBox(height: 12),
+                        ...bookings.map((booking) => Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: AppColor.authButton,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: AppText(
+                                      booking.service.serviceName,
+                                      fontSize: 13,
+                                      fontWeight: FontWeights.medium,
+                                      color: AppColor.darkGrey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  // Expanded view: list of full appointment details
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Divider(height: 1, color: Colors.black.withValues(alpha: 0.06)),
+                        const SizedBox(height: 12),
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: bookings.length,
+                          separatorBuilder: (_, __) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.black.withValues(alpha: 0.06),
+                            ),
+                          ),
+                          itemBuilder: (context, i) {
+                            final booking = bookings[i];
+                            return _DetailedAppointmentRow(
+                              booking: booking,
+                              showBookAgain: showBookAgain,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailedAppointmentRow extends StatelessWidget {
   final MyBookingModel booking;
   final bool showBookAgain;
 
-  const _AppointmentCard({required this.booking, this.showBookAgain = false});
+  const _DetailedAppointmentRow({
+    required this.booking,
+    required this.showBookAgain,
+  });
 
   bool get _showRetryPayment =>
       booking.paymentStatus.toLowerCase() == 'pending_payment' &&
@@ -427,252 +665,248 @@ class _AppointmentCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push(RouteNames.myBookingDetail, extra: booking.id),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: AppColor.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+        color: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _providerAvatar(
+                  booking.provider?.photoUrl,
+                  booking.provider?.displayName ?? '',
+                  44,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText(
+                        booking.service.serviceName,
+                        fontSize: FontSizes.regular,
+                        fontWeight: FontWeights.bold,
+                        color: AppColor.darkGrey,
+                        maxLines: 1,
+                      ),
+                      const SizedBox(height: 3),
+                      AppText(
+                        booking.provider != null
+                            ? 'with ${booking.provider!.displayName}'
+                            : '',
+                        fontSize: 12,
+                        color: AppColor.grey,
+                        maxLines: 1,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColor.authBg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: AppText(
+                    price,
+                    fontSize: 13,
+                    fontWeight: FontWeights.bold,
+                    color: AppColor.darkGrey,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Top row ────────────────────────────────────────────────
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  _providerAvatar(
-                    booking.provider?.photoUrl,
-                    booking.provider?.displayName ?? '',
-                    48,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        size: 12,
+                        color: AppColor.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      AppText(formattedDate, fontSize: 11, color: AppColor.grey),
+                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.access_time_rounded,
+                        size: 12,
+                        color: AppColor.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      AppText(formattedTime, fontSize: 11, color: AppColor.grey),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText(
-                          booking.service.serviceName,
-                          fontSize: FontSizes.regular,
-                          fontWeight: FontWeights.bold,
-                          color: AppColor.darkGrey,
-                          maxLines: 1,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_showRetryPayment)
+                        Consumer<MyBookingsProvider>(
+                          builder: (context, provider, _) {
+                            final isLoading =
+                                provider.payStatus == BookingActionStatus.loading &&
+                                provider.activePayTargetId == booking.paymentId;
+
+                            return GestureDetector(
+                              onTap: isLoading
+                                  ? null
+                                  : () => _handleRetryPayment(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColor.authButton,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: isLoading
+                                    ? const SizedBox(
+                                        width: 10,
+                                        height: 10,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            AppColor.white,
+                                          ),
+                                        ),
+                                      )
+                                    : AppText(
+                                        'Retry Payment',
+                                        fontSize: 11,
+                                        fontWeight: FontWeights.semiBold,
+                                        color: AppColor.white,
+                                      ),
+                              ),
+                            );
+                          },
                         ),
-                        const SizedBox(height: 3),
-                        AppText(
-                          booking.provider != null
-                              ? 'with ${booking.provider!.displayName}'
-                              : '',
-                          fontSize: 12,
-                          color: AppColor.grey,
-                          maxLines: 1,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColor.authBg,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: AppText(
-                      price,
-                      fontSize: 13,
-                      fontWeight: FontWeights.bold,
-                      color: AppColor.darkGrey,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-              Divider(height: 1, color: Colors.black.withValues(alpha: 0.06)),
-              const SizedBox(height: 12),
-
-              // ── Bottom row ─────────────────────────────────────────────
-              Row(
-                children: [
-                  const Icon(
-                    Icons.calendar_today_outlined,
-                    size: 13,
-                    color: AppColor.grey,
-                  ),
-                  const SizedBox(width: 5),
-                  AppText(formattedDate, fontSize: 12, color: AppColor.grey),
-                  const SizedBox(width: 12),
-                  const Icon(
-                    Icons.access_time_rounded,
-                    size: 13,
-                    color: AppColor.grey,
-                  ),
-                  const SizedBox(width: 5),
-                  AppText(formattedTime, fontSize: 12, color: AppColor.grey),
-                  const Spacer(),
-                  if (_showRetryPayment)
-                    Consumer<MyBookingsProvider>(
-                      builder: (context, provider, _) {
-                        final isLoading =
-                            provider.payStatus == BookingActionStatus.loading &&
-                            provider.activePayTargetId == booking.paymentId;
-
-                        return GestureDetector(
-                          onTap: isLoading
-                              ? null
-                              : () => _handleRetryPayment(context),
+                      if (_showRetryPayment) const SizedBox(width: 6),
+                      if (booking.isConfirmed && booking.providerId != null)
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => BookingChatScreen(
+                                bookingId: booking.id,
+                                providerId: booking.providerId!,
+                                providerName:
+                                    booking.provider?.displayName ?? 'Provider',
+                              ),
+                            ),
+                          ),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
+                              horizontal: 8,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColor.authButton,
-                              borderRadius: BorderRadius.circular(8),
+                              color: const Color(0xFFe8fff3),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        AppColor.white,
-                                      ),
-                                    ),
-                                  )
-                                : AppText(
-                                    'Retry Payment',
-                                    fontSize: 12,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  size: 11,
+                                  color: Color(0xFF50cd89),
+                                ),
+                                const SizedBox(width: 3),
+                                AppText(
+                                    'Chat',
+                                    fontSize: 11,
                                     fontWeight: FontWeights.semiBold,
-                                    color: AppColor.white,
+                                    color: const Color(0xFF50cd89),
                                   ),
+                                ],
+                              ),
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                  if (_showRetryPayment) const SizedBox(width: 8),
-                  if (booking.isConfirmed && booking.providerId != null)
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => BookingChatScreen(
-                            bookingId: booking.id,
-                            providerId: booking.providerId!,
-                            providerName:
-                                booking.provider?.displayName ?? 'Provider',
-                          ),
-                        ),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFe8fff3),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.chat_bubble_outline_rounded,
-                              size: 12,
-                              color: Color(0xFF50cd89),
-                            ),
-                            const SizedBox(width: 4),
-                            AppText(
-                              'Chat',
-                              fontSize: 12,
-                              fontWeight: FontWeights.semiBold,
-                              color: const Color(0xFF50cd89),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (booking.rescheduleBook) ...[
-                    if (_showRetryPayment ||
-                        (booking.isConfirmed && booking.providerId != null))
-                      const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        context.push(
-                          RouteNames.bookingDetail,
-                          extra: {
-                            'serviceId': booking.service.id,
-                            'preSelectedProvider': booking.provider,
-                            'rescheduleBookingId': booking.id,
-                            'rescheduleAddressId': booking.addressId,
-                          },
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFfff4e5),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.edit_calendar_rounded,
-                              size: 12,
-                              color: Color(0xFFe65100),
-                            ),
-                            const SizedBox(width: 4),
-                            AppText(
-                              'Reschedule',
-                              fontSize: 12,
-                              fontWeight: FontWeights.semiBold,
-                              color: const Color(0xFFe65100),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (showBookAgain)
-                    Row(
-                      children: [
-                        const SizedBox(width: 10),
-                        GestureDetector(
-                          onTap: () => context.push(
-                            RouteNames.bookingDetail,
-                            extra: {
-                              'serviceId': booking.service.id,
-                              'preSelectedProvider': booking.provider,
-                              'isBookAgain': true,
+                        if (booking.rescheduleBook) ...[
+                          if (_showRetryPayment ||
+                              (booking.isConfirmed && booking.providerId != null))
+                            const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () {
+                              context.push(
+                                RouteNames.bookingDetail,
+                                extra: {
+                                  'serviceId': booking.service.id,
+                                  'preSelectedProvider': booking.provider,
+                                  'rescheduleBookingId': booking.id,
+                                  'rescheduleAddressId': booking.addressId,
+                                },
+                              );
                             },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFfff4e5),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.edit_calendar_rounded,
+                                    size: 11,
+                                    color: Color(0xFFe65100),
+                                  ),
+                                  const SizedBox(width: 3),
+                                  AppText(
+                                    'Reschedule',
+                                    fontSize: 11,
+                                    fontWeight: FontWeights.semiBold,
+                                    color: const Color(0xFFe65100),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          child: AppText(
-                            'Book Again',
-                            fontSize: 12,
-                            fontWeight: FontWeights.semiBold,
-                            color: AppColor.authButton,
+                        ],
+                        if (showBookAgain)
+                          Row(
+                            children: [
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => context.push(
+                                  RouteNames.bookingDetail,
+                                  extra: {
+                                    'serviceId': booking.service.id,
+                                    'preSelectedProvider': booking.provider,
+                                    'isBookAgain': true,
+                                  },
+                                ),
+                                child: AppText(
+                                  'Book Again',
+                                  fontSize: 11,
+                                  fontWeight: FontWeights.semiBold,
+                                  color: AppColor.authButton,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
                       ],
                     ),
-                ],
+                  ],
+                ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
