@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pampa/core/routes/pages.dart';
 import 'package:pampa/core/services/push_notification_service.dart';
+import 'package:pampa/core/values/strings.dart';
 import 'package:pampa/core/values/urls.dart';
-import 'package:pampa/features/address/presentation/saved_addresses_screen.dart' show SavedAddressesScreen;
+import 'package:pampa/features/address/presentation/saved_addresses_screen.dart'
+    show SavedAddressesScreen;
 import 'package:pampa/features/address/presentation/address_search_screen.dart';
 import 'package:pampa/features/explore/presentation/provider/explore_provider.dart';
 import 'package:provider/provider.dart';
@@ -34,14 +36,20 @@ import 'package:intl/intl.dart';
 // ─── Icon mapping for category names ──────────────────────────────────────────
 IconData _iconForCategory(String name) {
   final lower = name.toLowerCase();
-  if (lower.contains('salon') || lower.contains('hair')) return Icons.content_cut_rounded;
+  if (lower.contains('salon') || lower.contains('hair'))
+    return Icons.content_cut_rounded;
   if (lower.contains('nail')) return Icons.colorize_rounded;
-  if (lower.contains('makeup') || lower.contains('beauty')) return Icons.brush_rounded;
-  if (lower.contains('massage') || lower.contains('spa')) return Icons.self_improvement_rounded;
-  if (lower.contains('facial') || lower.contains('skin')) return Icons.face_retouching_natural_rounded;
-  if (lower.contains('brow') || lower.contains('lash')) return Icons.auto_awesome_rounded;
+  if (lower.contains('makeup') || lower.contains('beauty'))
+    return Icons.brush_rounded;
+  if (lower.contains('massage') || lower.contains('spa'))
+    return Icons.self_improvement_rounded;
+  if (lower.contains('facial') || lower.contains('skin'))
+    return Icons.face_retouching_natural_rounded;
+  if (lower.contains('brow') || lower.contains('lash'))
+    return Icons.auto_awesome_rounded;
   if (lower.contains('wax')) return Icons.waves_rounded;
-  if (lower.contains('yoga') || lower.contains('fitness')) return Icons.fitness_center_rounded;
+  if (lower.contains('yoga') || lower.contains('fitness'))
+    return Icons.fitness_center_rounded;
   return Icons.spa_rounded;
 }
 
@@ -54,15 +62,39 @@ class _NavItem {
   final IconData icon;
   final IconData activeIcon;
   final String label;
-  const _NavItem({required this.icon, required this.activeIcon, required this.label});
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+  });
 }
 
 const _navItems = [
-  _NavItem(icon: Icons.home_outlined,               activeIcon: Icons.home_rounded,            label: 'Home'),
-  _NavItem(icon: Icons.explore_outlined,            activeIcon: Icons.explore_rounded,         label: 'Explore'),
-  _NavItem(icon: Icons.calendar_month_outlined,     activeIcon: Icons.calendar_month_rounded,  label: 'Appointments'),
-  _NavItem(icon: Icons.chat_bubble_outline_rounded, activeIcon: Icons.chat_bubble_rounded,     label: 'Messages'),
-  _NavItem(icon: Icons.person_outline_rounded,      activeIcon: Icons.person_rounded,          label: 'Profile'),
+  _NavItem(
+    icon: Icons.home_outlined,
+    activeIcon: Icons.home_rounded,
+    label: 'Home',
+  ),
+  _NavItem(
+    icon: Icons.explore_outlined,
+    activeIcon: Icons.explore_rounded,
+    label: 'Explore',
+  ),
+  _NavItem(
+    icon: Icons.calendar_month_outlined,
+    activeIcon: Icons.calendar_month_rounded,
+    label: 'Appointments',
+  ),
+  _NavItem(
+    icon: Icons.chat_bubble_outline_rounded,
+    activeIcon: Icons.chat_bubble_rounded,
+    label: 'Messages',
+  ),
+  _NavItem(
+    icon: Icons.person_outline_rounded,
+    activeIcon: Icons.person_rounded,
+    label: 'Profile',
+  ),
 ];
 
 // ─── Main shell ───────────────────────────────────────────────────────────────
@@ -105,12 +137,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   void _redirectToSavedAddresses() {
     if (_isRedirecting) return;
     _isRedirecting = true;
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const SavedAddressesScreen()),
-    ).then((_) {
-      _isRedirecting = false;
-      _onAddressProviderChanged();
-    });
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const SavedAddressesScreen()))
+        .then((_) {
+          _isRedirecting = false;
+          _onAddressProviderChanged();
+        });
   }
 
   void _onTabChanged() {
@@ -124,7 +156,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     context.read<CategoryProvider>().fetchCategories();
     context.read<AddressProvider>().fetchAddresses();
     final profileProvider = context.read<ProfileProvider>();
-    if (profileProvider.status == ProfileStatus.initial || profileProvider.profile == null) {
+    if (profileProvider.status == ProfileStatus.initial ||
+        profileProvider.profile == null) {
       profileProvider.fetchProfile();
     }
     context.read<MyBookingsProvider>().fetchBookings();
@@ -205,9 +238,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 ),
                 const SizedBox(height: 8),
                 AppText(
-                  message.isNotEmpty
-                      ? message
-                      : 'Your booking has been created successfully. You can track it in Appointments.',
+                  'Your booking has been requested successfully. You can track it in Appointments.',
                   fontSize: FontSizes.small,
                   color: AppColor.grey,
                   align: TextAlign.center,
@@ -261,8 +292,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int>(
@@ -278,33 +307,28 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           }
         },
         child: Scaffold(
-        backgroundColor: AppColor.authBg,
-        body: IndexedStack(
-          
-          index: currentIndex,
-          children: [
-            const _HomeTab(),
-            const ExploreTab(),
-            const MyBookingsTab(),
-            const ConversationsTab(),
-            const ProfileTab(),
-          ],
-        ),
-        bottomNavigationBar: _buildBottomNav(currentIndex),
+          backgroundColor: AppColor.authBg,
+          body: IndexedStack(
+            index: currentIndex,
+            children: [
+              const _HomeTab(),
+              const ExploreTab(),
+              const MyBookingsTab(),
+              const ConversationsTab(),
+              const ProfileTab(),
+            ],
+          ),
+          bottomNavigationBar: _buildBottomNav(currentIndex),
         ),
       ),
     );
   }
 
-
-
   Widget _buildBottomNav(int currentIndex) {
     return Container(
       decoration: BoxDecoration(
         color: AppColor.white,
-        border: Border(
-          top: BorderSide(color: AppColor.lightGrey, width: 1),
-        ),
+        border: Border(top: BorderSide(color: AppColor.lightGrey, width: 1)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -325,7 +349,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
-                    final hasAddress = context.read<AddressProvider>().addresses.isNotEmpty;
+                    final hasAddress = context
+                        .read<AddressProvider>()
+                        .addresses
+                        .isNotEmpty;
                     if (!hasAddress && index == 1) {
                       _redirectToSavedAddresses();
                       FunctionalComponent.showSnackBar(
@@ -349,7 +376,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                       AppText(
                         item.label,
                         fontSize: 10,
-                        fontWeight: isActive ? FontWeights.semiBold : FontWeights.regular,
+                        fontWeight: isActive
+                            ? FontWeights.semiBold
+                            : FontWeights.regular,
                         color: isActive ? AppColor.authButton : AppColor.offtab,
                       ),
                     ],
@@ -366,7 +395,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
 // ─── Services tab ─────────────────────────────────────────────────────────────
 class _ServicesTab extends StatefulWidget {
-
   const _ServicesTab();
 
   @override
@@ -376,7 +404,6 @@ class _ServicesTab extends StatefulWidget {
 class _ServicesTabState extends State<_ServicesTab> {
   @override
   Widget build(BuildContext context) {
-
     return Consumer<CategoryProvider>(
       builder: (context, provider, _) {
         return RefreshIndicator(
@@ -387,9 +414,8 @@ class _ServicesTabState extends State<_ServicesTab> {
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 16,right: 16, top: 16),
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
                   child: Row(
-
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
@@ -437,9 +463,7 @@ class _ServicesTabState extends State<_ServicesTab> {
                   ),
                 ),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              ),
+              SliverPadding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 0)),
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
               _buildBody(context, provider),
             ],
@@ -477,9 +501,7 @@ class _ServicesTabState extends State<_ServicesTab> {
         );
 
       case CategoryStatus.empty:
-        return const SliverFillRemaining(
-          child: _EmptyView(),
-        );
+        return const SliverFillRemaining(child: _EmptyView());
 
       case CategoryStatus.initial:
         return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -489,7 +511,8 @@ class _ServicesTabState extends State<_ServicesTab> {
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate(
-              (context, index) => _CategoryCard(category: provider.categories[index]),
+              (context, index) =>
+                  _CategoryCard(category: provider.categories[index]),
               childCount: provider.categories.length,
             ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -518,11 +541,15 @@ class _CategoryCard extends StatelessWidget {
       onTap: () async {
         await context.push(
           RouteNames.services,
-          extra: {'categoryId': category.id, 'categoryName': category.categoryName},
+          extra: {
+            'categoryId': category.id,
+            'categoryName': category.categoryName,
+          },
         );
         // Refresh when coming back from services/booking screens
         if (context.mounted) {
-          final parentState = context.findAncestorStateOfType<_HomeScreenState>();
+          final parentState = context
+              .findAncestorStateOfType<_HomeScreenState>();
           parentState?._refreshDashboardData();
         }
       },
@@ -601,9 +628,10 @@ class _CategoryCardShimmerState extends State<_CategoryCardShimmer>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -672,7 +700,11 @@ class _ErrorView extends StatelessWidget {
                 color: AppColor.authBg,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.wifi_off_rounded, size: 36, color: AppColor.authButton),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                size: 36,
+                color: AppColor.authButton,
+              ),
             ),
             const SizedBox(height: 20),
             AppText(
@@ -694,7 +726,10 @@ class _ErrorView extends StatelessWidget {
             GestureDetector(
               onTap: onRetry,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: AppColor.authButton,
                   borderRadius: BorderRadius.circular(12),
@@ -733,7 +768,11 @@ class _EmptyView extends StatelessWidget {
                 color: AppColor.authBg,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.spa_outlined, size: 36, color: AppColor.authButton),
+              child: const Icon(
+                Icons.spa_outlined,
+                size: 36,
+                color: AppColor.authButton,
+              ),
             ),
             const SizedBox(height: 20),
             AppText(
@@ -792,14 +831,14 @@ class AddressPickerSheetState extends State<AddressPickerSheet> {
                 onSaved: () => setState(() => _editingAddress = null),
               )
             : _showAddForm
-                ? _AddAddressForm(
-                    onBack: () => setState(() => _showAddForm = false),
-                    onSaved: () => setState(() => _showAddForm = false),
-                  )
-                : _AddressList(
-                    onAddNew: () => setState(() => _showAddForm = true),
-                    onEdit: (addr) => setState(() => _editingAddress = addr),
-                  ),
+            ? _AddAddressForm(
+                onBack: () => setState(() => _showAddForm = false),
+                onSaved: () => setState(() => _showAddForm = false),
+              )
+            : _AddressList(
+                onAddNew: () => setState(() => _showAddForm = true),
+                onEdit: (addr) => setState(() => _editingAddress = addr),
+              ),
       ),
     );
   }
@@ -832,29 +871,38 @@ class _AddressList extends StatelessWidget {
             const SizedBox(height: 20),
             Row(
               children: [
-                AppText('Your Addresses',
-                    fontSize: FontSizes.medium,
-                    fontWeight: FontWeights.bold,
-                    color: AppColor.darkGrey),
+                AppText(
+                  'Your Addresses',
+                  fontSize: FontSizes.medium,
+                  fontWeight: FontWeights.bold,
+                  color: AppColor.darkGrey,
+                ),
                 const Spacer(),
                 GestureDetector(
                   onTap: onAddNew,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColor.authBg,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.add_rounded,
-                            color: AppColor.authButton, size: 16),
+                        const Icon(
+                          Icons.add_rounded,
+                          color: AppColor.authButton,
+                          size: 16,
+                        ),
                         const SizedBox(width: 4),
-                        AppText('Add New',
-                            fontSize: 12,
-                            fontWeight: FontWeights.semiBold,
-                            color: AppColor.authButton),
+                        AppText(
+                          'Add New',
+                          fontSize: 12,
+                          fontWeight: FontWeights.semiBold,
+                          color: AppColor.authButton,
+                        ),
                       ],
                     ),
                   ),
@@ -882,17 +930,25 @@ class _AddressList extends StatelessWidget {
                           color: AppColor.authBg,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.location_off_outlined,
-                            color: AppColor.authButton, size: 26),
+                        child: const Icon(
+                          Icons.location_off_outlined,
+                          color: AppColor.authButton,
+                          size: 26,
+                        ),
                       ),
                       const SizedBox(height: 12),
-                      AppText('No addresses yet',
-                          fontSize: FontSizes.regular,
-                          fontWeight: FontWeights.semiBold,
-                          color: AppColor.darkGrey),
+                      AppText(
+                        'No addresses yet',
+                        fontSize: FontSizes.regular,
+                        fontWeight: FontWeights.semiBold,
+                        color: AppColor.darkGrey,
+                      ),
                       const SizedBox(height: 4),
-                      AppText('Add an address to get started',
-                          fontSize: FontSizes.small, color: AppColor.grey),
+                      AppText(
+                        'Add an address to get started',
+                        fontSize: FontSizes.small,
+                        color: AppColor.grey,
+                      ),
                     ],
                   ),
                 ),
@@ -909,8 +965,7 @@ class _AddressList extends StatelessWidget {
                       const Divider(height: 1, color: Color(0xFFF0F0F0)),
                   itemBuilder: (_, i) {
                     final addr = provider.addresses[i];
-                    final isSelected =
-                        provider.selectedAddress?.id == addr.id;
+                    final isSelected = provider.selectedAddress?.id == addr.id;
                     return Container(
                       color: Colors.transparent,
                       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -966,18 +1021,25 @@ class _AddressList extends StatelessWidget {
                                       ),
                                       if (addr.isDefault)
                                         Container(
-                                          margin: const EdgeInsets.only(left: 6),
+                                          margin: const EdgeInsets.only(
+                                            left: 6,
+                                          ),
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 7, vertical: 2),
+                                            horizontal: 7,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: AppColor.authBg,
-                                            borderRadius:
-                                                BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                           ),
-                                          child: AppText('Default',
-                                              fontSize: 9,
-                                              fontWeight: FontWeights.semiBold,
-                                              color: AppColor.authButton),
+                                          child: AppText(
+                                            'Default',
+                                            fontSize: 9,
+                                            fontWeight: FontWeights.semiBold,
+                                            color: AppColor.authButton,
+                                          ),
                                         ),
                                     ],
                                   ),
@@ -1002,19 +1064,27 @@ class _AddressList extends StatelessWidget {
                                 color: AppColor.authButton,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.check_rounded,
-                                  color: AppColor.white, size: 14),
+                              child: const Icon(
+                                Icons.check_rounded,
+                                color: AppColor.white,
+                                size: 14,
+                              ),
                             ),
                           // ── Actions menu ──────────────────────────────
                           PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert_rounded,
-                                size: 20, color: AppColor.grey),
+                            icon: const Icon(
+                              Icons.more_vert_rounded,
+                              size: 20,
+                              color: AppColor.grey,
+                            ),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             onSelected: (value) async {
                               if (value == 'default') {
-                                final ok =
-                                    await provider.setDefaultAddress(addr.id);
+                                final ok = await provider.setDefaultAddress(
+                                  addr.id,
+                                );
                                 if (context.mounted) {
                                   FunctionalComponent.showSnackBar(
                                     context: context,
@@ -1031,11 +1101,12 @@ class _AddressList extends StatelessWidget {
                                   context: context,
                                   builder: (ctx) => AlertDialog(
                                     shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(16)),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                     title: const Text('Delete Address'),
                                     content: Text(
-                                        'Remove "${addr.addressName}"?'),
+                                      'Remove "${addr.addressName}"?',
+                                    ),
                                     actions: [
                                       TextButton(
                                         onPressed: () =>
@@ -1045,16 +1116,18 @@ class _AddressList extends StatelessWidget {
                                       TextButton(
                                         onPressed: () =>
                                             Navigator.pop(ctx, true),
-                                        child: const Text('Delete',
-                                            style: TextStyle(
-                                                color: Colors.red)),
+                                        child: const Text(
+                                          'Delete',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
                                       ),
                                     ],
                                   ),
                                 );
                                 if (confirm == true && context.mounted) {
-                                  final ok = await provider
-                                      .deleteAddress(addr.id);
+                                  final ok = await provider.deleteAddress(
+                                    addr.id,
+                                  );
                                   if (context.mounted) {
                                     FunctionalComponent.showSnackBar(
                                       context: context,
@@ -1072,30 +1145,43 @@ class _AddressList extends StatelessWidget {
                               if (!addr.isDefault)
                                 const PopupMenuItem(
                                   value: 'default',
-                                  child: Row(children: [
-                                    Icon(Icons.star_outline_rounded,
-                                        size: 18),
-                                    SizedBox(width: 10),
-                                    Text('Set as Default'),
-                                  ]),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.star_outline_rounded,
+                                        size: 18,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text('Set as Default'),
+                                    ],
+                                  ),
                                 ),
                               const PopupMenuItem(
                                 value: 'edit',
-                                child: Row(children: [
-                                  Icon(Icons.edit_outlined, size: 18),
-                                  SizedBox(width: 10),
-                                  Text('Edit'),
-                                ]),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_outlined, size: 18),
+                                    SizedBox(width: 10),
+                                    Text('Edit'),
+                                  ],
+                                ),
                               ),
                               const PopupMenuItem(
                                 value: 'delete',
-                                child: Row(children: [
-                                  Icon(Icons.delete_outline_rounded,
-                                      size: 18, color: Colors.red),
-                                  SizedBox(width: 10),
-                                  Text('Delete',
-                                      style: TextStyle(color: Colors.red)),
-                                ]),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 18,
+                                      color: Colors.red,
+                                    ),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -1180,9 +1266,7 @@ class _AddAddressFormState extends State<_AddAddressForm> {
 
   Future<void> _selectAddressFromSearch(BuildContext context) async {
     final result = await Navigator.of(context).push<Map<String, String>>(
-      MaterialPageRoute(
-        builder: (_) => const AddressSearchScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const AddressSearchScreen()),
     );
     if (result != null && mounted) {
       setState(() {
@@ -1251,21 +1335,29 @@ class _AddAddressFormState extends State<_AddAddressForm> {
                   color: AppColor.authBg,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: AppColor.authButton, size: 14),
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColor.authButton,
+                  size: 14,
+                ),
               ),
             ),
             const SizedBox(width: 12),
-            AppText('Add New Address',
-                fontSize: FontSizes.medium,
-                fontWeight: FontWeights.bold,
-                color: AppColor.darkGrey),
+            AppText(
+              'Add New Address',
+              fontSize: FontSizes.medium,
+              fontWeight: FontWeights.bold,
+              color: AppColor.darkGrey,
+            ),
             const Spacer(),
             // Find My Location button
             GestureDetector(
               onTap: _isLocating ? null : _useCurrentLocation,
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 6,
+                  horizontal: 10,
+                ),
                 decoration: BoxDecoration(
                   color: AppColor.authButton.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
@@ -1376,7 +1468,8 @@ class _AddAddressFormState extends State<_AddAddressForm> {
                   backgroundColor: AppColor.authButton,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 onPressed: provider.isSaving ? null : _submit,
                 child: provider.isSaving
@@ -1384,12 +1477,16 @@ class _AddAddressFormState extends State<_AddAddressForm> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            color: AppColor.white, strokeWidth: 2.5),
+                          color: AppColor.white,
+                          strokeWidth: 2.5,
+                        ),
                       )
-                    : AppText('Save Address',
+                    : AppText(
+                        'Save Address',
                         fontSize: FontSizes.regular,
                         fontWeight: FontWeights.semiBold,
-                        color: AppColor.white),
+                        color: AppColor.white,
+                      ),
               ),
             );
           },
@@ -1443,8 +1540,10 @@ class _HomeAddressField extends StatelessWidget {
         hintStyle: const TextStyle(fontSize: 13, color: AppColor.mediumGrey),
         filled: true,
         fillColor: const Color(0xFFF8F8F8),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColor.lightGrey),
@@ -1455,8 +1554,7 @@ class _HomeAddressField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColor.authButton, width: 1.5),
+          borderSide: const BorderSide(color: AppColor.authButton, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -1491,8 +1589,11 @@ class _AddressStrip extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.location_on_rounded,
-                    color: AppColor.authButton, size: 16),
+                const Icon(
+                  Icons.location_on_rounded,
+                  color: AppColor.authButton,
+                  size: 16,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: provider.isLoading
@@ -1505,19 +1606,25 @@ class _AddressStrip extends StatelessWidget {
                           ),
                         )
                       : addr == null
-                          ? AppText('Tap to select an address',
-                              fontSize: 12, color: AppColor.grey)
-                          : AppText(
-                              '${addr.addressName}  ·  ${addr.streetAddress}, ${addr.city}',
-                              fontSize: 12,
-                              fontWeight: FontWeights.medium,
-                              color: AppColor.authButton,
-                              maxLines: 1,
-                            ),
+                      ? AppText(
+                          'Tap to select an address',
+                          fontSize: 12,
+                          color: AppColor.grey,
+                        )
+                      : AppText(
+                          '${addr.addressName}  ·  ${addr.streetAddress}, ${addr.city}',
+                          fontSize: 12,
+                          fontWeight: FontWeights.medium,
+                          color: AppColor.authButton,
+                          maxLines: 1,
+                        ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(Icons.keyboard_arrow_down_rounded,
-                    color: AppColor.authButton, size: 18),
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: AppColor.authButton,
+                  size: 18,
+                ),
               ],
             ),
           ),
@@ -1532,8 +1639,11 @@ class _EditAddressForm extends StatefulWidget {
   final AddressModel address;
   final VoidCallback onBack;
   final VoidCallback onSaved;
-  const _EditAddressForm(
-      {required this.address, required this.onBack, required this.onSaved});
+  const _EditAddressForm({
+    required this.address,
+    required this.onBack,
+    required this.onSaved,
+  });
 
   @override
   State<_EditAddressForm> createState() => _EditAddressFormState();
@@ -1623,15 +1733,20 @@ class _EditAddressFormState extends State<_EditAddressForm> {
                   color: AppColor.authBg,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: AppColor.authButton, size: 14),
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColor.authButton,
+                  size: 14,
+                ),
               ),
             ),
             const SizedBox(width: 12),
-            AppText('Edit Address',
-                fontSize: FontSizes.medium,
-                fontWeight: FontWeights.bold,
-                color: AppColor.darkGrey),
+            AppText(
+              'Edit Address',
+              fontSize: FontSizes.medium,
+              fontWeight: FontWeights.bold,
+              color: AppColor.darkGrey,
+            ),
           ],
         ),
         const SizedBox(height: 20),
@@ -1728,8 +1843,11 @@ class _EditAddressFormState extends State<_EditAddressForm> {
                     ),
                   ),
                   child: _isDefault
-                      ? const Icon(Icons.check_rounded,
-                          color: AppColor.white, size: 13)
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: AppColor.white,
+                          size: 13,
+                        )
                       : null,
                 ),
               ],
@@ -1747,7 +1865,8 @@ class _EditAddressFormState extends State<_EditAddressForm> {
                   backgroundColor: AppColor.authButton,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 onPressed: provider.isSaving ? null : _submit,
                 child: provider.isSaving
@@ -1755,12 +1874,16 @@ class _EditAddressFormState extends State<_EditAddressForm> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            color: AppColor.white, strokeWidth: 2.5),
+                          color: AppColor.white,
+                          strokeWidth: 2.5,
+                        ),
                       )
-                    : AppText('Update Address',
+                    : AppText(
+                        'Update Address',
                         fontSize: FontSizes.regular,
                         fontWeight: FontWeights.semiBold,
-                        color: AppColor.white),
+                        color: AppColor.white,
+                      ),
               ),
             );
           },
@@ -1782,7 +1905,6 @@ class _HomeTab extends StatelessWidget {
         color: AppColor.authButton,
         onRefresh: () => context.read<MyBookingsProvider>().fetchBookings(),
         child: CustomScrollView(
-          
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(child: _HomeHeader()),
@@ -1810,7 +1932,8 @@ class _HomeHeader extends StatelessWidget {
             Expanded(
               child: Consumer<ProfileProvider>(
                 builder: (_, p, _) {
-                  final firstName = p.profile?.name.trim().split(' ').first ?? '';
+                  final firstName =
+                      p.profile?.name.trim().split(' ').first ?? '';
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1845,7 +1968,11 @@ class _HomeHeader extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColor.mediumGrey, width: 1),
                 ),
-                child: const Icon(Icons.person_outline_rounded, color: AppColor.authButton, size: 22),
+                child: const Icon(
+                  Icons.person_outline_rounded,
+                  color: AppColor.authButton,
+                  size: 22,
+                ),
               ),
             ),
           ],
@@ -1862,9 +1989,13 @@ class _BookNewServiceButton extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: GestureDetector(
         onTap: () {
-          final hasAddress = context.read<AddressProvider>().addresses.isNotEmpty;
+          final hasAddress = context
+              .read<AddressProvider>()
+              .addresses
+              .isNotEmpty;
           if (!hasAddress) {
-            final parentState = context.findAncestorStateOfType<_HomeScreenState>();
+            final parentState = context
+                .findAncestorStateOfType<_HomeScreenState>();
             if (parentState != null) {
               parentState._redirectToSavedAddresses();
             } else {
@@ -1897,7 +2028,11 @@ class _BookNewServiceButton extends StatelessWidget {
                   color: AppColor.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.add_rounded, color: AppColor.white, size: 18),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: AppColor.white,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1908,7 +2043,11 @@ class _BookNewServiceButton extends StatelessWidget {
                   color: AppColor.white,
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, color: AppColor.white, size: 14),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppColor.white,
+                size: 14,
+              ),
             ],
           ),
         ),
@@ -1942,7 +2081,10 @@ class _UpcomingSection extends StatelessWidget {
                   ),
                   if (upcoming.isNotEmpty)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColor.authButton.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -1966,7 +2108,9 @@ class _UpcomingSection extends StatelessWidget {
                   sub: 'Book a service to get started',
                 )
               else ...[
-                ...upcoming.take(5).map((b) => _UpcomingBookingCard(booking: b)),
+                ...upcoming
+                    .take(5)
+                    .map((b) => _UpcomingBookingCard(booking: b)),
                 if (upcoming.length >= 5)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
@@ -2094,9 +2238,11 @@ class _QuickLinksSection extends StatelessWidget {
                 _QuickLinkTile(
                   icon: Icons.tune_rounded,
                   label: 'Preferences',
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const BeautyPreferencesScreen(),
-                  )),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const BeautyPreferencesScreen(),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -2111,7 +2257,11 @@ class _QuickLinkTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _QuickLinkTile({required this.icon, required this.label, required this.onTap});
+  const _QuickLinkTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2140,7 +2290,11 @@ class _QuickLinkTile extends StatelessWidget {
                 color: AppColor.darkGrey,
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColor.grey),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: AppColor.grey,
+            ),
           ],
         ),
       ),
@@ -2162,142 +2316,183 @@ class _UpcomingBookingCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push(RouteNames.myBookingDetail, extra: booking.id),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColor.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: 60,
-              height: 60,
-              child: hasImage
-                  ? FunctionalComponent.cachedNetworkImage(imageUrl, radius: 12, fit: BoxFit.cover)
-                  : Container(
-                      color: AppColor.authBg,
-                      child: const Icon(Icons.spa_rounded, color: AppColor.authButton, size: 28),
-                    ),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColor.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: 60,
+                height: 60,
+                child: hasImage
+                    ? FunctionalComponent.cachedNetworkImage(
+                        imageUrl,
+                        radius: 12,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        color: AppColor.authBg,
+                        child: const Icon(
+                          Icons.spa_rounded,
+                          color: AppColor.authButton,
+                          size: 28,
+                        ),
+                      ),
+              ),
             ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: AppText(
-                        booking.service.serviceName,
-                        fontSize: FontSizes.regular,
-                        fontWeight: FontWeights.semiBold,
-                        color: AppColor.darkGrey,
-                        maxLines: 1,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColor.authButton.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: AppText(
-                        '\$${booking.price.toStringAsFixed(0)}',
-                        fontSize: FontSizes.small,
-                        fontWeight: FontWeights.bold,
-                        color: AppColor.authButton,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                AppText(
-                  'with ${booking.provider?.displayName}',
-                  fontSize: FontSizes.small,
-                  color: AppColor.grey,
-                  maxLines: 1,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today_outlined, size: 12, color: AppColor.grey),
-                    const SizedBox(width: 4),
-                    AppText(dateStr, fontSize: FontSizes.mini, color: AppColor.grey),
-                    const SizedBox(width: 12),
-                    const Icon(Icons.access_time_rounded, size: 12, color: AppColor.grey),
-                    const SizedBox(width: 4),
-                    AppText(booking.appointmentTime, fontSize: FontSizes.mini, color: AppColor.grey),
-                  ],
-                ),
-                if ([location??[]].isNotEmpty && location != 'Location not set') ...[
-                  const SizedBox(height: 4),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.location_on_outlined, size: 12, color: AppColor.grey),
-                      const SizedBox(width: 4),
                       Expanded(
-                        child: AppText(location??'', fontSize: FontSizes.mini, color: AppColor.grey, maxLines: 1),
+                        child: AppText(
+                          booking.service.serviceName,
+                          fontSize: FontSizes.regular,
+                          fontWeight: FontWeights.semiBold,
+                          color: AppColor.darkGrey,
+                          maxLines: 1,
+                        ),
                       ),
-                    ],
-                  ),
-                ],
-                if (booking.rescheduleBook) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          context.push(RouteNames.bookingDetail, extra: {
-                            'serviceId': booking.service.id,
-                            'preSelectedProvider': booking.provider,
-                            'rescheduleBookingId': booking.id,
-                            'rescheduleAddressId': booking.addressId,
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFfff4e5),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.edit_calendar_rounded,
-                                size: 12,
-                                color: Color(0xFFe65100),
-                              ),
-                              const SizedBox(width: 4),
-                              AppText(
-                                'Reschedule',
-                                fontSize: 12,
-                                fontWeight: FontWeights.semiBold,
-                                color: const Color(0xFFe65100),
-                              ),
-                            ],
-                          ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColor.authButton.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: AppText(
+                          '\$${booking.price.toStringAsFixed(0)}',
+                          fontSize: FontSizes.small,
+                          fontWeight: FontWeights.bold,
+                          color: AppColor.authButton,
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 4),
+                  AppText(
+                    'with ${booking.provider?.displayName}',
+                    fontSize: FontSizes.small,
+                    color: AppColor.grey,
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        size: 12,
+                        color: AppColor.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      AppText(
+                        dateStr,
+                        fontSize: FontSizes.mini,
+                        color: AppColor.grey,
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.access_time_rounded,
+                        size: 12,
+                        color: AppColor.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      AppText(
+                        booking.appointmentTime,
+                        fontSize: FontSizes.mini,
+                        color: AppColor.grey,
+                      ),
+                    ],
+                  ),
+                  if ([location ?? []].isNotEmpty &&
+                      location != 'Location not set') ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 12,
+                          color: AppColor.grey,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: AppText(
+                            location ?? '',
+                            fontSize: FontSizes.mini,
+                            color: AppColor.grey,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (booking.rescheduleBook) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            context.push(
+                              RouteNames.bookingDetail,
+                              extra: {
+                                'serviceId': booking.service.id,
+                                'preSelectedProvider': booking.provider,
+                                'rescheduleBookingId': booking.id,
+                                'rescheduleAddressId': booking.addressId,
+                              },
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFfff4e5),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.edit_calendar_rounded,
+                                  size: 12,
+                                  color: Color(0xFFe65100),
+                                ),
+                                const SizedBox(width: 4),
+                                AppText(
+                                  'Reschedule',
+                                  fontSize: 12,
+                                  fontWeight: FontWeights.semiBold,
+                                  color: const Color(0xFFe65100),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ));
+    );
   }
 }
 
@@ -2315,96 +2510,141 @@ class _PastBookingCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push(RouteNames.myBookingDetail, extra: booking.id),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColor.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 52,
-                  height: 52,
-                  child: hasImage
-                      ? FunctionalComponent.cachedNetworkImage(imageUrl, radius: 12, fit: BoxFit.cover)
-                      : Container(
-                          color: AppColor.authBg,
-                          child: const Icon(Icons.spa_rounded, color: AppColor.authButton, size: 24),
-                        ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: AppText(
-                            booking.service.serviceName,
-                            fontSize: FontSizes.regular,
-                            fontWeight: FontWeights.semiBold,
-                            color: AppColor.darkGrey,
-                            maxLines: 1,
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColor.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: hasImage
+                        ? FunctionalComponent.cachedNetworkImage(
+                            "${ApiStrings.imageUrl}$imageUrl",
+                            radius: 12,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            color: AppColor.authBg,
+                            child: const Icon(
+                              Icons.spa_rounded,
+                              color: AppColor.authButton,
+                              size: 24,
+                            ),
                           ),
-                        ),
-                        if ((rating??0) > 0) ...[
-                          const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-                          const SizedBox(width: 2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: AppText(
+                              booking.service.serviceName,
+                              fontSize: FontSizes.regular,
+                              fontWeight: FontWeights.semiBold,
+                              color: AppColor.darkGrey,
+                              maxLines: 1,
+                            ),
+                          ),
+                          if ((rating ?? 0) > 0) ...[
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 14,
+                              color: Colors.amber,
+                            ),
+                            const SizedBox(width: 2),
+                            AppText(
+                              (rating ?? 0).toStringAsFixed(0),
+                              fontSize: FontSizes.small,
+                              fontWeight: FontWeights.semiBold,
+                              color: AppColor.darkGrey,
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      AppText(
+                        booking.provider?.displayName ?? '',
+                        fontSize: FontSizes.small,
+                        color: AppColor.grey,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
                           AppText(
-                            (rating??0).toStringAsFixed(0),
-                            fontSize: FontSizes.small,
-                            fontWeight: FontWeights.semiBold,
-                            color: AppColor.darkGrey,
+                            dateStr,
+                            fontSize: FontSizes.mini,
+                            color: AppColor.grey,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            '•',
+                            style: TextStyle(
+                              color: AppColor.grey,
+                              fontSize: 10,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          AppText(
+                            booking.appointmentTime,
+                            fontSize: FontSizes.mini,
+                            color: AppColor.grey,
                           ),
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    AppText(booking.provider?.displayName??'', fontSize: FontSizes.small, color: AppColor.grey),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        AppText(dateStr, fontSize: FontSizes.mini, color: AppColor.grey),
-                        const SizedBox(width: 8),
-                        const Text('•', style: TextStyle(color: AppColor.grey, fontSize: 10)),
-                        const SizedBox(width: 8),
-                        AppText(booking.appointmentTime, fontSize: FontSizes.mini, color: AppColor.grey),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => context.push(RouteNames.bookingDetail, extra: booking.serviceId),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColor.mediumGrey),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ],
                   ),
-                  child: AppText('Book Again', fontSize: FontSizes.small, fontWeight: FontWeights.semiBold, color: AppColor.darkGrey),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => context.push(
+                      RouteNames.bookingDetail,
+                      extra: {
+                        'serviceId': booking.serviceId,
+                        'preSelectedProvider': booking.provider,
+                        'isBookAgain': true,
+                      },
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColor.mediumGrey),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    child: AppText(
+                      'Book Again',
+                      fontSize: FontSizes.small,
+                      fontWeight: FontWeights.semiBold,
+                      color: AppColor.darkGrey,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 }
 
@@ -2412,7 +2652,11 @@ class _HomeEmptyCard extends StatelessWidget {
   final IconData icon;
   final String message;
   final String sub;
-  const _HomeEmptyCard({required this.icon, required this.message, required this.sub});
+  const _HomeEmptyCard({
+    required this.icon,
+    required this.message,
+    required this.sub,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2427,9 +2671,21 @@ class _HomeEmptyCard extends StatelessWidget {
         children: [
           Icon(icon, size: 32, color: AppColor.mediumGrey),
           const SizedBox(height: 10),
-          AppText(message, fontSize: FontSizes.regular, fontWeight: FontWeights.semiBold, color: AppColor.grey, align: TextAlign.center),
+          AppText(
+            message,
+            fontSize: FontSizes.regular,
+            fontWeight: FontWeights.semiBold,
+            color: AppColor.grey,
+            align: TextAlign.center,
+          ),
           const SizedBox(height: 4),
-          AppText(sub, fontSize: FontSizes.small, color: AppColor.mediumGrey, align: TextAlign.center, maxLines: 2),
+          AppText(
+            sub,
+            fontSize: FontSizes.small,
+            color: AppColor.mediumGrey,
+            align: TextAlign.center,
+            maxLines: 2,
+          ),
         ],
       ),
     );
@@ -2470,7 +2726,11 @@ class _PlaceholderTabState extends State<_PlaceholderTab> {
         children: [
           Icon(widget.icon, size: 48, color: AppColor.authBg),
           const SizedBox(height: 12),
-          AppText(widget.label, fontSize: FontSizes.medium, color: AppColor.grey),
+          AppText(
+            widget.label,
+            fontSize: FontSizes.medium,
+            color: AppColor.grey,
+          ),
         ],
       ),
     );

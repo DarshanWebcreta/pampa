@@ -19,10 +19,12 @@ class ProviderDashboardProvider extends ChangeNotifier {
   String get error => _error;
   bool get isOnline => _dashboard?.isOnline ?? false;
 
-  Future<void> fetchDashboard() async {
-    _loading = true;
-    _error = '';
-    notifyListeners();
+  Future<void> fetchDashboard({bool showLoader = true}) async {
+    if (showLoader) {
+      _loading = true;
+      _error = '';
+      notifyListeners();
+    }
 
     try {
       final response = await _api.getProviderDashboard();
@@ -31,13 +33,21 @@ class ProviderDashboardProvider extends ChangeNotifier {
         _dashboard = ProviderDashboardModel.fromJson(
             map['data'] as Map<String, dynamic>);
       } else {
-        _error = map['message'] as String? ?? 'Failed to load dashboard.';
+        if (showLoader) {
+          _error = map['message'] as String? ?? 'Failed to load dashboard.';
+        }
       }
     } catch (e) {
-      _error = 'Failed to load dashboard. Please try again.';
+      if (showLoader) {
+        _error = 'Failed to load dashboard. Please try again.';
+      }
     } finally {
-      _loading = false;
-      notifyListeners();
+      if (showLoader) {
+        _loading = false;
+        notifyListeners();
+      } else {
+        notifyListeners();
+      }
     }
   }
 
@@ -97,6 +107,8 @@ class ProviderDashboardProvider extends ChangeNotifier {
             serviceMix: _dashboard!.serviceMix,
           );
         }
+        fetchDashboard(showLoader: false);
+        fetchVacations(showLoader: false);
         return ToggleResult(
           success: true,
           message: map['message'] as String? ?? 'Status updated successfully.',
@@ -232,6 +244,8 @@ class ProviderDashboardProvider extends ChangeNotifier {
             serviceMix: _dashboard!.serviceMix,
           );
         }
+        fetchDashboard(showLoader: false);
+        fetchVacations(showLoader: false);
         return ToggleResult(
           success: true,
           message: map['message'] as String? ?? 'Status updated successfully.',
@@ -331,6 +345,8 @@ class ProviderDashboardProvider extends ChangeNotifier {
             serviceMix: _dashboard!.serviceMix,
           );
         }
+        fetchDashboard(showLoader: false);
+        fetchVacations(showLoader: false);
         return ToggleResult(
           success: true,
           message: map['message'] as String? ?? 'Status updated successfully.',
@@ -378,9 +394,11 @@ class ProviderDashboardProvider extends ChangeNotifier {
   int? _deletingVacationId;
   int? get deletingVacationId => _deletingVacationId;
 
-  Future<void> fetchVacations() async {
-    _vacationsLoading = true;
-    notifyListeners();
+  Future<void> fetchVacations({bool showLoader = true}) async {
+    if (showLoader) {
+      _vacationsLoading = true;
+      notifyListeners();
+    }
 
     try {
       final response = await _api.getProviderVacations();
@@ -396,8 +414,12 @@ class ProviderDashboardProvider extends ChangeNotifier {
     } catch (_) {
       _vacations = [];
     } finally {
-      _vacationsLoading = false;
-      notifyListeners();
+      if (showLoader) {
+        _vacationsLoading = false;
+        notifyListeners();
+      } else {
+        notifyListeners();
+      }
     }
   }
 
@@ -412,6 +434,8 @@ class ProviderDashboardProvider extends ChangeNotifier {
       final map = response as Map<String, dynamic>;
       if (map['status'] == true) {
         _vacations.removeWhere((v) => v.id == id);
+        fetchDashboard(showLoader: false);
+        fetchVacations(showLoader: false);
         return ToggleResult(
           success: true,
           message: map['message'] as String? ?? 'Vacation deleted successfully.',

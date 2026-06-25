@@ -17,11 +17,15 @@ import 'package:pampa/core/utils/functional_component.dart';
 class ChooseProviderScreen extends StatefulWidget {
   final AddressModel address;
   final int? rescheduleBookingId;
+  final ProviderModel? preSelectedProvider;
+  final bool returnOnSelect;
 
   const ChooseProviderScreen({
     super.key,
     required this.address,
     this.rescheduleBookingId,
+    this.preSelectedProvider,
+    this.returnOnSelect = false,
   });
 
   @override
@@ -29,15 +33,15 @@ class ChooseProviderScreen extends StatefulWidget {
 }
 
 class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
+  bool _showAllProviders = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final bookingProvider = context.read<BookingProvider>();
       bookingProvider.clearPendingBooking();
-      bookingProvider.fetchAvailableProviders(
-        zipCode: widget.address.zipCode,
-      );
+      bookingProvider.fetchAvailableProviders(zipCode: widget.address.zipCode);
     });
   }
 
@@ -49,12 +53,20 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
   void _openReviewWithServices(ProviderModel provider, List<int> serviceIds) {
     final bookingProvider = context.read<BookingProvider>();
     bookingProvider.selectProvider(provider);
+
+    if (widget.returnOnSelect) {
+      Navigator.of(context).pop();
+      return;
+    }
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => MultiProvider(
           providers: [
             ChangeNotifierProvider.value(value: bookingProvider),
-            ChangeNotifierProvider.value(value: context.read<AddressProvider>()),
+            ChangeNotifierProvider.value(
+              value: context.read<AddressProvider>(),
+            ),
           ],
           child: BookingReviewScreen(
             address: widget.address,
@@ -104,7 +116,9 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
       ),
     );
 
-    final success = await myBookingsProvider.cancelBooking(widget.rescheduleBookingId!);
+    final success = await myBookingsProvider.cancelBooking(
+      widget.rescheduleBookingId!,
+    );
     if (!context.mounted) return;
 
     // Dismiss the loading dialog
@@ -132,9 +146,19 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
     return Consumer<BookingProvider>(
       builder: (context, bookingProvider, _) {
         final service = bookingProvider.service;
-        final showCancelButton = widget.rescheduleBookingId != null &&
-            bookingProvider.providerFetchStatus == ProviderFetchStatus.success &&
+        final showCancelButton =
+            widget.rescheduleBookingId != null &&
+            bookingProvider.providerFetchStatus ==
+                ProviderFetchStatus.success &&
             bookingProvider.providers.isEmpty;
+
+        final allProviders = bookingProvider.providers;
+        final filteredProviders =
+            (widget.preSelectedProvider != null && !_showAllProviders)
+            ? allProviders
+                  .where((p) => p.id == widget.preSelectedProvider!.id)
+                  .toList()
+            : allProviders;
 
         return Scaffold(
           backgroundColor: const Color(0xFFF7F1F4),
@@ -156,8 +180,11 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
                           clipBehavior: Clip.antiAlias,
                           child: IconButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                color: Colors.white, size: 18),
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                           ),
                         ),
                       ),
@@ -174,23 +201,29 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
 
                     // ── Provider count subheader ──────────────────────────────
                     if (bookingProvider.providerFetchStatus ==
-                        ProviderFetchStatus.success &&
-                        bookingProvider.providers.isNotEmpty)
+                            ProviderFetchStatus.success &&
+                        filteredProviders.isNotEmpty)
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding:
-                              const EdgeInsets.fromLTRB(20, 20, 20, 4),
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
                           child: Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 5),
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppColor.authButton.withValues(alpha: 0.1),
+                                  color: AppColor.authButton.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: AppText(
-                                  '${bookingProvider.providers.length} available',
+                                  widget.preSelectedProvider != null &&
+                                          !_showAllProviders
+                                      ? 'Previous Provider'
+                                      : '${filteredProviders.length} available',
                                   fontSize: 12,
                                   fontWeight: FontWeights.semiBold,
                                   color: AppColor.authButton,
@@ -212,7 +245,7 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
 
                     // ── Body ─────────────────────────────────────────────────
                     SliverToBoxAdapter(
-                      child: _buildBody(bookingProvider),
+                      child: _buildBody(bookingProvider, filteredProviders),
                     ),
 
                     const SliverToBoxAdapter(child: SizedBox(height: 32)),
@@ -222,7 +255,11 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
               ? Container(
                   color: const Color(0xFFF7F1F4),
                   padding: EdgeInsets.fromLTRB(
-                      20, 12, 20, MediaQuery.of(context).padding.bottom + 16),
+                    20,
+                    12,
+                    20,
+                    MediaQuery.of(context).padding.bottom + 16,
+                  ),
                   child: SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -250,7 +287,10 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
     );
   }
 
-  Widget _buildBody(BookingProvider bookingProvider) {
+  Widget _buildBody(
+    BookingProvider bookingProvider,
+    List<ProviderModel> filteredProviders,
+  ) {
     switch (bookingProvider.providerFetchStatus) {
       case ProviderFetchStatus.loading:
         return const Padding(
@@ -272,31 +312,94 @@ class _ChooseProviderScreenState extends State<ChooseProviderScreen> {
           ),
         );
       case ProviderFetchStatus.success:
-        if (bookingProvider.providers.isEmpty) {
-          return _EmptyState(
-            icon: Icons.person_search_rounded,
-            title: 'No providers yet',
-            subtitle:
-                'No providers are available for this date and time in your area.',
-            buttonLabel: 'Choose another time',
-            onTap: () => Navigator.of(context).pop(),
+        if (filteredProviders.isEmpty) {
+          final hasOtherProviders = bookingProvider.providers.isNotEmpty;
+          return Column(
+            children: [
+              _EmptyState(
+                icon: Icons.person_search_rounded,
+                title: widget.preSelectedProvider != null && !_showAllProviders
+                    ? 'Provider Unavailable'
+                    : 'No providers yet',
+                subtitle:
+                    widget.preSelectedProvider != null && !_showAllProviders
+                    ? '${widget.preSelectedProvider!.displayName} is not available for this date and time.'
+                    : 'No providers are available for this date and time in your area.',
+                buttonLabel: 'Choose another time',
+                onTap: () => Navigator.of(context).pop(),
+              ),
+              if (widget.preSelectedProvider != null &&
+                  !_showAllProviders &&
+                  hasOtherProviders)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  child: TextButton(
+                    onPressed: () => setState(() => _showAllProviders = true),
+                    child: AppText(
+                      'View other available providers',
+                      fontSize: FontSizes.regular,
+                      fontWeight: FontWeights.semiBold,
+                      color: AppColor.authButton,
+                    ),
+                  ),
+                ),
+            ],
           );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          itemCount: bookingProvider.providers.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 14),
-          itemBuilder: (context, index) {
-            final provider = bookingProvider.providers[index];
-            final service = bookingProvider.service!;
-            return _ProviderCard(
-              provider: provider,
-              selectedServiceId: service.id,
-              onTap: () => _openReview(provider),
-            );
-          },
+        return Column(
+          children: [
+            ListView.separated(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: filteredProviders.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 14),
+              itemBuilder: (context, index) {
+                final provider = filteredProviders[index];
+                final service = bookingProvider.service!;
+                return _ProviderCard(
+                  provider: provider,
+                  selectedServiceId: service.id,
+                  onTap: () => _openReview(provider),
+                );
+              },
+            ),
+            if (widget.preSelectedProvider != null && !_showAllProviders)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => setState(() => _showAllProviders = true),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.swap_horiz_rounded,
+                          color: AppColor.authButton,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        AppText(
+                          'Change Provider',
+                          fontSize: 14,
+                          fontWeight: FontWeights.semiBold,
+                          color: AppColor.authButton,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
         );
       case ProviderFetchStatus.initial:
         return const SizedBox.shrink();
@@ -334,8 +437,8 @@ class _HeaderBanner extends StatelessWidget {
     final timeLabel = _formatTime(time);
     final addr =
         '${address.streetAddress}, ${address.city}'
-        '${address.state != null ? ', ${address.state}' : ''}'
-        ' ${address.zipCode}'
+                '${address.state != null ? ', ${address.state}' : ''}'
+                ' ${address.zipCode}'
             .trim()
             .replaceAll(RegExp(r'\s+'), ' ')
             .replaceAll(RegExp(r',\s*$'), '');
@@ -370,7 +473,10 @@ class _HeaderBanner extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   _InfoChip(icon: Icons.location_on_outlined, label: addr),
-                  _InfoChip(icon: Icons.calendar_today_outlined, label: dateLabel),
+                  _InfoChip(
+                    icon: Icons.calendar_today_outlined,
+                    label: dateLabel,
+                  ),
                   _InfoChip(icon: Icons.access_time_outlined, label: timeLabel),
                 ],
               ),
@@ -487,8 +593,11 @@ class _ProviderCard extends StatelessWidget {
                           // Rating + status
                           Row(
                             children: [
-                              const Icon(Icons.star_rounded,
-                                  size: 15, color: Color(0xFFFABF35)),
+                              const Icon(
+                                Icons.star_rounded,
+                                size: 15,
+                                color: Color(0xFFFABF35),
+                              ),
                               const SizedBox(width: 3),
                               AppText(
                                 provider.rating.toStringAsFixed(1),
@@ -505,14 +614,16 @@ class _ProviderCard extends StatelessWidget {
                           if ((provider.city ?? '').isNotEmpty)
                             Row(
                               children: [
-                                const Icon(Icons.location_on_rounded,
-                                    size: 13, color: AppColor.grey),
+                                const Icon(
+                                  Icons.location_on_rounded,
+                                  size: 13,
+                                  color: AppColor.grey,
+                                ),
                                 const SizedBox(width: 3),
                                 Expanded(
                                   child: AppText(
                                     [provider.city, provider.state]
-                                        .where((x) =>
-                                            x != null && x.isNotEmpty)
+                                        .where((x) => x != null && x.isNotEmpty)
                                         .join(', '),
                                     fontSize: 12,
                                     color: AppColor.grey,
@@ -560,8 +671,11 @@ class _ProviderCard extends StatelessWidget {
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.timer_outlined,
-                                size: 12, color: AppColor.grey),
+                            const Icon(
+                              Icons.timer_outlined,
+                              size: 12,
+                              color: AppColor.grey,
+                            ),
                             const SizedBox(width: 3),
                             AppText(
                               duration,
@@ -574,8 +688,9 @@ class _ProviderCard extends StatelessWidget {
                                 width: 3,
                                 height: 3,
                                 decoration: const BoxDecoration(
-                                    color: AppColor.grey,
-                                    shape: BoxShape.circle),
+                                  color: AppColor.grey,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                               const SizedBox(width: 8),
                               AppText(
@@ -596,7 +711,9 @@ class _ProviderCard extends StatelessWidget {
                       onTap: onTap,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 22, vertical: 11),
+                          horizontal: 22,
+                          vertical: 11,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColor.authButton,
                           borderRadius: BorderRadius.circular(999),
@@ -706,9 +823,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
       decoration: BoxDecoration(
-        color: isActive
-            ? const Color(0xFFE6F9EE)
-            : const Color(0xFFFCE8E8),
+        color: isActive ? const Color(0xFFE6F9EE) : const Color(0xFFFCE8E8),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -718,9 +833,7 @@ class _StatusBadge extends StatelessWidget {
             width: 5,
             height: 5,
             decoration: BoxDecoration(
-              color: isActive
-                  ? const Color(0xFF1F8F4C)
-                  : Colors.red.shade600,
+              color: isActive ? const Color(0xFF1F8F4C) : Colors.red.shade600,
               shape: BoxShape.circle,
             ),
           ),
@@ -730,9 +843,7 @@ class _StatusBadge extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: isActive
-                  ? const Color(0xFF1F8F4C)
-                  : Colors.red.shade600,
+              color: isActive ? const Color(0xFF1F8F4C) : Colors.red.shade600,
             ),
           ),
         ],

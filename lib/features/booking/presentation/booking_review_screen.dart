@@ -14,18 +14,22 @@ import 'package:pampa/features/booking/data/models/provider_model.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
 import 'package:pampa/features/home/presentation/home_screen.dart';
 import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
+import 'package:pampa/features/address/presentation/provider/address_provider.dart';
+import 'package:pampa/features/booking/presentation/choose_provider_screen.dart';
 import 'package:pampa/features/webview/webview.dart';
 
 class BookingReviewScreen extends StatefulWidget {
   final AddressModel address;
   final List<int> serviceIds;
   final int? rescheduleBookingId;
+  final bool isBookAgain;
 
   const BookingReviewScreen({
     super.key,
     required this.address,
     this.serviceIds = const [],
     this.rescheduleBookingId,
+    this.isBookAgain = false,
   });
 
   @override
@@ -78,7 +82,9 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
 
     final selectedProvider = bookingProvider.selectedProvider;
     final appointmentTime = bookingProvider.selectedTime;
-    if (service == null || selectedProvider == null || appointmentTime == null) {
+    if (service == null ||
+        selectedProvider == null ||
+        appointmentTime == null) {
       return;
     }
 
@@ -164,8 +170,12 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
     final appointmentTime = bookingProvider.selectedTime;
     if (appointmentTime == null) return;
 
-    final dateStr = DateFormat('yyyy-MM-dd').format(bookingProvider.selectedDate);
-    final timeStr = appointmentTime.length == 5 ? '$appointmentTime:00' : appointmentTime;
+    final dateStr = DateFormat(
+      'yyyy-MM-dd',
+    ).format(bookingProvider.selectedDate);
+    final timeStr = appointmentTime.length == 5
+        ? '$appointmentTime:00'
+        : appointmentTime;
 
     setState(() => _isRescheduling = true);
 
@@ -207,9 +217,8 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
     final bookingsProvider = context.read<MyBookingsProvider>();
     bookingProvider.clearPendingBooking();
     homeTabNotifier.value = 2;
-    homeSuccessMessageNotifier.value = bookingProvider.successMessage.isEmpty
-        ? 'Booking Requested successfully!'
-        : bookingProvider.successMessage;
+    homeSuccessMessageNotifier.value = 'Booking Requested successfully!';
+
     Navigator.of(context).popUntil((route) => route.isFirst);
     // Refresh asynchronously so we don't keep users waiting on this screen.
     bookingsProvider.fetchBookings();
@@ -219,8 +228,16 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
   Widget build(BuildContext context) {
     return Consumer<BookingProvider>(
       builder: (context, bookingProvider, _) {
-        final service = bookingProvider.service!;
-        final provider = bookingProvider.selectedProvider!;
+        final service = bookingProvider.service;
+        final provider = bookingProvider.selectedProvider;
+        if (service == null || provider == null) {
+          return const Scaffold(
+            backgroundColor: AppColor.authBg,
+            body: Center(
+              child: CircularProgressIndicator(color: AppColor.authButton),
+            ),
+          );
+        }
         final ids = bookingProvider.selectedServiceIds.isNotEmpty
             ? bookingProvider.selectedServiceIds
             : (widget.serviceIds.isNotEmpty ? widget.serviceIds : [service.id]);
@@ -238,15 +255,19 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
         final depositAmount = selectedServices.isNotEmpty
             ? selectedServices.fold(0.0, (sum, s) => sum + s.deposit)
             : (providerService != null && providerService.deposit > 0
-                ? providerService.deposit
-                : service.deposit);
-         final priorityFee = service.priorityFee;
+                  ? providerService.deposit
+                  : service.deposit);
+        final priorityFee = service.priorityFee;
         final tip = bookingProvider.tipAmount;
         final travelFee = bookingProvider.travelFee ?? 0.0;
         final todayDue =
-            (depositAmount > 0 ? depositAmount : fullPrice) + priorityFee + tip + travelFee;
-        final remainingBalance =
-            depositAmount > 0 ? fullPrice - depositAmount : 0.0;
+            (depositAmount > 0 ? depositAmount : fullPrice) +
+            priorityFee +
+            tip +
+            travelFee;
+        final remainingBalance = depositAmount > 0
+            ? fullPrice - depositAmount
+            : 0.0;
         return Scaffold(
           backgroundColor: AppColor.authBg,
           appBar: AppBar(
@@ -271,71 +292,144 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
           bottomNavigationBar: SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: bookingProvider.withinRange == false
-                        ? AppColor.grey
-                        : AppColor.authButton,
-                    foregroundColor: AppColor.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.isBookAgain) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColor.authButton),
+                          foregroundColor: AppColor.authButton,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final prevProvider = bookingProvider.selectedProvider;
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => MultiProvider(
+                                providers: [
+                                  ChangeNotifierProvider.value(
+                                    value: bookingProvider,
+                                  ),
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<AddressProvider>(),
+                                  ),
+                                ],
+                                child: ChooseProviderScreen(
+                                  address: widget.address,
+                                  rescheduleBookingId:
+                                      widget.rescheduleBookingId,
+                                  returnOnSelect: true,
+                                ),
+                              ),
+                            ),
+                          );
+                          // After returning, fetch the distance charge for the newly selected provider
+                          final newProvider = bookingProvider.selectedProvider;
+                          if (newProvider != null) {
+                            bookingProvider.fetchDistanceCharge(
+                              providerId: newProvider.id,
+                              customerZip: widget.address.zipCode,
+                            );
+                          } else if (prevProvider != null) {
+                            // Restore previous provider if no selection was made (user backed out)
+                            bookingProvider.selectProvider(prevProvider);
+                            bookingProvider.fetchDistanceCharge(
+                              providerId: prevProvider.id,
+                              customerZip: widget.address.zipCode,
+                            );
+                          }
+                        },
+                        child: AppText(
+                          'Change Provider',
+                          color: AppColor.authButton,
+                          fontWeight: FontWeights.semiBold,
+                          fontSize: FontSizes.regular,
+                        ),
+                      ),
                     ),
-                  ),
-                  onPressed: bookingProvider.isSubmitting ||
-                          _isOpeningPayment ||
-                          _isRescheduling ||
-                          bookingProvider.withinRange == false
-                      ? null
-                      : widget.rescheduleBookingId != null
+                    const SizedBox(height: 12),
+                  ],
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: bookingProvider.withinRange == false
+                            ? AppColor.grey
+                            : AppColor.authButton,
+                        foregroundColor: AppColor.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed:
+                          bookingProvider.isSubmitting ||
+                              _isOpeningPayment ||
+                              _isRescheduling ||
+                              bookingProvider.withinRange == false
+                          ? null
+                          : widget.rescheduleBookingId != null
                           ? () => _reschedule(context)
-                          : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
-                                  bookingProvider.paymentLink != null)
-                              ? () async {
-                                  if (_isOpeningPayment) return;
-                                  setState(() => _isOpeningPayment = true);
-                                  final paid = await Navigator.of(context).push<bool>(
+                          : (bookingProvider.submitStatus ==
+                                    BookingSubmitStatus.submitted &&
+                                bookingProvider.paymentLink != null)
+                          ? () async {
+                              if (_isOpeningPayment) return;
+                              setState(() => _isOpeningPayment = true);
+                              final paid = await Navigator.of(context)
+                                  .push<bool>(
                                     MaterialPageRoute(
                                       builder: (_) => CustomWebView(
-                                        checkoutUrl: bookingProvider.paymentLink!,
+                                        checkoutUrl:
+                                            bookingProvider.paymentLink!,
                                         title: 'Complete Payment',
                                       ),
                                     ),
                                   );
-                                  if (!context.mounted) return;
-                                  if (paid == true) {
-                                    _completeBookingFlow(context, bookingProvider);
-                                    return;
-                                  }
-                                  setState(() => _isOpeningPayment = false);
-                                }
-                              : () => _submit(context),
-                  child: bookingProvider.isSubmitting || _isOpeningPayment || _isRescheduling
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: AppColor.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : AppText(
-                          bookingProvider.withinRange == false
-                              ? 'Out of Service Range'
-                              : widget.rescheduleBookingId != null
+                              if (!context.mounted) return;
+                              if (paid == true) {
+                                _completeBookingFlow(context, bookingProvider);
+                                return;
+                              }
+                              setState(() => _isOpeningPayment = false);
+                            }
+                          : () => _submit(context),
+                      child:
+                          bookingProvider.isSubmitting ||
+                              _isOpeningPayment ||
+                              _isRescheduling
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                color: AppColor.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : AppText(
+                              bookingProvider.withinRange == false
+                                  ? 'Out of Service Range'
+                                  : widget.rescheduleBookingId != null
                                   ? 'Schedule'
-                                  : (bookingProvider.submitStatus == BookingSubmitStatus.submitted &&
-                                          bookingProvider.paymentLink != null)
-                                      ? 'Retry Payment'
-                                      : 'Submit Booking',
-                          color: AppColor.white,
-                          fontWeight: FontWeights.semiBold,
-                          fontSize: FontSizes.regular,
-                        ),
-                ),
+                                  : (bookingProvider.submitStatus ==
+                                            BookingSubmitStatus.submitted &&
+                                        bookingProvider.paymentLink != null)
+                                  ? 'Retry Payment'
+                                  : 'Submit Booking',
+                              color: AppColor.white,
+                              fontWeight: FontWeights.semiBold,
+                              fontSize: FontSizes.regular,
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -373,9 +467,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                 const SizedBox(height: 18),
                 _SectionLabel('Service Address'),
                 const SizedBox(height: 8),
-                _ReadOnlyField(
-                  value: _formatFullAddress(widget.address),
-                ),
+                _ReadOnlyField(value: _formatFullAddress(widget.address)),
                 const SizedBox(height: 6),
                 if (bookingProvider.distanceChargeLoading) ...[
                   const Row(
@@ -398,7 +490,11 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
                 ] else if (bookingProvider.withinRange == false) ...[
                   const Row(
                     children: [
-                      Icon(Icons.warning_amber_rounded, color: Colors.red, size: 16),
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.red,
+                        size: 16,
+                      ),
                       SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -547,20 +643,11 @@ class _ProviderSummaryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          _MetaRow(
-            label: 'Date',
-            value: DateFormat('M/d/yyyy').format(date),
-          ),
+          _MetaRow(label: 'Date', value: DateFormat('M/d/yyyy').format(date)),
           const SizedBox(height: 10),
-          _MetaRow(
-            label: 'Time',
-            value: _formatTime(time),
-          ),
+          _MetaRow(label: 'Time', value: _formatTime(time)),
           const SizedBox(height: 10),
-          _MetaRow(
-            label: 'Duration',
-            value: '$duration min',
-          ),
+          _MetaRow(label: 'Duration', value: '$duration min'),
         ],
       ),
     );
@@ -569,8 +656,7 @@ class _ProviderSummaryCard extends StatelessWidget {
   static String _formatTime(String time) {
     if (time.isEmpty) return '-';
     try {
-      return DateFormat('h:mm a')
-          .format(DateFormat('HH:mm').parseStrict(time));
+      return DateFormat('h:mm a').format(DateFormat('HH:mm').parseStrict(time));
     } catch (_) {
       return time;
     }
@@ -581,26 +667,15 @@ class _MetaRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _MetaRow({
-    required this.label,
-    required this.value,
-  });
+  const _MetaRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        AppText(
-          label,
-          fontSize: 12,
-          color: AppColor.grey,
-        ),
+        AppText(label, fontSize: 12, color: AppColor.grey),
         const Spacer(),
-        AppText(
-          value,
-          fontSize: 12,
-          color: AppColor.darkGrey,
-        ),
+        AppText(value, fontSize: 12, color: AppColor.darkGrey),
       ],
     );
   }
@@ -637,12 +712,7 @@ class _ReadOnlyField extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColor.lightGrey),
       ),
-      child: AppText(
-        value,
-        fontSize: 13,
-        color: AppColor.grey,
-        maxLines: 3,
-      ),
+      child: AppText(value, fontSize: 13, color: AppColor.grey, maxLines: 3),
     );
   }
 }
@@ -668,10 +738,7 @@ class _InputField extends StatelessWidget {
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(
-          color: AppColor.grey,
-          fontSize: 13,
-        ),
+        hintStyle: const TextStyle(color: AppColor.grey, fontSize: 13),
         filled: true,
         fillColor: AppColor.white,
         contentPadding: const EdgeInsets.symmetric(
@@ -760,10 +827,7 @@ class _ImageUploadBox extends StatelessWidget {
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.file_upload_outlined,
-                    color: AppColor.grey,
-                  ),
+                  const Icon(Icons.file_upload_outlined, color: AppColor.grey),
                   const SizedBox(height: 10),
                   AppText(
                     'Upload a reference photo',
@@ -823,21 +887,20 @@ class _PricingBreakdownCard extends StatelessWidget {
           const SizedBox(height: 14),
           if (showIndividual) ...[
             // Individual service rows with per-service deposit
-            ...selectedServices.expand((s) => [
-              _PriceRow(
-                label: s.serviceName,
-                value: _fmt(s.priceAsDouble),
-              ),
-              if (s.deposit > 0) ...[
-                const SizedBox(height: 4),
-                _PriceRow(
-                  label: '  Deposit',
-                  value: _fmt(s.deposit),
-                  secondary: true,
-                ),
+            ...selectedServices.expand(
+              (s) => [
+                _PriceRow(label: s.serviceName, value: _fmt(s.priceAsDouble)),
+                if (s.deposit > 0) ...[
+                  const SizedBox(height: 4),
+                  _PriceRow(
+                    label: '  Deposit',
+                    value: _fmt(s.deposit),
+                    secondary: true,
+                  ),
+                ],
+                const SizedBox(height: 10),
               ],
-              const SizedBox(height: 10),
-            ]),
+            ),
             Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
             const SizedBox(height: 10),
             _PriceRow(label: 'Subtotal', value: _fmt(servicePrice)),
@@ -847,7 +910,9 @@ class _PricingBreakdownCard extends StatelessWidget {
           if (depositAmount > 0) ...[
             const SizedBox(height: 10),
             _PriceRow(
-              label: showIndividual ? 'Total Deposit Due Today' : 'Deposit Due Today',
+              label: showIndividual
+                  ? 'Total Deposit Due Today'
+                  : 'Deposit Due Today',
               value: _fmt(depositAmount),
             ),
           ],
@@ -983,10 +1048,7 @@ class _AvatarFallback extends StatelessWidget {
   final String initials;
   final double size;
 
-  const _AvatarFallback({
-    required this.initials,
-    required this.size,
-  });
+  const _AvatarFallback({required this.initials, required this.size});
 
   @override
   Widget build(BuildContext context) {

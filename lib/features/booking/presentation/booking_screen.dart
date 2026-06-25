@@ -23,8 +23,10 @@ import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_pro
 // ─── Icon helper for address name ─────────────────────────────────────────────
 IconData _iconForAddress(String name) {
   final lower = name.toLowerCase();
-  if (lower.contains('home') || lower.contains('house')) return Icons.home_rounded;
-  if (lower.contains('work') || lower.contains('office')) return Icons.work_rounded;
+  if (lower.contains('home') || lower.contains('house'))
+    return Icons.home_rounded;
+  if (lower.contains('work') || lower.contains('office'))
+    return Icons.work_rounded;
   return Icons.location_on_rounded;
 }
 
@@ -35,6 +37,7 @@ class BookingScreen extends StatefulWidget {
   final List<int> preSelectedServiceIds;
   final int? rescheduleBookingId;
   final int? rescheduleAddressId;
+  final bool isBookAgain;
 
   const BookingScreen({
     super.key,
@@ -43,6 +46,7 @@ class BookingScreen extends StatefulWidget {
     this.preSelectedServiceIds = const [],
     this.rescheduleBookingId,
     this.rescheduleAddressId,
+    this.isBookAgain = false,
   });
 
   @override
@@ -51,9 +55,9 @@ class BookingScreen extends StatefulWidget {
 
 // Period definition used in the UI
 const _periods = [
-  {'label': 'Morning',   'from': 9 * 60,  'to': 12 * 60},
+  {'label': 'Morning', 'from': 9 * 60, 'to': 12 * 60},
   {'label': 'Afternoon', 'from': 12 * 60, 'to': 16 * 60},
-  {'label': 'Evening',   'from': 16 * 60, 'to': 22 * 60},
+  {'label': 'Evening', 'from': 16 * 60, 'to': 22 * 60},
 ];
 
 class _BookingScreenState extends State<BookingScreen> {
@@ -82,7 +86,7 @@ class _BookingScreenState extends State<BookingScreen> {
       } else if (bp.service == null) {
         await bp.fetchServiceDetail(widget.serviceId);
       }
-      
+
       final provider = widget.preSelectedProvider;
       if (provider != null && bp.service != null) {
         bp.fetchUnavailableDates(provider.id, bp.service!.categoryId);
@@ -144,7 +148,11 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   /// Returns slots whose start time falls within [fromMins, toMins)
-  List<SlotModel> _slotsForPeriod(List<SlotModel> all, int fromMins, int toMins) {
+  List<SlotModel> _slotsForPeriod(
+    List<SlotModel> all,
+    int fromMins,
+    int toMins,
+  ) {
     return all.where((s) {
       if (s.time.isEmpty) return false;
       final parts = s.time.split(':');
@@ -166,20 +174,22 @@ class _BookingScreenState extends State<BookingScreen> {
       final ids = bp.selectedServiceIds.isNotEmpty
           ? bp.selectedServiceIds
           : (widget.preSelectedServiceIds.isNotEmpty
-              ? widget.preSelectedServiceIds
-              : [widget.serviceId]);
+                ? widget.preSelectedServiceIds
+                : [widget.serviceId]);
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => MultiProvider(
             providers: [
               ChangeNotifierProvider.value(value: bp),
               ChangeNotifierProvider.value(
-                  value: context.read<AddressProvider>()),
+                value: context.read<AddressProvider>(),
+              ),
             ],
             child: BookingReviewScreen(
               address: _selectedAddress!,
               serviceIds: ids,
               rescheduleBookingId: widget.rescheduleBookingId,
+              isBookAgain: widget.isBookAgain,
             ),
           ),
         ),
@@ -193,7 +203,8 @@ class _BookingScreenState extends State<BookingScreen> {
           providers: [
             ChangeNotifierProvider.value(value: bp),
             ChangeNotifierProvider.value(
-                value: context.read<AddressProvider>()),
+              value: context.read<AddressProvider>(),
+            ),
           ],
           child: ChooseProviderScreen(
             address: _selectedAddress!,
@@ -222,16 +233,15 @@ class _BookingScreenState extends State<BookingScreen> {
             if (provider.fetchStatus == BookingFetchStatus.loading) {
               return const SafeArea(
                 child: Center(
-                    child: CircularProgressIndicator(
-                        color: AppColor.authButton)),
+                  child: CircularProgressIndicator(color: AppColor.authButton),
+                ),
               );
             }
             if (provider.fetchStatus == BookingFetchStatus.error) {
               return SafeArea(
                 child: _ErrorView(
                   message: provider.fetchError,
-                  onRetry: () =>
-                      provider.fetchServiceDetail(widget.serviceId),
+                  onRetry: () => provider.fetchServiceDetail(widget.serviceId),
                 ),
               );
             }
@@ -254,8 +264,11 @@ class _BookingScreenState extends State<BookingScreen> {
               children: [
                 GestureDetector(
                   onTap: _goBack,
-                  child: const Icon(Icons.arrow_back_ios_new_rounded,
-                      size: 20, color: AppColor.darkGrey),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    size: 20,
+                    color: AppColor.darkGrey,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 AppText(
@@ -284,19 +297,20 @@ class _BookingScreenState extends State<BookingScreen> {
             builder: (_, ap, _) {
               if (ap.isLoading) {
                 return const Center(
-                    child: CircularProgressIndicator(
-                        color: AppColor.authButton));
+                  child: CircularProgressIndicator(color: AppColor.authButton),
+                );
               }
               return SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 child: Column(
                   children: [
-                    ...ap.addresses.map((addr) => _AddressTile(
-                          address: addr,
-                          isSelected: _selectedAddress?.id == addr.id,
-                          onTap: () =>
-                              setState(() => _selectedAddress = addr),
-                        )),
+                    ...ap.addresses.map(
+                      (addr) => _AddressTile(
+                        address: addr,
+                        isSelected: _selectedAddress?.id == addr.id,
+                        onTap: () => setState(() => _selectedAddress = addr),
+                      ),
+                    ),
                     _AddNewAddressTile(
                       onAdded: (addr) =>
                           setState(() => _selectedAddress = addr),
@@ -340,13 +354,18 @@ class _BookingScreenState extends State<BookingScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.arrow_back_ios_new_rounded,
-                              size: 14, color: AppColor.authButton),
+                          const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            size: 14,
+                            color: AppColor.authButton,
+                          ),
                           const SizedBox(width: 4),
-                          AppText('Back',
-                              fontSize: FontSizes.small,
-                              fontWeight: FontWeights.semiBold,
-                              color: AppColor.authButton),
+                          AppText(
+                            'Back',
+                            fontSize: FontSizes.small,
+                            fontWeight: FontWeights.semiBold,
+                            color: AppColor.authButton,
+                          ),
                         ],
                       ),
                     ),
@@ -370,7 +389,9 @@ class _BookingScreenState extends State<BookingScreen> {
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColor.authButton.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(20),
@@ -407,10 +428,15 @@ class _BookingScreenState extends State<BookingScreen> {
                     final maxDate = today.add(const Duration(days: 90));
                     final minMonth = DateTime(today.year, today.month);
                     final maxMonthLimit = DateTime(maxDate.year, maxDate.month);
-                    final targetMonth = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
-                    
-                    if ((targetMonth.isAfter(minMonth) || targetMonth.isAtSameMomentAs(minMonth)) &&
-                        (targetMonth.isBefore(maxMonthLimit) || targetMonth.isAtSameMomentAs(maxMonthLimit))) {
+                    final targetMonth = DateTime(
+                      _visibleMonth.year,
+                      _visibleMonth.month + delta,
+                    );
+
+                    if ((targetMonth.isAfter(minMonth) ||
+                            targetMonth.isAtSameMomentAs(minMonth)) &&
+                        (targetMonth.isBefore(maxMonthLimit) ||
+                            targetMonth.isAtSameMomentAs(maxMonthLimit))) {
                       setState(() {
                         _visibleMonth = targetMonth;
                       });
@@ -418,22 +444,28 @@ class _BookingScreenState extends State<BookingScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
-                AppText('Select Time',
-                    fontSize: FontSizes.medium,
-                    fontWeight: FontWeights.bold,
-                    color: AppColor.darkGrey),
+                AppText(
+                  'Select Time',
+                  fontSize: FontSizes.medium,
+                  fontWeight: FontWeights.bold,
+                  color: AppColor.darkGrey,
+                ),
                 const SizedBox(height: 12),
                 if (provider.slotsLoading)
                   Wrap(
                     spacing: 10,
                     runSpacing: 10,
-                    children: List.generate(3, (_) => Container(
-                      width: 100, height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColor.lightGrey,
-                        borderRadius: BorderRadius.circular(12),
+                    children: List.generate(
+                      3,
+                      (_) => Container(
+                        width: 100,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColor.lightGrey,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                    )),
+                    ),
                   )
                 else if (provider.availableSlots.isEmpty)
                   Container(
@@ -457,10 +489,14 @@ class _BookingScreenState extends State<BookingScreen> {
                     spacing: 10,
                     runSpacing: 10,
                     children: _periods.map((p) {
-                      final label   = p['label'] as String;
-                      final from    = p['from']  as int;
-                      final to      = p['to']    as int;
-                      final active  = _periodHasSlots(provider.availableSlots, from, to);
+                      final label = p['label'] as String;
+                      final from = p['from'] as int;
+                      final to = p['to'] as int;
+                      final active = _periodHasSlots(
+                        provider.availableSlots,
+                        from,
+                        to,
+                      );
                       final selected = _selectedPeriod == label;
                       return GestureDetector(
                         onTap: active
@@ -472,18 +508,27 @@ class _BookingScreenState extends State<BookingScreen> {
                             : null,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 150),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: selected
                                 ? AppColor.authButton
-                                : (active ? AppColor.white : AppColor.lightGrey.withValues(alpha: 0.5)),
+                                : (active
+                                      ? AppColor.white
+                                      : AppColor.lightGrey.withValues(
+                                          alpha: 0.5,
+                                        )),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: selected
                                   ? AppColor.authButton
                                   : (active
-                                      ? AppColor.authButton.withValues(alpha: 0.3)
-                                      : AppColor.lightGrey),
+                                        ? AppColor.authButton.withValues(
+                                            alpha: 0.3,
+                                          )
+                                        : AppColor.lightGrey),
                               width: selected ? 1.5 : 1,
                             ),
                           ),
@@ -493,7 +538,9 @@ class _BookingScreenState extends State<BookingScreen> {
                             fontWeight: FontWeights.semiBold,
                             color: selected
                                 ? AppColor.white
-                                : (active ? AppColor.darkGrey : AppColor.grey.withValues(alpha: 0.5)),
+                                : (active
+                                      ? AppColor.darkGrey
+                                      : AppColor.grey.withValues(alpha: 0.5)),
                           ),
                         ),
                       );
@@ -502,24 +549,32 @@ class _BookingScreenState extends State<BookingScreen> {
                   // ── Slots for selected period ─────────────────────
                   if (_selectedPeriod != null) ...[
                     const SizedBox(height: 16),
-                    Builder(builder: (_) {
-                      final p = _periods.firstWhere((p) => p['label'] == _selectedPeriod);
-                      final filtered = _slotsForPeriod(
-                        provider.availableSlots,
-                        p['from'] as int,
-                        p['to']   as int,
-                      );
-                      return _TimeSlotGrid(
-                        slots: filtered,
-                        loading: false,
-                        selectedDisplay: _selectedTimeDisplay,
-                        onSelect: (i) {
-                          final slot = filtered[i];
-                          provider.selectTime(slot.time);
-                          setState(() => _selectedTimeDisplay = _formatDisplayTime(slot.time));
-                        },
-                      );
-                    }),
+                    Builder(
+                      builder: (_) {
+                        final p = _periods.firstWhere(
+                          (p) => p['label'] == _selectedPeriod,
+                        );
+                        final filtered = _slotsForPeriod(
+                          provider.availableSlots,
+                          p['from'] as int,
+                          p['to'] as int,
+                        );
+                        return _TimeSlotGrid(
+                          slots: filtered,
+                          loading: false,
+                          selectedDisplay: _selectedTimeDisplay,
+                          onSelect: (i) {
+                            final slot = filtered[i];
+                            provider.selectTime(slot.time);
+                            setState(
+                              () => _selectedTimeDisplay = _formatDisplayTime(
+                                slot.time,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ],
                 ],
               ],
@@ -530,7 +585,8 @@ class _BookingScreenState extends State<BookingScreen> {
           label: 'Continue',
           enabled: hasTime,
           onTap: _onConfirm,
-          onChangeProvider: (provider.availableSlots.isEmpty &&
+          onChangeProvider:
+              (provider.availableSlots.isEmpty &&
                   !provider.slotsLoading &&
                   !_changeProviderMode &&
                   widget.rescheduleBookingId != null)
@@ -550,7 +606,7 @@ class _BookingScreenState extends State<BookingScreen> {
       a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
- String _formatDisplayTime(String time24) {
+String _formatDisplayTime(String time24) {
   if (time24.isEmpty) return '';
   try {
     final parts = time24.split(':');
@@ -568,23 +624,23 @@ class _BookingScreenState extends State<BookingScreen> {
 String _formatTimeRange(String start24, String end24) {
   if (start24.isEmpty) return '';
   if (end24.isEmpty) return _formatDisplayTime(start24);
-  
+
   try {
     final startParts = start24.split(':');
     final endParts = end24.split(':');
-    
+
     final sh = int.parse(startParts[0]);
     final sm = int.parse(startParts[1]);
     final eh = int.parse(endParts[0]);
     final em = int.parse(endParts[1]);
-    
+
     final period = eh < 12 ? 'AM' : 'PM';
-    
+
     final displaySH = sh % 12 == 0 ? 12 : sh % 12;
     final displaySM = sm.toString().padLeft(2, '0');
     final displayEH = eh % 12 == 0 ? 12 : eh % 12;
     final displayEM = em.toString().padLeft(2, '0');
-    
+
     return '$displaySH:$displaySM - $displayEH:$displayEM $period';
   } catch (_) {
     return _formatDisplayTime(start24);
@@ -660,25 +716,30 @@ class _TimeSlotGrid extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColor.authButton
-                  : (isAvailable ? AppColor.white : AppColor.lightGrey.withValues(alpha: 0.5)),
+                  : (isAvailable
+                        ? AppColor.white
+                        : AppColor.lightGrey.withValues(alpha: 0.5)),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isSelected
                     ? AppColor.authButton
                     : (isAvailable
-                        ? AppColor.authButton.withValues(alpha: 0.25)
-                        : AppColor.lightGrey),
+                          ? AppColor.authButton.withValues(alpha: 0.25)
+                          : AppColor.lightGrey),
                 width: isSelected ? 1.5 : 1,
               ),
             ),
             child: AppText(
               displayLabel,
               fontSize: FontSizes.small,
-              fontWeight:
-                  isSelected ? FontWeights.semiBold : FontWeights.regular,
+              fontWeight: isSelected
+                  ? FontWeights.semiBold
+                  : FontWeights.regular,
               color: isSelected
                   ? AppColor.white
-                  : (isAvailable ? AppColor.darkGrey : AppColor.grey.withValues(alpha: 0.6)),
+                  : (isAvailable
+                        ? AppColor.darkGrey
+                        : AppColor.grey.withValues(alpha: 0.6)),
             ),
           ),
         );
@@ -687,17 +748,17 @@ class _TimeSlotGrid extends StatelessWidget {
   }
 }
 
-
 // ─── Address tile ─────────────────────────────────────────────────────────────
 class _AddressTile extends StatelessWidget {
   final AddressModel address;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _AddressTile(
-      {required this.address,
-      required this.isSelected,
-      required this.onTap});
+  const _AddressTile({
+    required this.address,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -728,10 +789,11 @@ class _AddressTile extends StatelessWidget {
                     : AppColor.lightGrey,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(_iconForAddress(address.addressName),
-                  size: 20,
-                  color:
-                      isSelected ? AppColor.authButton : AppColor.grey),
+              child: Icon(
+                _iconForAddress(address.addressName),
+                size: 20,
+                color: isSelected ? AppColor.authButton : AppColor.grey,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -743,26 +805,31 @@ class _AddressTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Flexible(
-                        child: AppText(address.addressName,
-                            fontSize: FontSizes.regular,
-                            maxLines: 5,
-                            fontWeight: FontWeights.semiBold,
-                            color: AppColor.darkGrey),
+                        child: AppText(
+                          address.addressName,
+                          fontSize: FontSizes.regular,
+                          maxLines: 5,
+                          fontWeight: FontWeights.semiBold,
+                          color: AppColor.darkGrey,
+                        ),
                       ),
                       if (address.isDefault) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppColor.authButton
-                                .withValues(alpha: 0.1),
+                            color: AppColor.authButton.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: AppText('Default',
-                              fontSize: 10,
-                              fontWeight: FontWeights.semiBold,
-                              color: AppColor.authButton),
+                          child: AppText(
+                            'Default',
+                            fontSize: 10,
+                            fontWeight: FontWeights.semiBold,
+                            color: AppColor.authButton,
+                          ),
                         ),
                       ],
                     ],
@@ -784,9 +851,14 @@ class _AddressTile extends StatelessWidget {
                 width: 24,
                 height: 24,
                 decoration: const BoxDecoration(
-                    color: AppColor.authButton, shape: BoxShape.circle),
-                child: const Icon(Icons.check_rounded,
-                    color: AppColor.white, size: 14),
+                  color: AppColor.authButton,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: AppColor.white,
+                  size: 14,
+                ),
               ),
             ],
           ],
@@ -820,22 +892,31 @@ class _AddNewAddressTile extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                  color: AppColor.authBg,
-                  borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.add_rounded,
-                  color: AppColor.authButton, size: 22),
+                color: AppColor.authBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                color: AppColor.authButton,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 14),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppText('Add a new address',
-                    fontSize: FontSizes.regular,
-                    fontWeight: FontWeights.semiBold,
-                    color: AppColor.darkGrey),
+                AppText(
+                  'Add a new address',
+                  fontSize: FontSizes.regular,
+                  fontWeight: FontWeights.semiBold,
+                  color: AppColor.darkGrey,
+                ),
                 const SizedBox(height: 2),
-                AppText('Add another service location',
-                    fontSize: FontSizes.small, color: AppColor.grey),
+                AppText(
+                  'Add another service location',
+                  fontSize: FontSizes.small,
+                  color: AppColor.grey,
+                ),
               ],
             ),
           ],
@@ -876,7 +957,11 @@ class _BottomBar extends StatelessWidget {
     return Container(
       color: AppColor.authBg,
       padding: EdgeInsets.fromLTRB(
-          20, 12, 20, MediaQuery.of(context).padding.bottom + 16),
+        20,
+        12,
+        20,
+        MediaQuery.of(context).padding.bottom + 16,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -885,17 +970,21 @@ class _BottomBar extends StatelessWidget {
             height: 52,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    enabled ? AppColor.authButton : AppColor.mediumGrey,
+                backgroundColor: enabled
+                    ? AppColor.authButton
+                    : AppColor.mediumGrey,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               onPressed: enabled ? onTap : null,
-              child: AppText(label,
-                  fontSize: FontSizes.regular,
-                  fontWeight: FontWeights.semiBold,
-                  color: AppColor.white),
+              child: AppText(
+                label,
+                fontSize: FontSizes.regular,
+                fontWeight: FontWeights.semiBold,
+                color: AppColor.white,
+              ),
             ),
           ),
           if (onChangeProvider != null) ...[
@@ -953,13 +1042,19 @@ class _CalendarCard extends StatelessWidget {
     final maxMonthLimit = DateTime(maxDate.year, maxDate.month);
 
     final currentMonth = DateTime(visibleMonth.year, visibleMonth.month);
-    final isLeftDisabled = currentMonth.isBefore(minMonth) || currentMonth.isAtSameMomentAs(minMonth);
-    final isRightDisabled = currentMonth.isAfter(maxMonthLimit) || currentMonth.isAtSameMomentAs(maxMonthLimit);
+    final isLeftDisabled =
+        currentMonth.isBefore(minMonth) ||
+        currentMonth.isAtSameMomentAs(minMonth);
+    final isRightDisabled =
+        currentMonth.isAfter(maxMonthLimit) ||
+        currentMonth.isAtSameMomentAs(maxMonthLimit);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: AppColor.white, borderRadius: BorderRadius.circular(16)),
+        color: AppColor.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Column(
         children: [
           Row(
@@ -969,20 +1064,32 @@ class _CalendarCard extends StatelessWidget {
                 onTap: isLeftDisabled ? null : () => onMonthChanged(-1),
                 child: Padding(
                   padding: const EdgeInsets.all(6),
-                  child: Icon(Icons.chevron_left_rounded,
-                      color: isLeftDisabled ? AppColor.mediumGrey : AppColor.darkGrey, size: 22),
+                  child: Icon(
+                    Icons.chevron_left_rounded,
+                    color: isLeftDisabled
+                        ? AppColor.mediumGrey
+                        : AppColor.darkGrey,
+                    size: 22,
+                  ),
                 ),
               ),
-              AppText(DateFormat('MMMM yyyy').format(visibleMonth),
-                  fontSize: FontSizes.regular,
-                  fontWeight: FontWeights.semiBold,
-                  color: AppColor.darkGrey),
+              AppText(
+                DateFormat('MMMM yyyy').format(visibleMonth),
+                fontSize: FontSizes.regular,
+                fontWeight: FontWeights.semiBold,
+                color: AppColor.darkGrey,
+              ),
               GestureDetector(
                 onTap: isRightDisabled ? null : () => onMonthChanged(1),
                 child: Padding(
                   padding: const EdgeInsets.all(6),
-                  child: Icon(Icons.chevron_right_rounded,
-                      color: isRightDisabled ? AppColor.mediumGrey : AppColor.darkGrey, size: 22),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    color: isRightDisabled
+                        ? AppColor.mediumGrey
+                        : AppColor.darkGrey,
+                    size: 22,
+                  ),
                 ),
               ),
             ],
@@ -990,14 +1097,18 @@ class _CalendarCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
-                .map((d) => Expanded(
-                      child: Center(
-                        child: AppText(d,
-                            fontSize: 11,
-                            fontWeight: FontWeights.semiBold,
-                            color: AppColor.grey),
+                .map(
+                  (d) => Expanded(
+                    child: Center(
+                      child: AppText(
+                        d,
+                        fontSize: 11,
+                        fontWeight: FontWeights.semiBold,
+                        color: AppColor.grey,
                       ),
-                    ))
+                    ),
+                  ),
+                )
                 .toList(),
           ),
           const SizedBox(height: 8),
@@ -1023,46 +1134,51 @@ class _CalendarCard extends StatelessWidget {
       final date = DateTime(visibleMonth.year, visibleMonth.month, day);
       final isPast = date.isBefore(todayMidnight);
       final isAfterLimit = date.isAfter(maxDateMidnight);
-      
+
       final dateStr = DateFormat('yyyy-MM-dd').format(date);
       final isUnavailable = unavailableDates.contains(dateStr);
-      
+
       final isDisabled = isPast || isAfterLimit || isUnavailable;
-      final isTapEnabled = !isPast && !isAfterLimit && (!isUnavailable || isRescheduling);
-      
-      final isSelected = date.year == selectedDate.year &&
+      final isTapEnabled =
+          !isPast && !isAfterLimit && (!isUnavailable || isRescheduling);
+
+      final isSelected =
+          date.year == selectedDate.year &&
           date.month == selectedDate.month &&
           date.day == selectedDate.day;
-      final isToday = date.year == today.year &&
+      final isToday =
+          date.year == today.year &&
           date.month == today.month &&
           date.day == today.day;
 
-      cells.add(GestureDetector(
-        onTap: isTapEnabled ? () => onDateSelected(date) : null,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          margin: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColor.authButton : Colors.transparent,
-            shape: BoxShape.circle,
-            border: isToday && !isSelected
-                ? Border.all(color: AppColor.authButton, width: 1.5)
-                : null,
-          ),
-          child: Center(
-            child: AppText('$day',
+      cells.add(
+        GestureDetector(
+          onTap: isTapEnabled ? () => onDateSelected(date) : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            margin: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColor.authButton : Colors.transparent,
+              shape: BoxShape.circle,
+              border: isToday && !isSelected
+                  ? Border.all(color: AppColor.authButton, width: 1.5)
+                  : null,
+            ),
+            child: Center(
+              child: AppText(
+                '$day',
                 fontSize: 13,
-                fontWeight: isSelected
-                    ? FontWeights.bold
-                    : FontWeights.regular,
+                fontWeight: isSelected ? FontWeights.bold : FontWeights.regular,
                 color: isSelected
                     ? AppColor.white
                     : isDisabled
-                        ? AppColor.mediumGrey
-                        : AppColor.darkGrey),
+                    ? AppColor.mediumGrey
+                    : AppColor.darkGrey,
+              ),
+            ),
           ),
         ),
-      ));
+      );
     }
 
     return GridView.count(
@@ -1125,9 +1241,10 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
       debugPrint("BookingScreen: error in _useCurrentLocation = $e");
       if (mounted) {
         FunctionalComponent.showSnackBar(
-            context: context,
-            title: e.toString().replaceFirst('Exception: ', ''),
-            success: false);
+          context: context,
+          title: e.toString().replaceFirst('Exception: ', ''),
+          success: false,
+        );
       }
     } finally {
       if (mounted) {
@@ -1138,9 +1255,7 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
 
   Future<void> _selectAddressFromSearch(BuildContext context) async {
     final result = await Navigator.of(context).push<Map<String, String>>(
-      MaterialPageRoute(
-        builder: (_) => const AddressSearchScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const AddressSearchScreen()),
     );
     if (result != null && mounted) {
       setState(() {
@@ -1165,13 +1280,17 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
       final addr = ap.addresses.first;
       Navigator.of(context).pop();
       FunctionalComponent.showSnackBar(
-          context: context,
-          title: 'Address saved!',
-          success: true);
+        context: context,
+        title: 'Address saved!',
+        success: true,
+      );
       widget.onSaved?.call(addr);
     } else {
       FunctionalComponent.showSnackBar(
-          context: context, title: ap.saveError, success: false);
+        context: context,
+        title: ap.saveError,
+        success: false,
+      );
       ap.resetSave();
     }
   }
@@ -1180,13 +1299,15 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-          color: AppColor.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        color: AppColor.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 24),
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1196,83 +1317,103 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                  color: AppColor.mediumGrey,
-                  borderRadius: BorderRadius.circular(2)),
+                color: AppColor.mediumGrey,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           const SizedBox(height: 20),
-          Row(children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                  color: AppColor.authBg, shape: BoxShape.circle),
-              child: const Icon(Icons.location_on_rounded,
-                  color: AppColor.authButton, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                AppText('Add Your Address',
-                    fontSize: FontSizes.medium,
-                    fontWeight: FontWeights.bold,
-                    color: AppColor.darkGrey),
-                AppText('Required to proceed with booking',
-                    fontSize: FontSizes.small, color: AppColor.grey),
-              ]),
-            ),
-            // Find My Location button
-            GestureDetector(
-              onTap: _isLocating ? null : _useCurrentLocation,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-                decoration: BoxDecoration(
-                  color: AppColor.authButton.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: AppColor.authBg,
+                  shape: BoxShape.circle,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: const Icon(
+                  Icons.location_on_rounded,
+                  color: AppColor.authButton,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _isLocating
-                        ? const SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(
-                              color: AppColor.authButton,
-                              strokeWidth: 1.5,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.my_location_rounded,
-                            color: AppColor.authButton,
-                            size: 12,
-                          ),
-                    const SizedBox(width: 6),
                     AppText(
-                      _isLocating ? 'Locating...' : 'Find my location',
-                      fontSize: 11,
-                      fontWeight: FontWeights.semiBold,
-                      color: AppColor.authButton,
+                      'Add Your Address',
+                      fontSize: FontSizes.medium,
+                      fontWeight: FontWeights.bold,
+                      color: AppColor.darkGrey,
+                    ),
+                    AppText(
+                      'Required to proceed with booking',
+                      fontSize: FontSizes.small,
+                      color: AppColor.grey,
                     ),
                   ],
                 ),
               ),
-            ),
-          ]),
+              // Find My Location button
+              GestureDetector(
+                onTap: _isLocating ? null : _useCurrentLocation,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 6,
+                    horizontal: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColor.authButton.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _isLocating
+                          ? const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                color: AppColor.authButton,
+                                strokeWidth: 1.5,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.my_location_rounded,
+                              color: AppColor.authButton,
+                              size: 12,
+                            ),
+                      const SizedBox(width: 6),
+                      AppText(
+                        _isLocating ? 'Locating...' : 'Find my location',
+                        fontSize: 11,
+                        fontWeight: FontWeights.semiBold,
+                        color: AppColor.authButton,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 24),
           Form(
             key: _formKey,
-            child: Column(children: [
-              _Field(
+            child: Column(
+              children: [
+                _Field(
                   ctrl: _nameCtrl,
                   label: 'Address Name',
                   hint: 'e.g. Home, Work',
                   icon: Icons.home_outlined,
-                  validator: (v) => v == null || v.trim().isEmpty
-                      ? 'Required'
-                      : null),
-              const SizedBox(height: 14),
-              _Field(
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: 14),
+                _Field(
                   ctrl: _streetCtrl,
                   label: 'Street Address',
                   hint: 'Tap to search address',
@@ -1290,35 +1431,38 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
                       ),
                     ),
                   ),
-                  validator: (v) => v == null || v.trim().isEmpty
-                      ? 'Required'
-                      : null),
-              const SizedBox(height: 14),
-              Row(children: [
-                Expanded(
-                  child: _Field(
-                      ctrl: _zipCtrl,
-                      label: 'ZIP Code',
-                      hint: '90210',
-                      icon: Icons.pin_drop_outlined,
-                      keyboardType: TextInputType.number,
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Required'
-                          : null),
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _Field(
-                      ctrl: _cityCtrl,
-                      label: 'City',
-                      hint: 'Raleigh',
-                      icon: Icons.location_city_outlined,
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Required'
-                          : null),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _Field(
+                        ctrl: _zipCtrl,
+                        label: 'ZIP Code',
+                        hint: '90210',
+                        icon: Icons.pin_drop_outlined,
+                        keyboardType: TextInputType.number,
+                        validator: (v) =>
+                            v == null || v.trim().isEmpty ? 'Required' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _Field(
+                        ctrl: _cityCtrl,
+                        label: 'City',
+                        hint: 'Raleigh',
+                        icon: Icons.location_city_outlined,
+                        validator: (v) =>
+                            v == null || v.trim().isEmpty ? 'Required' : null,
+                      ),
+                    ),
+                  ],
                 ),
-              ]),
-            ]),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
           Consumer<AddressProvider>(
@@ -1327,21 +1471,28 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
               height: 52,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColor.authButton,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14))),
+                  backgroundColor: AppColor.authButton,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
                 onPressed: ap.isSaving ? null : _submit,
                 child: ap.isSaving
                     ? const SizedBox(
                         width: 22,
                         height: 22,
                         child: CircularProgressIndicator(
-                            color: AppColor.white, strokeWidth: 2.5))
-                    : AppText('Save Address',
+                          color: AppColor.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : AppText(
+                        'Save Address',
                         fontSize: FontSizes.regular,
                         fontWeight: FontWeights.semiBold,
-                        color: AppColor.white),
+                        color: AppColor.white,
+                      ),
               ),
             ),
           ),
@@ -1393,29 +1544,33 @@ class _Field extends StatelessWidget {
         prefixIcon: Icon(icon, size: 18, color: AppColor.grey),
         suffixIcon: suffixIcon,
         labelStyle: const TextStyle(fontSize: 13, color: AppColor.grey),
-        hintStyle:
-            const TextStyle(fontSize: 13, color: AppColor.mediumGrey),
+        hintStyle: const TextStyle(fontSize: 13, color: AppColor.mediumGrey),
         filled: true,
         fillColor: const Color(0xFFF8F8F8),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColor.lightGrey)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColor.lightGrey),
+        ),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColor.lightGrey)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColor.lightGrey),
+        ),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(
-                color: AppColor.authButton, width: 1.5)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColor.authButton, width: 1.5),
+        ),
         errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.red)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
         focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: Colors.red, width: 1.5)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        ),
       ),
     );
   }
@@ -1439,34 +1594,48 @@ class _ErrorView extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: const BoxDecoration(
-                  color: AppColor.authBg, shape: BoxShape.circle),
-              child: const Icon(Icons.wifi_off_rounded,
-                  color: AppColor.authButton, size: 32),
+                color: AppColor.authBg,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                color: AppColor.authButton,
+                size: 32,
+              ),
             ),
             const SizedBox(height: 16),
-            AppText('Failed to load',
-                fontSize: FontSizes.medium,
-                fontWeight: FontWeights.semiBold,
-                color: AppColor.darkGrey),
+            AppText(
+              'Failed to load',
+              fontSize: FontSizes.medium,
+              fontWeight: FontWeights.semiBold,
+              color: AppColor.darkGrey,
+            ),
             const SizedBox(height: 8),
-            AppText(message,
-                fontSize: FontSizes.small,
-                color: AppColor.grey,
-                align: TextAlign.center,
-                maxLines: 3),
+            AppText(
+              message,
+              fontSize: FontSizes.small,
+              color: AppColor.grey,
+              align: TextAlign.center,
+              maxLines: 3,
+            ),
             const SizedBox(height: 24),
             GestureDetector(
               onTap: onRetry,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 28, vertical: 13),
+                  horizontal: 28,
+                  vertical: 13,
+                ),
                 decoration: BoxDecoration(
-                    color: AppColor.authButton,
-                    borderRadius: BorderRadius.circular(10)),
-                child: AppText('Retry',
-                    fontSize: FontSizes.regular,
-                    fontWeight: FontWeights.semiBold,
-                    color: AppColor.white),
+                  color: AppColor.authButton,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: AppText(
+                  'Retry',
+                  fontSize: FontSizes.regular,
+                  fontWeight: FontWeights.semiBold,
+                  color: AppColor.white,
+                ),
               ),
             ),
           ],

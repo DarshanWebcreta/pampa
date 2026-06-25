@@ -943,7 +943,7 @@ class _VacationsBottomSheet extends StatelessWidget {
                   },
                   icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
                   label: const Text(
-                    'Add Vacation',
+                    'Add Time Off',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 14,

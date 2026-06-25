@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pampa/core/routes/routes.dart';
@@ -21,12 +20,12 @@ import 'package:pampa/features/services/presentation/services_screen.dart';
 import 'package:pampa/features/booking/presentation/booking_screen.dart';
 import 'package:pampa/features/booking/presentation/provider/booking_provider.dart';
 import 'package:pampa/features/my_bookings/presentation/booking_detail_screen.dart';
-import 'package:pampa/features/chat/presentation/chat_screen.dart' show BookingChatScreen;
+import 'package:pampa/features/chat/presentation/chat_screen.dart'
+    show BookingChatScreen;
 import 'package:pampa/features/provider_home/presentation/provider_home_screen.dart';
 import 'package:provider/provider.dart';
 
 class AppRouter {
-
   // ── Auth-gate routes (require a token) ──────────────────────────────────────
   static const _protectedRoutes = {
     RouteNames.mainScreen,
@@ -50,7 +49,8 @@ class AppRouter {
         : RouteNames.mainScreen;
   }
 
-  static final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+  static final RouteObserver<ModalRoute<void>> routeObserver =
+      RouteObserver<ModalRoute<void>>();
   static final navigatorKey = GlobalKey<NavigatorState>();
 
   static GoRouter router = GoRouter(
@@ -80,7 +80,6 @@ class AppRouter {
       return null; // no redirect needed
     },
     routes: [
-
       GoRoute(
         path: RouteNames.initial,
         name: RouteNames.initial,
@@ -155,12 +154,15 @@ class AppRouter {
           ProviderModel? preSelectedProvider;
           int? rescheduleBookingId;
           int? rescheduleAddressId;
+          bool isBookAgain = false;
 
           if (extra is Map<String, dynamic>) {
             serviceId = extra['serviceId'] as int;
-            preSelectedProvider = extra['preSelectedProvider'] as ProviderModel?;
+            preSelectedProvider =
+                extra['preSelectedProvider'] as ProviderModel?;
             rescheduleBookingId = extra['rescheduleBookingId'] as int?;
             rescheduleAddressId = extra['rescheduleAddressId'] as int?;
+            isBookAgain = extra['isBookAgain'] as bool? ?? false;
           } else {
             serviceId = extra as int;
           }
@@ -172,6 +174,7 @@ class AppRouter {
               preSelectedProvider: preSelectedProvider,
               rescheduleBookingId: rescheduleBookingId,
               rescheduleAddressId: rescheduleAddressId,
+              isBookAgain: isBookAgain,
             ),
           );
         },
@@ -221,7 +224,7 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           final email = extra?['email'] as String? ?? '';
-          final otp   = extra?['otp']   as String? ?? '';
+          final otp = extra?['otp'] as String? ?? '';
           return ResetPasswordScreen(email: email, otp: otp);
         },
       ),
@@ -231,14 +234,11 @@ class AppRouter {
         name: RouteNames.changePasswordRoute,
         builder: (context, state) => const ChangePasswordScreen(),
       ),
-
     ],
 
     errorBuilder: (context, state) {
       return Scaffold(
-        body: Center(
-          child: Text('Invalid route: ${state.name}'),
-        ),
+        body: Center(child: Text('Invalid route: ${state.name}')),
       );
     },
   );

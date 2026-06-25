@@ -83,7 +83,10 @@ class _MyBookingsTabState extends State<MyBookingsTab> {
     });
   }
 
-  Future<void> _pickDate(BuildContext context, MyBookingsProvider provider) async {
+  Future<void> _pickDate(
+    BuildContext context,
+    MyBookingsProvider provider,
+  ) async {
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
@@ -99,9 +102,7 @@ class _MyBookingsTabState extends State<MyBookingsTab> {
               onSurface: AppColor.darkGrey,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: AppColor.authButton,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColor.authButton),
             ),
           ),
           child: child!,
@@ -139,12 +140,16 @@ class _MyBookingsTabState extends State<MyBookingsTab> {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: provider.selectedDate != null ? AppColor.authButton : AppColor.lightGrey,
+                        color: provider.selectedDate != null
+                            ? AppColor.authButton
+                            : AppColor.lightGrey,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.calendar_month_rounded,
-                        color: provider.selectedDate != null ? AppColor.white : AppColor.darkGrey,
+                        color: provider.selectedDate != null
+                            ? AppColor.white
+                            : AppColor.darkGrey,
                         size: 18,
                       ),
                     ),
@@ -195,7 +200,11 @@ class _MyBookingsTabState extends State<MyBookingsTab> {
                           color: AppColor.authButton.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.close, size: 14, color: AppColor.authButton),
+                        child: const Icon(
+                          Icons.close,
+                          size: 14,
+                          color: AppColor.authButton,
+                        ),
                       ),
                     ),
                   ],
@@ -594,16 +603,20 @@ class _AppointmentCard extends StatelessWidget {
                       ),
                     ),
                   if (booking.rescheduleBook) ...[
-                    if (_showRetryPayment || (booking.isConfirmed && booking.providerId != null))
+                    if (_showRetryPayment ||
+                        (booking.isConfirmed && booking.providerId != null))
                       const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () {
-                        context.push(RouteNames.bookingDetail, extra: {
-                          'serviceId': booking.service.id,
-                          'preSelectedProvider': booking.provider,
-                          'rescheduleBookingId': booking.id,
-                          'rescheduleAddressId': booking.addressId,
-                        });
+                        context.push(
+                          RouteNames.bookingDetail,
+                          extra: {
+                            'serviceId': booking.service.id,
+                            'preSelectedProvider': booking.provider,
+                            'rescheduleBookingId': booking.id,
+                            'rescheduleAddressId': booking.addressId,
+                          },
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -637,11 +650,15 @@ class _AppointmentCard extends StatelessWidget {
                   if (showBookAgain)
                     Row(
                       children: [
-                        const SizedBox(width: 10,),
+                        const SizedBox(width: 10),
                         GestureDetector(
                           onTap: () => context.push(
                             RouteNames.bookingDetail,
-                            extra: booking.service.id,
+                            extra: {
+                              'serviceId': booking.service.id,
+                              'preSelectedProvider': booking.provider,
+                              'isBookAgain': true,
+                            },
                           ),
                           child: AppText(
                             'Book Again',

@@ -120,13 +120,23 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.authBg,
+      appBar: AppBar(
+        backgroundColor: AppColor.authBg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          onPressed: () => context.go(RouteNames.userType),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 18,
+            color: AppColor.darkGrey,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
-            children: [
-              _buildHeader(context),
-              _buildFormCard(context),
-            ],
+            children: [_buildHeader(context), _buildFormCard(context)],
           ),
         ),
       ),
@@ -136,15 +146,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-      decoration: const BoxDecoration(
-        color: AppColor.authBg,
-      ),
+      padding: const EdgeInsets.only(top: 8, bottom: 28, left: 24, right: 24),
+      decoration: const BoxDecoration(color: AppColor.authBg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          AssetImageView(path: ImageStrings.appDesignLogo,height: 50,),
-
+          AssetImageView(path: ImageStrings.appDesignLogo, height: 50),
 
           // AppText(
           //   'Welcome Back',
@@ -152,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
           //   fontWeight: FontWeight.w700,
           //   color: AppColor.authButton,
           // ),
-           const SizedBox(height: 6),
+          const SizedBox(height: 6),
           AppText(
             'Sign in to continue',
             fontSize: 18,
@@ -205,7 +212,11 @@ class _LoginScreenState extends State<LoginScreen> {
               autovalidate: true,
               prefix: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(Icons.email_outlined, color: AppColor.grey, size: 20),
+                child: Icon(
+                  Icons.email_outlined,
+                  color: AppColor.grey,
+                  size: 20,
+                ),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -242,14 +253,21 @@ class _LoginScreenState extends State<LoginScreen> {
               action: TextInputAction.done,
               prefix: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(Icons.lock_outline_rounded, color: AppColor.grey, size: 20),
+                child: Icon(
+                  Icons.lock_outline_rounded,
+                  color: AppColor.grey,
+                  size: 20,
+                ),
               ),
               suffixBtn: GestureDetector(
-                onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+                onTap: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Icon(
-                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
                     color: AppColor.grey,
                     size: 20,
                   ),
@@ -306,8 +324,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Expanded(
                       child: _SocialButton(
-
-                        icon: Image.asset(ImageStrings.googleLogo,height: 20,width: 20,),
+                        icon: Image.asset(
+                          ImageStrings.googleLogo,
+                          height: 20,
+                          width: 20,
+                        ),
                         label: 'Google',
                         onTap: auth.isLoading ? null : _onGoogleSignIn,
                       ),
@@ -315,7 +336,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _SocialButton(
-                        icon: const Icon(Icons.apple, size: 20, color: Color(0xFF1C1C1E)),
+                        icon: const Icon(
+                          Icons.apple,
+                          size: 20,
+                          color: Color(0xFF1C1C1E),
+                        ),
                         label: 'Apple',
                         onTap: auth.isLoading ? null : () {},
                       ),
@@ -357,7 +382,12 @@ class _LoginScreenState extends State<LoginScreen> {
         Expanded(child: Divider(color: AppColor.mediumGrey, thickness: 0.8)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: AppText('OR', fontSize: 12, color: AppColor.grey, fontWeight: FontWeight.w500),
+          child: AppText(
+            'OR',
+            fontSize: 12,
+            color: AppColor.grey,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         Expanded(child: Divider(color: AppColor.mediumGrey, thickness: 0.8)),
       ],
@@ -371,7 +401,11 @@ class _SocialButton extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const _SocialButton({required this.icon, required this.label, required this.onTap});
+  const _SocialButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -382,7 +416,9 @@ class _SocialButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           backgroundColor: AppColor.white,
           side: const BorderSide(color: AppColor.mediumGrey, width: 1),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           padding: EdgeInsets.zero,
         ),
         child: Row(
@@ -472,8 +508,11 @@ class _AccountPendingDialogState extends State<_AccountPendingDialog>
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    const Icon(Icons.lock_clock_outlined,
-                        size: 40, color: Color(0xFFF59E0B)),
+                    const Icon(
+                      Icons.lock_clock_outlined,
+                      size: 40,
+                      color: Color(0xFFF59E0B),
+                    ),
                     Positioned(
                       bottom: 10,
                       right: 10,
@@ -485,8 +524,11 @@ class _AccountPendingDialogState extends State<_AccountPendingDialog>
                           shape: BoxShape.circle,
                           border: Border.all(color: AppColor.white, width: 2),
                         ),
-                        child: const Icon(Icons.hourglass_top_rounded,
-                            size: 11, color: Colors.white),
+                        child: const Icon(
+                          Icons.hourglass_top_rounded,
+                          size: 11,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
@@ -507,8 +549,10 @@ class _AccountPendingDialogState extends State<_AccountPendingDialog>
 
               // ── Badge ─────────────────────────────────────────────────
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEF3C7),
                   borderRadius: BorderRadius.circular(20),
@@ -516,8 +560,11 @@ class _AccountPendingDialogState extends State<_AccountPendingDialog>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.pending_outlined,
-                        size: 13, color: Color(0xFFF59E0B)),
+                    const Icon(
+                      Icons.pending_outlined,
+                      size: 13,
+                      color: Color(0xFFF59E0B),
+                    ),
                     const SizedBox(width: 5),
                     AppText(
                       'Awaiting Admin Approval',
