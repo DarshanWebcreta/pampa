@@ -46,7 +46,8 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete Address'),
         content: Text(
-            'Remove "${address.addressName}" from your saved addresses?'),
+          'Remove "${address.addressName}" from your saved addresses?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -54,8 +55,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Delete',
-                style: TextStyle(color: AppColor.deepRed)),
+            child: Text('Delete', style: TextStyle(color: AppColor.deepRed)),
           ),
         ],
       ),
@@ -101,14 +101,19 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Please add at least one address to continue.'),
+                    content: Text(
+                      'Please add at least one address to continue.',
+                    ),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               }
             },
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                size: 18, color: AppColor.darkGrey),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: AppColor.darkGrey,
+            ),
           ),
           title: AppText(
             'Saved Addresses',
@@ -133,105 +138,124 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
             ),
           ],
         ),
-      body: Consumer<AddressProvider>(
-        builder: (context, provider, _) {
-          if (provider.fetchStatus == AddressFetchStatus.loading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColor.authButton),
-            );
-          }
+        body: Consumer<AddressProvider>(
+          builder: (context, provider, _) {
+            if (provider.fetchStatus == AddressFetchStatus.loading) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColor.authButton),
+              );
+            }
 
-          if (provider.fetchStatus == AddressFetchStatus.error) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.wifi_off_rounded,
-                        color: AppColor.authButton, size: 40),
-                    const SizedBox(height: 12),
-                    AppText(provider.fetchError,
+            if (provider.fetchStatus == AddressFetchStatus.error) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.wifi_off_rounded,
+                        color: AppColor.authButton,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 12),
+                      AppText(
+                        provider.fetchError,
                         fontSize: FontSizes.small,
                         color: AppColor.grey,
                         align: TextAlign.center,
-                        maxLines: 3),
-                    const SizedBox(height: 16),
-                    GestureDetector(
-                      onTap: provider.fetchAddresses,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: AppColor.authButton,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: AppText('Retry',
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 16),
+                      GestureDetector(
+                        onTap: provider.fetchAddresses,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColor.authButton,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: AppText(
+                            'Retry',
                             fontSize: FontSizes.small,
                             fontWeight: FontWeights.semiBold,
-                            color: AppColor.white),
+                            color: AppColor.white,
+                          ),
+                        ),
                       ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            if (provider.addresses.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.location_off_outlined,
+                      color: AppColor.authButton,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 12),
+                    AppText(
+                      'No saved addresses',
+                      fontSize: FontSizes.regular,
+                      fontWeight: FontWeights.semiBold,
+                      color: AppColor.darkGrey,
+                    ),
+                    const SizedBox(height: 6),
+                    AppText(
+                      'Tap + to add your first address',
+                      fontSize: FontSizes.small,
+                      color: AppColor.grey,
                     ),
                   ],
                 ),
-              ),
-            );
-          }
+              );
+            }
 
-          if (provider.addresses.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.location_off_outlined,
-                      color: AppColor.authButton, size: 48),
-                  const SizedBox(height: 12),
-                  AppText('No saved addresses',
-                      fontSize: FontSizes.regular,
-                      fontWeight: FontWeights.semiBold,
-                      color: AppColor.darkGrey),
-                  const SizedBox(height: 6),
-                  AppText('Tap + to add your first address',
-                      fontSize: FontSizes.small, color: AppColor.grey),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            color: AppColor.authButton,
-            onRefresh: provider.fetchAddresses,
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-              itemCount: provider.addresses.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (_, i) {
-                final address = provider.addresses[i];
-                return _AddressCard(
-                  address: address,
-                  onEdit: () => _openAddSheet(address),
-                  onDelete: () => _confirmDelete(address),
-                  onSetDefault: address.isDefault
-                      ? null
-                      : () async {
-                          final ok = await provider
-                              .setDefaultAddress(address.id);
-                          if (!ok && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Failed to set default.'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
+            return RefreshIndicator(
+              color: AppColor.authButton,
+              onRefresh: provider.fetchAddresses,
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                itemCount: provider.addresses.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (_, i) {
+                  final address = provider.addresses[i];
+                  return _AddressCard(
+                    address: address,
+                    onEdit: () => _openAddSheet(address),
+                    onDelete: () => _confirmDelete(address),
+                    onSetDefault: address.isDefault
+                        ? null
+                        : () async {
+                            final ok = await provider.setDefaultAddress(
+                              address.id,
                             );
-                          }
-                        },
-                );
-              },
-            ),
-          );
-        },
+                            if (!ok && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Failed to set default.'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
-    ));
+    );
   }
 }
 
@@ -315,10 +339,13 @@ class _AddressCard extends StatelessWidget {
                               const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppColor.authButton
-                                      .withValues(alpha: 0.1),
+                                  color: AppColor.authButton.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: AppText(
@@ -341,7 +368,8 @@ class _AddressCard extends StatelessWidget {
                         AppText(
                           [
                             address.city,
-                            if ((address.state ?? '').isNotEmpty) address.state!,
+                            if ((address.state ?? '').isNotEmpty)
+                              address.state!,
                             address.zipCode,
                           ].where((s) => s.isNotEmpty).join(', '),
                           fontSize: FontSizes.small,
@@ -387,8 +415,11 @@ class _AddressCard extends StatelessWidget {
                 ],
                 TextButton.icon(
                   onPressed: onDelete,
-                  icon: Icon(Icons.delete_outline_rounded,
-                      size: 16, color: AppColor.deepRed),
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    size: 16,
+                    color: AppColor.deepRed,
+                  ),
                   label: AppText(
                     'Delete',
                     fontSize: FontSizes.small,
@@ -396,8 +427,10 @@ class _AddressCard extends StatelessWidget {
                     color: AppColor.deepRed,
                   ),
                   style: TextButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                 ),
               ],
@@ -483,9 +516,7 @@ class _AddressSheetState extends State<_AddressSheet> {
 
   Future<void> _selectAddressFromSearch(BuildContext context) async {
     final result = await Navigator.of(context).push<Map<String, String>>(
-      MaterialPageRoute(
-        builder: (_) => const AddressSearchScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const AddressSearchScreen()),
     );
     if (result != null && mounted) {
       setState(() {
@@ -574,7 +605,10 @@ class _AddressSheetState extends State<_AddressSheet> {
                 GestureDetector(
                   onTap: _isLocating ? null : _useCurrentLocation,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 6,
+                      horizontal: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColor.authButton.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
@@ -670,11 +704,12 @@ class _AddressSheetState extends State<_AddressSheet> {
               Row(
                 children: [
                   Checkbox(
-                     value: _isDefault,
-                     onChanged: (v) => setState(() => _isDefault = v ?? false),
-                     activeColor: AppColor.authButton,
-                     shape: RoundedRectangleBorder(
-                         borderRadius: BorderRadius.circular(4)),
+                    value: _isDefault,
+                    onChanged: (v) => setState(() => _isDefault = v ?? false),
+                    activeColor: AppColor.authButton,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
                   AppText(
                     'Set as default address',
@@ -696,10 +731,12 @@ class _AddressSheetState extends State<_AddressSheet> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColor.authButton,
                       foregroundColor: AppColor.white,
-                      disabledBackgroundColor:
-                          AppColor.authButton.withValues(alpha: 0.5),
+                      disabledBackgroundColor: AppColor.authButton.withValues(
+                        alpha: 0.5,
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       elevation: 0,
                     ),
                     child: saving
@@ -707,7 +744,9 @@ class _AddressSheetState extends State<_AddressSheet> {
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
-                                color: AppColor.white, strokeWidth: 2.5),
+                              color: AppColor.white,
+                              strokeWidth: 2.5,
+                            ),
                           )
                         : AppText(
                             _isEditing ? 'Update Address' : 'Save Address',
@@ -756,10 +795,25 @@ class _Field extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppText(label,
-            fontSize: FontSizes.small,
-            fontWeight: FontWeights.medium,
-            color: AppColor.grey),
+        Text.rich(
+          TextSpan(
+            text: label,
+            style: const TextStyle(
+              fontSize: FontSizes.small,
+              fontWeight: FontWeights.medium,
+              color: AppColor.grey,
+            ),
+            children: const [
+              TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
@@ -775,30 +829,34 @@ class _Field extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(
-                fontSize: FontSizes.regular, color: AppColor.mediumGrey),
+              fontSize: FontSizes.regular,
+              color: AppColor.mediumGrey,
+            ),
             filled: true,
             fillColor: AppColor.authBg,
             suffixIcon: suffixIcon,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColor.deepRed, width: 1),
+              borderSide: const BorderSide(color: AppColor.deepRed, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColor.authButton, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColor.authButton,
+                width: 1.5,
+              ),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColor.deepRed, width: 1.5),
+              borderSide: const BorderSide(color: AppColor.deepRed, width: 1.5),
             ),
           ),
         ),

@@ -19,8 +19,7 @@ class PersonalInformationScreen extends StatefulWidget {
       _PersonalInformationScreenState();
 }
 
-class _PersonalInformationScreenState
-    extends State<PersonalInformationScreen> {
+class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _firstNameCtrl;
@@ -53,7 +52,8 @@ class _PersonalInformationScreenState
     if (rawMobile.startsWith(matchedCountry.dial)) {
       _selectedCountry = matchedCountry;
       _mobileCtrl = TextEditingController(
-          text: rawMobile.substring(matchedCountry.dial.length));
+        text: rawMobile.substring(matchedCountry.dial.length),
+      );
     } else {
       _mobileCtrl = TextEditingController(text: rawMobile);
     }
@@ -101,7 +101,9 @@ class _PersonalInformationScreenState
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Remove Photo'),
-        content: const Text('Are you sure you want to remove your profile photo?'),
+        content: const Text(
+          'Are you sure you want to remove your profile photo?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -137,49 +139,6 @@ class _PersonalInformationScreenState
     }
   }
 
-  Future<void> _save() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-
-    final provider = context.read<ProfileProvider>();
-    final success = await provider.updateProfile(
-      firstName: _firstNameCtrl.text.trim(),
-      lastName: _lastNameCtrl.text.trim(),
-      email: _emailCtrl.text.trim(),
-      mobile: '${_selectedCountry.dial}${_mobileCtrl.text.trim()}',
-      streetAddress: _streetCtrl.text.trim(),
-      zipCode: _zipCtrl.text.trim(),
-      city: _cityCtrl.text.trim(),
-      state: _stateCtrl.text.trim(),
-      country: _countryCtrl.text.trim(),
-      photo: _selectedPhoto,
-    );
-
-    if (!mounted) return;
-
-    if (success) {
-      // Re-fetch /customer/me so the profile avatar & all fields
-      // in the profile tab reflect the latest server data.
-      if (mounted) {
-        context.read<ProfileProvider>().fetchProfile(forceRefresh: true);
-      }
-      FunctionalComponent.showSnackBar(
-        context: context,
-        title: 'Profile updated successfully.',
-        success: true,
-      );
-      Navigator.of(context).pop();
-    } else {
-      FunctionalComponent.showSnackBar(
-        context: context,
-        title: provider.updateError.isNotEmpty
-            ? provider.updateError
-            : 'Failed to update profile.',
-        success: false,
-      );
-      provider.resetUpdateStatus();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<ProfileProvider>(
@@ -194,8 +153,11 @@ class _PersonalInformationScreenState
             scrolledUnderElevation: 0,
             leading: IconButton(
               onPressed: isSaving ? null : () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 18, color: AppColor.darkGrey),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 18,
+                color: AppColor.darkGrey,
+              ),
             ),
             title: AppText(
               'Personal Information',
@@ -204,30 +166,7 @@ class _PersonalInformationScreenState
               color: AppColor.darkGrey,
             ),
             centerTitle: false,
-            actions: [
-              isSaving
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(AppColor.authButton),
-                        ),
-                      ),
-                    )
-                  : TextButton(
-                      onPressed: _save,
-                      child: AppText(
-                        'Save',
-                        fontSize: FontSizes.regular,
-                        fontWeight: FontWeights.semiBold,
-                        color: AppColor.authButton,
-                      ),
-                    ),
-              const SizedBox(width: 8),
-            ],
+            actions: const [SizedBox(width: 8)],
           ),
           body: Form(
             key: _formKey,
@@ -239,9 +178,12 @@ class _PersonalInformationScreenState
                   photoUrl: provider.profile?.photoUrl,
                   selectedFile: _selectedPhoto,
                   onTap: _pickPhoto,
-                  onDelete: (provider.profile?.photoUrl != null || _selectedPhoto != null)
+                  onDelete:
+                      (provider.profile?.photoUrl != null ||
+                          _selectedPhoto != null)
                       ? _deletePhoto
                       : null,
+                  isEditable: false,
                 ),
 
                 const SizedBox(height: 24),
@@ -253,6 +195,7 @@ class _PersonalInformationScreenState
                   icon: Icons.person_outline_rounded,
                   label: 'First Name',
                   controller: _firstNameCtrl,
+                  enabled: false,
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Required' : null,
                 ),
@@ -261,6 +204,7 @@ class _PersonalInformationScreenState
                   icon: Icons.person_outline_rounded,
                   label: 'Last Name',
                   controller: _lastNameCtrl,
+                  enabled: false,
                 ),
                 const SizedBox(height: 10),
 
@@ -270,6 +214,7 @@ class _PersonalInformationScreenState
                   label: 'Email Address',
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
+                  enabled: false,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Required';
                     if (!v.contains('@')) return 'Enter a valid email';
@@ -286,8 +231,8 @@ class _PersonalInformationScreenState
                   fillColor: AppColor.white,
                   initialCountry: _selectedCountry,
                   radius: 14,
-                  onCountryChanged: (c) =>
-                      setState(() => _selectedCountry = c),
+                  enabled: false,
+                  onCountryChanged: (c) => setState(() => _selectedCountry = c),
                 ),
 
                 // const SizedBox(height: 24),
@@ -349,14 +294,14 @@ class _PersonalInformationScreenState
   }
 
   Widget _sectionLabel(String label) => Padding(
-        padding: const EdgeInsets.only(left: 4, bottom: 2),
-        child: AppText(
-          label,
-          fontSize: FontSizes.small,
-          fontWeight: FontWeights.medium,
-          color: AppColor.grey,
-        ),
-      );
+    padding: const EdgeInsets.only(left: 4, bottom: 2),
+    child: AppText(
+      label,
+      fontSize: FontSizes.small,
+      fontWeight: FontWeights.medium,
+      color: AppColor.grey,
+    ),
+  );
 }
 
 // ─── Photo picker ─────────────────────────────────────────────────────────────
@@ -366,19 +311,21 @@ class _PhotoPicker extends StatelessWidget {
   final File? selectedFile;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
+  final bool isEditable;
 
   const _PhotoPicker({
     required this.photoUrl,
     required this.selectedFile,
     required this.onTap,
     this.onDelete,
+    this.isEditable = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: GestureDetector(
-        onTap: onTap,
+        onTap: isEditable ? onTap : null,
         child: Stack(
           children: [
             Container(
@@ -396,60 +343,68 @@ class _PhotoPicker extends StatelessWidget {
                 child: selectedFile != null
                     ? Image.file(selectedFile!, fit: BoxFit.cover)
                     : (photoUrl != null && photoUrl!.isNotEmpty)
-                        ? FunctionalComponent.cachedNetworkImage(
-                            photoUrl!,
-                            radius: 45,
-                            fit: BoxFit.cover,
-                          )
-                        : const Icon(
-                            Icons.person_outline_rounded,
-                            size: 40,
-                            color: AppColor.authButton,
-                          ),
+                    ? FunctionalComponent.cachedNetworkImage(
+                        photoUrl!,
+                        radius: 45,
+                        fit: BoxFit.cover,
+                      )
+                    : const Icon(
+                        Icons.person_outline_rounded,
+                        size: 40,
+                        color: AppColor.authButton,
+                      ),
               ),
             ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: GestureDetector(
-                onTap: onTap,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: const BoxDecoration(
-                    color: AppColor.authButton,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.camera_alt_rounded,
-                      size: 14, color: AppColor.white),
-                ),
-              ),
-            ),
-            if (onDelete != null)
+            if (isEditable) ...[
               Positioned(
-                top: 0,
+                bottom: 0,
                 right: 0,
                 child: GestureDetector(
-                  onTap: onDelete,
+                  onTap: onTap,
                   child: Container(
                     width: 28,
                     height: 28,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
+                    decoration: const BoxDecoration(
+                      color: AppColor.authButton,
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
-                    child: const Icon(Icons.delete_outline_rounded,
-                        size: 16, color: Colors.red),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      size: 14,
+                      color: AppColor.white,
+                    ),
                   ),
                 ),
               ),
+              if (onDelete != null)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: onDelete,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline_rounded,
+                        size: 16,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ],
         ),
       ),
@@ -465,6 +420,7 @@ class _FieldCard extends StatelessWidget {
   final TextEditingController controller;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
+  final bool enabled;
 
   const _FieldCard({
     required this.icon,
@@ -472,6 +428,7 @@ class _FieldCard extends StatelessWidget {
     required this.controller,
     this.keyboardType = TextInputType.text,
     this.validator,
+    this.enabled = true,
   });
 
   @override
@@ -497,6 +454,7 @@ class _FieldCard extends StatelessWidget {
             controller: controller,
             keyboardType: keyboardType,
             validator: validator,
+            enabled: enabled,
             style: const TextStyle(
               fontSize: FontSizes.regular,
               color: AppColor.darkGrey,

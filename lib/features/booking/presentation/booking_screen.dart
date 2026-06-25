@@ -1539,7 +1539,20 @@ class _Field extends StatelessWidget {
       onTap: onTap,
       style: const TextStyle(fontSize: 14, color: AppColor.darkGrey),
       decoration: InputDecoration(
-        labelText: label,
+        label: Text.rich(
+          TextSpan(
+            text: label,
+            children: const [
+              TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
         hintText: hint,
         prefixIcon: Icon(icon, size: 18, color: AppColor.grey),
         suffixIcon: suffixIcon,

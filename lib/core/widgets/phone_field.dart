@@ -22,52 +22,52 @@ class CountryCode {
 // ─── Common country list ──────────────────────────────────────────────────────
 
 const List<CountryCode> kCountryCodes = [
-  CountryCode(name: 'United States',    flag: '🇺🇸', dial: '+1',   code: 'US'),
-  CountryCode(name: 'United Kingdom',   flag: '🇬🇧', dial: '+44',  code: 'GB'),
-  CountryCode(name: 'India',            flag: '🇮🇳', dial: '+91',  code: 'IN'),
-  CountryCode(name: 'Canada',           flag: '🇨🇦', dial: '+1',   code: 'CA'),
-  CountryCode(name: 'Australia',        flag: '🇦🇺', dial: '+61',  code: 'AU'),
-  CountryCode(name: 'Germany',          flag: '🇩🇪', dial: '+49',  code: 'DE'),
-  CountryCode(name: 'France',           flag: '🇫🇷', dial: '+33',  code: 'FR'),
-  CountryCode(name: 'Italy',            flag: '🇮🇹', dial: '+39',  code: 'IT'),
-  CountryCode(name: 'Spain',            flag: '🇪🇸', dial: '+34',  code: 'ES'),
-  CountryCode(name: 'Brazil',           flag: '🇧🇷', dial: '+55',  code: 'BR'),
-  CountryCode(name: 'Mexico',           flag: '🇲🇽', dial: '+52',  code: 'MX'),
-  CountryCode(name: 'Japan',            flag: '🇯🇵', dial: '+81',  code: 'JP'),
-  CountryCode(name: 'China',            flag: '🇨🇳', dial: '+86',  code: 'CN'),
-  CountryCode(name: 'South Korea',      flag: '🇰🇷', dial: '+82',  code: 'KR'),
-  CountryCode(name: 'Singapore',        flag: '🇸🇬', dial: '+65',  code: 'SG'),
-  CountryCode(name: 'UAE',              flag: '🇦🇪', dial: '+971', code: 'AE'),
-  CountryCode(name: 'Saudi Arabia',     flag: '🇸🇦', dial: '+966', code: 'SA'),
-  CountryCode(name: 'Pakistan',         flag: '🇵🇰', dial: '+92',  code: 'PK'),
-  CountryCode(name: 'Bangladesh',       flag: '🇧🇩', dial: '+880', code: 'BD'),
-  CountryCode(name: 'Nigeria',          flag: '🇳🇬', dial: '+234', code: 'NG'),
-  CountryCode(name: 'South Africa',     flag: '🇿🇦', dial: '+27',  code: 'ZA'),
-  CountryCode(name: 'Kenya',            flag: '🇰🇪', dial: '+254', code: 'KE'),
-  CountryCode(name: 'Ghana',            flag: '🇬🇭', dial: '+233', code: 'GH'),
-  CountryCode(name: 'Netherlands',      flag: '🇳🇱', dial: '+31',  code: 'NL'),
-  CountryCode(name: 'Switzerland',      flag: '🇨🇭', dial: '+41',  code: 'CH'),
-  CountryCode(name: 'Sweden',           flag: '🇸🇪', dial: '+46',  code: 'SE'),
-  CountryCode(name: 'Norway',           flag: '🇳🇴', dial: '+47',  code: 'NO'),
-  CountryCode(name: 'Denmark',          flag: '🇩🇰', dial: '+45',  code: 'DK'),
-  CountryCode(name: 'Finland',          flag: '🇫🇮', dial: '+358', code: 'FI'),
-  CountryCode(name: 'Poland',           flag: '🇵🇱', dial: '+48',  code: 'PL'),
-  CountryCode(name: 'Turkey',           flag: '🇹🇷', dial: '+90',  code: 'TR'),
-  CountryCode(name: 'Greece',           flag: '🇬🇷', dial: '+30',  code: 'GR'),
-  CountryCode(name: 'Portugal',         flag: '🇵🇹', dial: '+351', code: 'PT'),
-  CountryCode(name: 'Russia',           flag: '🇷🇺', dial: '+7',   code: 'RU'),
-  CountryCode(name: 'Philippines',      flag: '🇵🇭', dial: '+63',  code: 'PH'),
-  CountryCode(name: 'Indonesia',        flag: '🇮🇩', dial: '+62',  code: 'ID'),
-  CountryCode(name: 'Malaysia',         flag: '🇲🇾', dial: '+60',  code: 'MY'),
-  CountryCode(name: 'Thailand',         flag: '🇹🇭', dial: '+66',  code: 'TH'),
-  CountryCode(name: 'Vietnam',          flag: '🇻🇳', dial: '+84',  code: 'VN'),
-  CountryCode(name: 'Egypt',            flag: '🇪🇬', dial: '+20',  code: 'EG'),
-  CountryCode(name: 'Argentina',        flag: '🇦🇷', dial: '+54',  code: 'AR'),
-  CountryCode(name: 'Colombia',         flag: '🇨🇴', dial: '+57',  code: 'CO'),
-  CountryCode(name: 'Chile',            flag: '🇨🇱', dial: '+56',  code: 'CL'),
-  CountryCode(name: 'Peru',             flag: '🇵🇪', dial: '+51',  code: 'PE'),
-  CountryCode(name: 'New Zealand',      flag: '🇳🇿', dial: '+64',  code: 'NZ'),
-  CountryCode(name: 'Ireland',          flag: '🇮🇪', dial: '+353', code: 'IE'),
+  CountryCode(name: 'United States', flag: '🇺🇸', dial: '+1', code: 'US'),
+  CountryCode(name: 'United Kingdom', flag: '🇬🇧', dial: '+44', code: 'GB'),
+  CountryCode(name: 'India', flag: '🇮🇳', dial: '+91', code: 'IN'),
+  CountryCode(name: 'Canada', flag: '🇨🇦', dial: '+1', code: 'CA'),
+  CountryCode(name: 'Australia', flag: '🇦🇺', dial: '+61', code: 'AU'),
+  CountryCode(name: 'Germany', flag: '🇩🇪', dial: '+49', code: 'DE'),
+  CountryCode(name: 'France', flag: '🇫🇷', dial: '+33', code: 'FR'),
+  CountryCode(name: 'Italy', flag: '🇮🇹', dial: '+39', code: 'IT'),
+  CountryCode(name: 'Spain', flag: '🇪🇸', dial: '+34', code: 'ES'),
+  CountryCode(name: 'Brazil', flag: '🇧🇷', dial: '+55', code: 'BR'),
+  CountryCode(name: 'Mexico', flag: '🇲🇽', dial: '+52', code: 'MX'),
+  CountryCode(name: 'Japan', flag: '🇯🇵', dial: '+81', code: 'JP'),
+  CountryCode(name: 'China', flag: '🇨🇳', dial: '+86', code: 'CN'),
+  CountryCode(name: 'South Korea', flag: '🇰🇷', dial: '+82', code: 'KR'),
+  CountryCode(name: 'Singapore', flag: '🇸🇬', dial: '+65', code: 'SG'),
+  CountryCode(name: 'UAE', flag: '🇦🇪', dial: '+971', code: 'AE'),
+  CountryCode(name: 'Saudi Arabia', flag: '🇸🇦', dial: '+966', code: 'SA'),
+  CountryCode(name: 'Pakistan', flag: '🇵🇰', dial: '+92', code: 'PK'),
+  CountryCode(name: 'Bangladesh', flag: '🇧🇩', dial: '+880', code: 'BD'),
+  CountryCode(name: 'Nigeria', flag: '🇳🇬', dial: '+234', code: 'NG'),
+  CountryCode(name: 'South Africa', flag: '🇿🇦', dial: '+27', code: 'ZA'),
+  CountryCode(name: 'Kenya', flag: '🇰🇪', dial: '+254', code: 'KE'),
+  CountryCode(name: 'Ghana', flag: '🇬🇭', dial: '+233', code: 'GH'),
+  CountryCode(name: 'Netherlands', flag: '🇳🇱', dial: '+31', code: 'NL'),
+  CountryCode(name: 'Switzerland', flag: '🇨🇭', dial: '+41', code: 'CH'),
+  CountryCode(name: 'Sweden', flag: '🇸🇪', dial: '+46', code: 'SE'),
+  CountryCode(name: 'Norway', flag: '🇳🇴', dial: '+47', code: 'NO'),
+  CountryCode(name: 'Denmark', flag: '🇩🇰', dial: '+45', code: 'DK'),
+  CountryCode(name: 'Finland', flag: '🇫🇮', dial: '+358', code: 'FI'),
+  CountryCode(name: 'Poland', flag: '🇵🇱', dial: '+48', code: 'PL'),
+  CountryCode(name: 'Turkey', flag: '🇹🇷', dial: '+90', code: 'TR'),
+  CountryCode(name: 'Greece', flag: '🇬🇷', dial: '+30', code: 'GR'),
+  CountryCode(name: 'Portugal', flag: '🇵🇹', dial: '+351', code: 'PT'),
+  CountryCode(name: 'Russia', flag: '🇷🇺', dial: '+7', code: 'RU'),
+  CountryCode(name: 'Philippines', flag: '🇵🇭', dial: '+63', code: 'PH'),
+  CountryCode(name: 'Indonesia', flag: '🇮🇩', dial: '+62', code: 'ID'),
+  CountryCode(name: 'Malaysia', flag: '🇲🇾', dial: '+60', code: 'MY'),
+  CountryCode(name: 'Thailand', flag: '🇹🇭', dial: '+66', code: 'TH'),
+  CountryCode(name: 'Vietnam', flag: '🇻🇳', dial: '+84', code: 'VN'),
+  CountryCode(name: 'Egypt', flag: '🇪🇬', dial: '+20', code: 'EG'),
+  CountryCode(name: 'Argentina', flag: '🇦🇷', dial: '+54', code: 'AR'),
+  CountryCode(name: 'Colombia', flag: '🇨🇴', dial: '+57', code: 'CO'),
+  CountryCode(name: 'Chile', flag: '🇨🇱', dial: '+56', code: 'CL'),
+  CountryCode(name: 'Peru', flag: '🇵🇪', dial: '+51', code: 'PE'),
+  CountryCode(name: 'New Zealand', flag: '🇳🇿', dial: '+64', code: 'NZ'),
+  CountryCode(name: 'Ireland', flag: '🇮🇪', dial: '+353', code: 'IE'),
 ];
 
 // ─── Phone field widget ───────────────────────────────────────────────────────
@@ -103,6 +103,7 @@ class PhoneField extends StatefulWidget {
 
   final double radius;
   final TextInputAction action;
+  final bool enabled;
 
   const PhoneField({
     super.key,
@@ -118,6 +119,7 @@ class PhoneField extends StatefulWidget {
     this.validator,
     this.radius = 12,
     this.action = TextInputAction.next,
+    this.enabled = true,
   });
 
   @override
@@ -145,10 +147,12 @@ class _PhoneFieldState extends State<PhoneField> {
     final lower = q.toLowerCase();
     setState(() {
       _filtered = kCountryCodes
-          .where((c) =>
-              c.name.toLowerCase().contains(lower) ||
-              c.dial.contains(lower) ||
-              c.code.toLowerCase().contains(lower))
+          .where(
+            (c) =>
+                c.name.toLowerCase().contains(lower) ||
+                c.dial.contains(lower) ||
+                c.code.toLowerCase().contains(lower),
+          )
           .toList();
     });
   }
@@ -182,6 +186,7 @@ class _PhoneFieldState extends State<PhoneField> {
       keyboardType: TextInputType.phone,
       textInputAction: widget.action,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      enabled: widget.enabled,
       style: const TextStyle(
         fontSize: FontSizes.regular,
         color: AppColor.darkGrey,
@@ -189,8 +194,10 @@ class _PhoneFieldState extends State<PhoneField> {
       decoration: InputDecoration(
         filled: true,
         fillColor: fill,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.radius),
           borderSide: const BorderSide(color: AppColor.mediumGrey),
@@ -201,8 +208,11 @@ class _PhoneFieldState extends State<PhoneField> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.radius),
-          borderSide:
-              const BorderSide(color: AppColor.authButton, width: 1.5),
+          borderSide: const BorderSide(color: AppColor.authButton, width: 1.5),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.radius),
+          borderSide: const BorderSide(color: AppColor.mediumGrey),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.radius),
@@ -215,25 +225,19 @@ class _PhoneFieldState extends State<PhoneField> {
         hintText: 'Phone number',
         hintStyle: const TextStyle(color: AppColor.grey, fontSize: 14),
         prefixIcon: GestureDetector(
-          onTap: _openPicker,
+          onTap: widget.enabled ? _openPicker : null,
           child: Container(
             constraints: const BoxConstraints(minWidth: 80),
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               border: Border(
-                right: BorderSide(
-                  color: AppColor.mediumGrey,
-                  width: 1,
-                ),
+                right: BorderSide(color: AppColor.mediumGrey, width: 1),
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  _selected.flag,
-                  style: const TextStyle(fontSize: 18),
-                ),
+                Text(_selected.flag, style: const TextStyle(fontSize: 18)),
                 const SizedBox(width: 6),
                 Text(
                   _selected.dial,
@@ -244,14 +248,18 @@ class _PhoneFieldState extends State<PhoneField> {
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(Icons.arrow_drop_down_rounded,
-                    size: 18, color: AppColor.grey),
+                const Icon(
+                  Icons.arrow_drop_down_rounded,
+                  size: 18,
+                  color: AppColor.grey,
+                ),
               ],
             ),
           ),
         ),
       ),
-      validator: widget.validator ??
+      validator:
+          widget.validator ??
           (value) {
             if (value == null || value.trim().isEmpty) {
               return 'Phone number is required';
@@ -304,10 +312,12 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
     final q = widget.searchCtrl.text.toLowerCase();
     setState(() {
       _list = kCountryCodes
-          .where((c) =>
-              c.name.toLowerCase().contains(q) ||
-              c.dial.contains(q) ||
-              c.code.toLowerCase().contains(q))
+          .where(
+            (c) =>
+                c.name.toLowerCase().contains(q) ||
+                c.dial.contains(q) ||
+                c.code.toLowerCase().contains(q),
+          )
           .toList();
     });
   }
@@ -356,12 +366,14 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
               autofocus: true,
               decoration: InputDecoration(
                 hintText: 'Search country or code...',
-                hintStyle:
-                    const TextStyle(color: AppColor.grey, fontSize: 14),
+                hintStyle: const TextStyle(color: AppColor.grey, fontSize: 14),
                 filled: true,
                 fillColor: AppColor.authBg,
-                prefixIcon: const Icon(Icons.search_rounded,
-                    color: AppColor.grey, size: 20),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: AppColor.grey,
+                  size: 20,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -373,10 +385,14 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                      color: AppColor.authButton, width: 1.2),
+                    color: AppColor.authButton,
+                    width: 1.2,
+                  ),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 12),
+                  horizontal: 12,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
@@ -386,8 +402,10 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
           Expanded(
             child: _list.isEmpty
                 ? const Center(
-                    child: Text('No results found',
-                        style: TextStyle(color: AppColor.grey)),
+                    child: Text(
+                      'No results found',
+                      style: TextStyle(color: AppColor.grey),
+                    ),
                   )
                 : ListView.builder(
                     itemCount: _list.length,
@@ -397,11 +415,15 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                         onTap: () => widget.onSelect(c),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 13),
+                            horizontal: 20,
+                            vertical: 13,
+                          ),
                           child: Row(
                             children: [
-                              Text(c.flag,
-                                  style: const TextStyle(fontSize: 22)),
+                              Text(
+                                c.flag,
+                                style: const TextStyle(fontSize: 22),
+                              ),
                               const SizedBox(width: 14),
                               Expanded(
                                 child: Text(
