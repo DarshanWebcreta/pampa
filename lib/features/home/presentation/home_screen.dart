@@ -28,6 +28,7 @@ import 'package:pampa/features/my_bookings/presentation/my_bookings_tab.dart';
 import 'package:pampa/features/my_bookings/presentation/provider/my_bookings_provider.dart';
 import 'package:pampa/features/profile/presentation/provider/profile_provider.dart';
 import 'package:pampa/features/messaging/presentation/conversations_tab.dart';
+import 'package:pampa/features/messaging/presentation/provider/messaging_provider.dart';
 import 'package:pampa/features/profile/presentation/profile_tab.dart';
 import 'package:pampa/features/explore/presentation/explore_tab.dart';
 import 'package:pampa/features/profile/presentation/beauty_preferences_screen.dart';
@@ -128,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     if (_addressProvider.fetchStatus == AddressFetchStatus.loaded) {
       if (_addressProvider.addresses.isEmpty) {
         _redirectToSavedAddresses();
-      } else {
+      } else if (homeTabNotifier.value == 1) {
         context.read<ExploreProvider>().fetch();
       }
     }
@@ -146,15 +147,34 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }
 
   void _onTabChanged() {
-    if (homeTabNotifier.value == 0 || homeTabNotifier.value == 2) {
+    final index = homeTabNotifier.value;
+    if (index == 0 || index == 2) {
       _refreshDashboardData();
+    } else if (index == 1) {
+      final exploreProv = context.read<ExploreProvider>();
+      if (exploreProv.status == ExploreFetchStatus.initial) {
+        exploreProv.fetch();
+      }
+    } else if (index == 3) {
+      final messagingProv = context.read<MessagingProvider>();
+      if (messagingProv.convStatus == ConversationsFetchStatus.initial) {
+        messagingProv.fetchConversations();
+      }
     }
   }
 
   void _refreshDashboardData() {
     if (!mounted) return;
-    context.read<CategoryProvider>().fetchCategories();
-    context.read<AddressProvider>().fetchAddresses();
+    final categoryProvider = context.read<CategoryProvider>();
+    if (categoryProvider.status == CategoryStatus.initial ||
+        categoryProvider.categories.isEmpty) {
+      categoryProvider.fetchCategories();
+    }
+    final addressProvider = context.read<AddressProvider>();
+    if (addressProvider.fetchStatus == AddressFetchStatus.initial ||
+        addressProvider.addresses.isEmpty) {
+      addressProvider.fetchAddresses();
+    }
     final profileProvider = context.read<ProfileProvider>();
     if (profileProvider.status == ProfileStatus.initial ||
         profileProvider.profile == null) {

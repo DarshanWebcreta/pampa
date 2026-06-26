@@ -89,12 +89,17 @@ class _ProviderHomeScreenState extends State<ProviderHomeScreen> with RouteAware
 
   void _refreshAllData() {
     if (!mounted) return;
-    // Refresh the currently active tab's data
-    getIt<ProviderDashboardProvider>().fetchDashboard();
-    getIt<ProviderDashboardProvider>().fetchVacations();
-    getIt<ProviderBookingsProvider>().fetch();
-    getIt<ProviderEarningsProvider>().fetchEarnings();
-    getIt<ProviderMessagingProvider>().refreshConversations();
+    final activeTab = providerHomeTabNotifier.value;
+    if (activeTab == 0) {
+      getIt<ProviderDashboardProvider>().fetchDashboard();
+      getIt<ProviderDashboardProvider>().fetchVacations();
+    } else if (activeTab == 1) {
+      getIt<ProviderBookingsProvider>().fetch();
+    } else if (activeTab == 2) {
+      getIt<ProviderEarningsProvider>().fetchEarnings();
+    } else if (activeTab == 3) {
+      getIt<ProviderMessagingProvider>().refreshConversations();
+    }
   }
 
   Future<void> _showExitDialog() async {

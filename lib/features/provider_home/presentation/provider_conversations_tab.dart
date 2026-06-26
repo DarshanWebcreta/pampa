@@ -25,9 +25,6 @@ class _ProviderConversationsTabState extends State<ProviderConversationsTab> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ProviderMessagingProvider>().fetchConversations();
-    });
   }
 
   @override

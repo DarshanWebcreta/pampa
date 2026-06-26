@@ -27,9 +27,6 @@ class _ExploreTabState extends State<ExploreTab> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ExploreProvider>().fetch();
-    });
   }
 
   @override
