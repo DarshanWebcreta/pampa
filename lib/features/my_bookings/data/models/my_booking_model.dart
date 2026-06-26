@@ -1,4 +1,5 @@
 import 'package:pampa/features/booking/data/models/provider_model.dart';
+import 'package:pampa/core/values/urls.dart';
 
 class BookingServiceModel {
   final int id;
@@ -16,9 +17,18 @@ class BookingServiceModel {
   });
 
   factory BookingServiceModel.fromJson(Map<String, dynamic> json) {
+    final rawImage = json['image_url']?.toString() ?? json['image']?.toString() ?? '';
+    final imageUrl = rawImage.trim().startsWith('http')
+        ? rawImage.trim()
+        : (rawImage.trim().startsWith('/')
+            ? '${ApiStrings.imageUrl}${rawImage.trim()}'
+            : (rawImage.trim().isNotEmpty
+                ? '${ApiStrings.imageUrl}/${rawImage.trim()}'
+                : ''));
+
     return BookingServiceModel(
       id: json['id'] as int? ?? 0,
-      image: json['image'] as String? ?? '',
+      image: imageUrl,
       serviceName: json['service_name'] as String? ?? '',
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0,
       duration: json['duration'] as int? ?? 0,

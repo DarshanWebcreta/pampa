@@ -12,7 +12,7 @@ part of 'apiservice.dart';
 
 class _ApiService implements ApiService {
   _ApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://springgreen-goat-999550.hostingersite.com/api/';
+    baseUrl ??= 'https://pampa.boxtasks.com/api/';
   }
 
   final Dio _dio;

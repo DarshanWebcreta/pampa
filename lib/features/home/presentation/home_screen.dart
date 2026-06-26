@@ -2342,7 +2342,7 @@ class _UpcomingBookingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final serviceImage = booking.services.isNotEmpty ? booking.services.first.image.trim() : booking.service.image.trim();
-    final imageUrl = "${ApiStrings.imageUrl}$serviceImage";
+    final imageUrl = serviceImage.startsWith('http') ? serviceImage : "${ApiStrings.imageUrl}$serviceImage";
     final hasImage = serviceImage.isNotEmpty;
     final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate);
     final location = booking.provider?.displayLocation;
@@ -2546,6 +2546,7 @@ class _PastBookingCard extends StatelessWidget {
     final servicesLabel = booking.services.isNotEmpty
         ? booking.services.map((s) => s.serviceName).join(', ')
         : booking.service.serviceName;
+    final imageUrl = serviceImage.startsWith('http') ? serviceImage : "${ApiStrings.imageUrl}$serviceImage";
 
     return GestureDetector(
       onTap: () => context.push(RouteNames.myBookingDetail, extra: booking.id),
@@ -2569,7 +2570,7 @@ class _PastBookingCard extends StatelessWidget {
                     height: 52,
                     child: hasImage
                         ? FunctionalComponent.cachedNetworkImage(
-                            "${ApiStrings.imageUrl}$serviceImage",
+                            imageUrl,
                             radius: 12,
                             fit: BoxFit.cover,
                           )

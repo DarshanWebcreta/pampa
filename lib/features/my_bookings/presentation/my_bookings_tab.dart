@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pampa/core/utils/functional_component.dart';
+import 'package:pampa/core/values/urls.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pampa/core/routes/routes.dart';
@@ -38,12 +39,25 @@ Widget _providerAvatar(String? photoUrl, String displayName, double size) {
       .map((p) => p[0].toUpperCase())
       .join();
 
-  if (photoUrl != null && photoUrl.isNotEmpty) {
+  if (photoUrl != null && photoUrl.trim().isNotEmpty) {
+    final trimmed = photoUrl.trim();
+    final url = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+        ? trimmed
+        : (trimmed.startsWith('/')
+            ? '${ApiStrings.imageUrl}$trimmed'
+            : '${ApiStrings.imageUrl}/$trimmed');
+
+
+
     return ClipOval(
-      child: FunctionalComponent.cachedNetworkImage(
-        photoUrl,
-        radius: size / 2,
-        fit: BoxFit.cover,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: FunctionalComponent.cachedNetworkImage(
+          url,
+          radius: size / 2,
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }
@@ -670,12 +684,15 @@ class _DetailedAppointmentRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _providerAvatar(
-                  booking.provider?.photoUrl,
-                  booking.provider?.displayName ?? '',
-                  44,
+                SizedBox(
+                  height: 35,width: 35,
+                  child: _providerAvatar(
+                    booking.provider?.photoUrl,
+                    booking.provider?.displayName ?? '',
+                    35,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

@@ -2,7 +2,7 @@ class ApiStrings {
   ApiStrings._();
 
   static const String host =
-      'https://springgreen-goat-999550.hostingersite.com';
+      'https://pampa.boxtasks.com';
 
   /// Web client ID from Firebase Console → Authentication → Sign-in method → Google
   /// → Web SDK configuration → Web client ID.

@@ -83,7 +83,7 @@ class ProviderModel {
 
   factory ProviderModel.fromJson(Map<String, dynamic> json) {
     final ratingRaw = json['rating'];
-    final rawPhoto = json['photo']?.toString();
+    final rawPhoto = json['photo_url']?.toString() ?? json['photo']?.toString();
     final ratingValue = ratingRaw is int
         ? ratingRaw.toDouble()
         : (ratingRaw is double ? ratingRaw : 0.0);
