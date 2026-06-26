@@ -193,7 +193,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                 // ── Name ────────────────────────────────────────────────────
                 _FieldCard(
                   icon: Icons.person_outline_rounded,
-                  label: 'First Name',
+                  label: 'First Name *',
                   controller: _firstNameCtrl,
                   enabled: false,
                   validator: (v) =>
@@ -211,7 +211,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                 // ── Contact ─────────────────────────────────────────────────
                 _FieldCard(
                   icon: Icons.mail_outline_rounded,
-                  label: 'Email Address',
+                  label: 'Email Address *',
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   enabled: false,
@@ -446,7 +446,25 @@ class _FieldCard extends StatelessWidget {
             children: [
               Icon(icon, size: 14, color: AppColor.authButton),
               const SizedBox(width: 5),
-              AppText(label, fontSize: 11, color: AppColor.grey),
+              Text.rich(
+                TextSpan(
+                  text: label.replaceAll('*', '').trim(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColor.grey,
+                  ),
+                  children: [
+                    if (label.contains('*'))
+                      const TextSpan(
+                        text: ' *',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 4),

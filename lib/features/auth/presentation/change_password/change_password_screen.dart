@@ -122,12 +122,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Current Password
-                    AppText(
-                      'Current Password',
-                      fontSize: 13,
-                      fontWeight: FontWeights.semiBold,
-                      color: AppColor.darkGrey,
-                    ),
+                    FunctionalComponent.labelWidget('Current Password *'),
                     const SizedBox(height: 8),
                     CustomTextFormField(
                       controller: _oldPasswordController,
@@ -171,12 +166,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     const SizedBox(height: 20),
 
                     // New Password
-                    AppText(
-                      'New Password',
-                      fontSize: 13,
-                      fontWeight: FontWeights.semiBold,
-                      color: AppColor.darkGrey,
-                    ),
+                    FunctionalComponent.labelWidget('New Password *'),
                     const SizedBox(height: 8),
                     CustomTextFormField(
                       controller: _passwordController,
@@ -226,12 +216,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     const SizedBox(height: 20),
 
                     // Confirm Password
-                    AppText(
-                      'Confirm New Password',
-                      fontSize: 13,
-                      fontWeight: FontWeights.semiBold,
-                      color: AppColor.darkGrey,
-                    ),
+                    FunctionalComponent.labelWidget('Confirm New Password *'),
                     const SizedBox(height: 8),
                     CustomTextFormField(
                       controller: _confirmController,

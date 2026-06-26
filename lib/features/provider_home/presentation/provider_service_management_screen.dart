@@ -453,7 +453,7 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
                       Expanded(
                         child: _NumberField(
                           controller: _priceCtrl,
-                          label: 'Price',
+                          label: 'Price *',
                           hint: '65.00',
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -471,7 +471,7 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
                       Expanded(
                         child: _NumberField(
                           controller: _durationCtrl,
-                          label: 'Duration',
+                          label: 'Duration *',
                           hint: '45',
                           suffix: 'min',
                           validator: (value) {
@@ -667,11 +667,26 @@ class _ServiceFieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppText(
-      label,
-      fontSize: 13,
-      fontWeight: FontWeights.semiBold,
-      color: AppColor.darkGrey,
+    final bool isRequired = label.contains('*');
+    return Text.rich(
+      TextSpan(
+        text: label.replaceAll('*', '').trim(),
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeights.semiBold,
+          color: AppColor.darkGrey,
+        ),
+        children: [
+          if (isRequired)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

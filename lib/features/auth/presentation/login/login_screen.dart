@@ -198,12 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AppText(
-              'Email Address',
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColor.darkGrey,
-            ),
+            FunctionalComponent.labelWidget('Email Address *'),
             const SizedBox(height: 8),
             CustomTextFormField(
               controller: _emailController,
@@ -237,12 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
               },
             ),
             const SizedBox(height: 20),
-            AppText(
-              'Password',
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColor.darkGrey,
-            ),
+            FunctionalComponent.labelWidget('Password *'),
             const SizedBox(height: 8),
             CustomTextFormField(
               controller: _passwordController,

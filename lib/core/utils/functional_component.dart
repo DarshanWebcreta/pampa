@@ -348,26 +348,30 @@ class FunctionalComponent {
       ),
     ));
   }
-  static Widget labelWidget(String label, {double bottomPadding = 0}) {
+  static Widget labelWidget(String label, {double bottomPadding = 0, Color textColor = AppColor.darkGrey}) {
     final bool requiredField = label.contains("*");
 
     return Padding(
-      padding:  EdgeInsets.only(bottom: bottomPadding),
-      child: Row(
-        children: [
-          AppText(
-            label.replaceAll("*", ""),
-            fontSize: 12,
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      child: Text.rich(
+        TextSpan(
+          text: label.replaceAll("*", "").trim(),
+          style: TextStyle(
+            fontSize: 13,
             fontWeight: FontWeights.semiBold,
-            color: AppColor.black,
+            color: textColor,
           ),
-          AppText(
-            requiredField ? "" : " (Optional)",
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: requiredField ? AppColor.red : AppColor.black,
-          ),
-        ],
+          children: [
+            if (requiredField)
+              const TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

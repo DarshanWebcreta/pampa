@@ -213,7 +213,7 @@ class _RequestCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             _InputField(
-              label: 'Amount',
+              label: 'Amount *',
               hint: '200.00',
               controller: amountCtrl,
               keyboardType: const TextInputType.numberWithOptions(
@@ -436,11 +436,25 @@ class _InputField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppText(
-          label,
-          fontSize: 12,
-          fontWeight: FontWeights.semiBold,
-          color: AppColor.darkGrey,
+        Text.rich(
+          TextSpan(
+            text: label.replaceAll('*', '').trim(),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeights.semiBold,
+              color: AppColor.darkGrey,
+            ),
+            children: [
+              if (label.contains('*'))
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
+          ),
         ),
         const SizedBox(height: 6),
         TextFormField(

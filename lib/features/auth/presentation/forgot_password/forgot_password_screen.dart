@@ -115,12 +115,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppText(
-                      'Email Address',
-                      fontSize: 13,
-                      fontWeight: FontWeights.semiBold,
-                      color: AppColor.darkGrey,
-                    ),
+                    FunctionalComponent.labelWidget('Email Address *'),
                     const SizedBox(height: 8),
                     CustomTextFormField(
                       controller: _emailController,

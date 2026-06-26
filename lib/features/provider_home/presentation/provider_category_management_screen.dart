@@ -383,7 +383,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                   const SizedBox(height: 16),
 
                   // ── Category Name ──────────────────────────────────────
-                  const _FieldLabel('Category Name'),
+                  const _FieldLabel('Category Name *'),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _nameCtrl,
@@ -611,11 +611,26 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppText(
-      label,
-      fontSize: 13,
-      fontWeight: FontWeights.semiBold,
-      color: AppColor.darkGrey,
+    final bool isRequired = label.contains('*');
+    return Text.rich(
+      TextSpan(
+        text: label.replaceAll('*', '').trim(),
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeights.semiBold,
+          color: AppColor.darkGrey,
+        ),
+        children: [
+          if (isRequired)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

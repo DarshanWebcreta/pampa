@@ -127,12 +127,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // New Password
-                    AppText(
-                      'New Password',
-                      fontSize: 13,
-                      fontWeight: FontWeights.semiBold,
-                      color: AppColor.darkGrey,
-                    ),
+                    FunctionalComponent.labelWidget('New Password *'),
                     const SizedBox(height: 8),
                     CustomTextFormField(
                       controller: _passwordController,
@@ -179,12 +174,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     const SizedBox(height: 20),
 
                     // Confirm Password
-                    AppText(
-                      'Confirm Password',
-                      fontSize: 13,
-                      fontWeight: FontWeights.semiBold,
-                      color: AppColor.darkGrey,
-                    ),
+                    FunctionalComponent.labelWidget('Confirm Password *'),
                     const SizedBox(height: 8),
                     CustomTextFormField(
                       controller: _confirmController,

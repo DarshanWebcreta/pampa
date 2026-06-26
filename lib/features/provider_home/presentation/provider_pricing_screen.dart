@@ -427,7 +427,7 @@ class _ServicePricingCard extends StatelessWidget {
               Expanded(
                 child: _PricingField(
                   controller: priceController,
-                  label: 'Your Price',
+                  label: 'Your Price *',
                   hint: '85',
                   prefix: '\$',
                   validator: _numberValidatorRequired,
@@ -439,7 +439,7 @@ class _ServicePricingCard extends StatelessWidget {
               Expanded(
                 child: _PricingField(
                   controller: durationController,
-                  label: 'Duration (min)',
+                  label: 'Duration (min) *',
                   hint: '60',
                   validator: _intValidatorRequired,
                   onChanged: (value) =>
@@ -563,7 +563,25 @@ class _PricingField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppText(label, fontSize: 12, color: AppColor.grey),
+        Text.rich(
+          TextSpan(
+            text: label.replaceAll('*', '').trim(),
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColor.grey,
+            ),
+            children: [
+              if (label.contains('*'))
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
+          ),
+        ),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,

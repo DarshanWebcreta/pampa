@@ -190,7 +190,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLabel('Full Name'),
+            _buildLabel('Full Name *'),
             const SizedBox(height: 8),
             CustomTextFormField(
               controller: _nameController,
@@ -219,7 +219,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               },
             ),
             const SizedBox(height: 18),
-            _buildLabel('Email Address'),
+            _buildLabel('Email Address *'),
             const SizedBox(height: 8),
             CustomTextFormField(
               controller: _emailController,
@@ -249,7 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               },
             ),
             const SizedBox(height: 18),
-            _buildLabel('Mobile Number'),
+            _buildLabel('Mobile Number *'),
             const SizedBox(height: 8),
             PhoneField(
               controller: _mobileController,
@@ -267,7 +267,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               },
             ),
             const SizedBox(height: 18),
-            _buildLabel('Password'),
+            _buildLabel('Password *'),
             const SizedBox(height: 8),
             CustomTextFormField(
               controller: _passwordController,
@@ -308,7 +308,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               },
             ),
             const SizedBox(height: 18),
-            _buildLabel('Confirm Password'),
+            _buildLabel('Confirm Password *'),
             const SizedBox(height: 8),
             CustomTextFormField(
               controller: _confirmPasswordController,
@@ -419,12 +419,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildLabel(String label) {
-    return AppText(
-      label,
-      fontSize: 13,
-      fontWeight: FontWeight.w600,
-      color: AppColor.darkGrey,
-    );
+    return FunctionalComponent.labelWidget(label);
   }
 }
 

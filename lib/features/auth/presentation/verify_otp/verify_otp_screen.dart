@@ -143,12 +143,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppText(
-                      'OTP Code',
-                      fontSize: 13,
-                      fontWeight: FontWeights.semiBold,
-                      color: AppColor.darkGrey,
-                    ),
+                    FunctionalComponent.labelWidget('OTP Code *'),
                     const SizedBox(height: 8),
                     CustomTextFormField(
                       controller: _otpController,

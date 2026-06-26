@@ -212,21 +212,21 @@ class _ProviderBankDetailScreenState extends State<ProviderBankDetailScreen> {
                 AppText('Bank Information', fontSize: 18, fontWeight: FontWeights.bold, color: AppColor.darkGrey),
                 const SizedBox(height: 16),
                 _InputField(
-                  label: 'Bank Name',
+                  label: 'Bank Name *',
                   hint: 'e.g. Chase Bank',
                   controller: _bankNameCtrl,
                   validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
                 _InputField(
-                  label: 'Account Holder Name',
+                  label: 'Account Holder Name *',
                   hint: 'Full name on account',
                   controller: _holderNameCtrl,
                   validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
                 _InputField(
-                  label: 'Account Number',
+                  label: 'Account Number *',
                   hint: 'Full account number',
                   controller: _accountNumberCtrl,
                   keyboardType: TextInputType.number,
@@ -336,7 +336,25 @@ class _InputField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppText(label, fontSize: 13, color: AppColor.grey),
+        Text.rich(
+          TextSpan(
+            text: label.replaceAll('*', '').trim(),
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColor.grey,
+            ),
+            children: [
+              if (label.contains('*'))
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
+          ),
+        ),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
