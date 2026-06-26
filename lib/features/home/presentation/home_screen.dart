@@ -2321,10 +2321,14 @@ class _UpcomingBookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = "${ApiStrings.imageUrl}${booking.service.image.trim()}";
-    final hasImage = imageUrl.isNotEmpty;
+    final serviceImage = booking.services.isNotEmpty ? booking.services.first.image.trim() : booking.service.image.trim();
+    final imageUrl = "${ApiStrings.imageUrl}$serviceImage";
+    final hasImage = serviceImage.isNotEmpty;
     final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate);
     final location = booking.provider?.displayLocation;
+    final servicesLabel = booking.services.isNotEmpty
+        ? booking.services.map((s) => s.serviceName).join(', ')
+        : booking.service.serviceName;
 
     return GestureDetector(
       onTap: () => context.push(RouteNames.myBookingDetail, extra: booking.id),
@@ -2369,7 +2373,7 @@ class _UpcomingBookingCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: AppText(
-                          booking.service.serviceName,
+                          servicesLabel,
                           fontSize: FontSizes.regular,
                           fontWeight: FontWeights.semiBold,
                           color: AppColor.darkGrey,
@@ -2515,10 +2519,13 @@ class _PastBookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = booking.service.image.trim();
-    final hasImage = imageUrl.isNotEmpty;
+    final serviceImage = booking.services.isNotEmpty ? booking.services.first.image.trim() : booking.service.image.trim();
+    final hasImage = serviceImage.isNotEmpty;
     final dateStr = DateFormat('yyyy-MM-dd').format(booking.appointmentDate);
     final rating = booking.provider?.rating;
+    final servicesLabel = booking.services.isNotEmpty
+        ? booking.services.map((s) => s.serviceName).join(', ')
+        : booking.service.serviceName;
 
     return GestureDetector(
       onTap: () => context.push(RouteNames.myBookingDetail, extra: booking.id),
@@ -2542,7 +2549,7 @@ class _PastBookingCard extends StatelessWidget {
                     height: 52,
                     child: hasImage
                         ? FunctionalComponent.cachedNetworkImage(
-                            "${ApiStrings.imageUrl}$imageUrl",
+                            "${ApiStrings.imageUrl}$serviceImage",
                             radius: 12,
                             fit: BoxFit.cover,
                           )
@@ -2566,7 +2573,7 @@ class _PastBookingCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: AppText(
-                              booking.service.serviceName,
+                              servicesLabel,
                               fontSize: FontSizes.regular,
                               fontWeight: FontWeights.semiBold,
                               color: AppColor.darkGrey,

@@ -1073,17 +1073,41 @@ class _BookingCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AppText(
-                        booking.displayName,
-                        fontSize: FontSizes.regular,
-                        fontWeight: FontWeights.semiBold,
-                        color: AppColor.darkGrey,
-                        maxLines: 1,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: AppText(
+                              booking.displayName,
+                              fontSize: FontSizes.regular,
+                              fontWeight: FontWeights.semiBold,
+                              color: AppColor.darkGrey,
+                              maxLines: 1,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColor.authButton.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: AppText(
+                              '\$${(double.tryParse(booking.price) ?? 0).toStringAsFixed(0)}',
+                              fontSize: FontSizes.small,
+                              fontWeight: FontWeights.bold,
+                              color: AppColor.authButton,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 3),
                       if (booking.services.isNotEmpty)
                         AppText(
-                          booking.services.first.serviceName,
+                          booking.services.map((s) => s.serviceName).join(', '),
                           fontSize: 13,
                           color: AppColor.grey,
                           maxLines: 1,
@@ -1091,8 +1115,8 @@ class _BookingCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          // Service pill
-                          if (booking.services.isNotEmpty)
+                          // Service pills
+                          if (booking.services.isNotEmpty) ...[
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 3),
@@ -1108,6 +1132,24 @@ class _BookingCard extends StatelessWidget {
                                 maxLines: 1,
                               ),
                             ),
+                            if (booking.services.length > 1) ...[
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColor.grey.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: AppText(
+                                  '+${booking.services.length - 1}',
+                                  fontSize: 10,
+                                  fontWeight: FontWeights.semiBold,
+                                  color: AppColor.darkGrey,
+                                ),
+                              ),
+                            ],
+                          ],
                           const SizedBox(width: 8),
                           const Icon(Icons.calendar_today_rounded,
                               size: 11, color: AppColor.grey),

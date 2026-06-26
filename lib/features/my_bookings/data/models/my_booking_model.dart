@@ -54,6 +54,7 @@ class MyBookingModel {
   final String? pinterestLink;
   final String? inspirationPhoto;
   final BookingServiceModel service;
+  final List<BookingServiceModel> services;
   final ProviderModel? provider;
   final bool rescheduleBook;
   final String? distanceKm;
@@ -79,6 +80,7 @@ class MyBookingModel {
     this.pinterestLink,
     this.inspirationPhoto,
     required this.service,
+    required this.services,
     this.provider,
     this.rescheduleBook = false,
     this.distanceKm,
@@ -120,6 +122,13 @@ class MyBookingModel {
       service: json['service'] != null
           ? BookingServiceModel.fromJson(json['service'])
           : BookingServiceModel.empty(),
+      services: json['services'] != null
+          ? (json['services'] as List<dynamic>)
+              .map((s) => BookingServiceModel.fromJson(s as Map<String, dynamic>))
+              .toList()
+          : (json['service'] != null
+              ? [BookingServiceModel.fromJson(json['service'])]
+              : []),
       provider: json['provider'] != null
           ? ProviderModel.fromJson(json['provider'])
           : null,

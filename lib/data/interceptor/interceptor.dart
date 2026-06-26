@@ -17,9 +17,9 @@ class DefaultInterceptor extends Interceptor {
     }
     options.headers[ApiStrings.accept] = ApiStrings.applicationJson;
 
-    options.connectTimeout = const Duration(milliseconds: 20000);
-    options.sendTimeout = const Duration(milliseconds: 20000);
-    options.receiveTimeout = const Duration(milliseconds: 20000);
+    options.connectTimeout = const Duration(milliseconds: 40000);
+    options.sendTimeout = const Duration(milliseconds: 40000);
+    options.receiveTimeout = const Duration(milliseconds: 40000);
 
     String? authToken = StorageManager.readData(StoreKeys.token);
     if (authToken != null && authToken.isNotEmpty) {

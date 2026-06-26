@@ -530,11 +530,32 @@ class _ServiceDetailsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final servicesList = booking.services;
+    
+    if (servicesList.isEmpty) {
+      return _buildServiceRow(booking.service);
+    }
+
+    return Column(
+      children: [
+        for (int i = 0; i < servicesList.length; i++) ...[
+          if (i > 0) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+            const SizedBox(height: 12),
+          ],
+          _buildServiceRow(servicesList[i]),
+        ]
+      ],
+    );
+  }
+
+  Widget _buildServiceRow(BookingServiceModel service) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         _ServiceImageThumb(
-          imageUrl: booking.service.image,
+          imageUrl: service.image,
           size: 60,
           radius: 12,
         ),
@@ -544,7 +565,7 @@ class _ServiceDetailsContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppText(
-                booking.service.serviceName,
+                service.serviceName,
                 fontSize: FontSizes.medium,
                 fontWeight: FontWeights.bold,
                 color: AppColor.darkGrey,
@@ -556,7 +577,7 @@ class _ServiceDetailsContent extends StatelessWidget {
                       size: 13, color: AppColor.grey),
                   const SizedBox(width: 4),
                   AppText(
-                    '${booking.service.duration} min',
+                    '${service.duration} min',
                     fontSize: FontSizes.small,
                     color: AppColor.grey,
                   ),
@@ -565,12 +586,12 @@ class _ServiceDetailsContent extends StatelessWidget {
             ],
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             AppText(
-              '\$${booking.service.price.toStringAsFixed(2)}',
+              '\$${service.price.toStringAsFixed(2)}',
               fontSize: FontSizes.large,
               fontWeight: FontWeights.bold,
               color: AppColor.authButton,

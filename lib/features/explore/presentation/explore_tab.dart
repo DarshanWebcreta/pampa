@@ -861,13 +861,6 @@ class _ServiceCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Price
-            AppText(
-              '\$${service.price.toStringAsFixed(0)}',
-              fontSize: FontSizes.regular,
-              fontWeight: FontWeights.bold,
-              color: AppColor.authButton,
-            ),
           ],
         ),
       ),

@@ -201,12 +201,6 @@ class _FilterChips extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           _Chip(
-            label: 'Best Price',
-            active: provider.sortType == ServiceSortType.bestPrice,
-            onTap: () => onSort(ServiceSortType.bestPrice),
-          ),
-          const SizedBox(width: 8),
-          _Chip(
             label: 'Nearest',
             active: provider.sortType == ServiceSortType.nearest,
             onTap: () => onSort(ServiceSortType.nearest),
@@ -341,40 +335,10 @@ class _ServiceCard extends StatelessWidget {
                             fontSize: 12,
                             color: AppColor.grey,
                           ),
-                          if (service.deposit > 0) ...[
-                            const SizedBox(width: 12),
-                            const Icon(Icons.info_outline_rounded,
-                                size: 14, color: AppColor.grey),
-                            const SizedBox(width: 4),
-                            AppText(
-                              'Deposit req.',
-                              fontSize: 12,
-                              color: AppColor.grey,
-                            ),
-                          ],
                         ],
                       ),
                     ],
                   ),
-                ),
-
-                // Price
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    AppText(
-                      service.formattedPrice,
-                      fontSize: 20,
-                      fontWeight: FontWeights.bold,
-                      color: AppColor.darkGrey,
-                    ),
-                    if (service.priorityFee > 0)
-                      AppText(
-                        '+\$${service.priorityFee.toStringAsFixed(0)} priority',
-                        fontSize: 10,
-                        color: AppColor.grey,
-                      ),
-                  ],
                 ),
               ],
             ),
@@ -481,7 +445,6 @@ class _ServiceCardShimmerState extends State<_ServiceCardShimmer>
                       ],
                     ),
                   ),
-                  _shimmerBox(48, 20),
                 ],
               ),
               const SizedBox(height: 14),

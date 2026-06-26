@@ -668,8 +668,8 @@ class _DetailsCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Service name (for pending)
-          if (isPending && booking.services.isNotEmpty) ...[
+          // Service name list
+          if (booking.services.isNotEmpty) ...[
             AppText(
               booking.services.map((s) => s.serviceName).join(', '),
               fontSize: FontSizes.medium,
