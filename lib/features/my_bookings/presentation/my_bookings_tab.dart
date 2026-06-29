@@ -30,8 +30,8 @@ String _formatTime(String time) {
   }
 }
 
-Widget _providerAvatar(String? photoUrl, String displayName, double size) {
-  final initials = displayName
+Widget _serviceAvatar(String? photoUrl, String serviceName, double size) {
+  final initials = serviceName
       .trim()
       .split(RegExp(r'\s+'))
       .where((p) => p.isNotEmpty)
@@ -47,17 +47,11 @@ Widget _providerAvatar(String? photoUrl, String displayName, double size) {
             ? '${ApiStrings.imageUrl}$trimmed'
             : '${ApiStrings.imageUrl}/$trimmed');
 
-
-
     return ClipOval(
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: FunctionalComponent.cachedNetworkImage(
-          url,
-          radius: size / 2,
-          fit: BoxFit.cover,
-        ),
+      child: FunctionalComponent.cachedNetworkImage(
+        url,
+        radius: size / 2,
+        fit: BoxFit.cover,
       ),
     );
   }
@@ -687,11 +681,14 @@ class _DetailedAppointmentRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  height: 35,width: 35,
-                  child: _providerAvatar(
-                    booking.provider?.photoUrl,
-                    booking.provider?.displayName ?? '',
-                    35,
+                  height: 35,
+                  width: 35,
+                  child: _serviceAvatar(
+                    booking.services.isNotEmpty
+                        ? booking.services.first.image
+                        : booking.service.image,
+                    booking.service.serviceName,
+                    35.0,
                   ),
                 ),
                 const SizedBox(width: 12),
