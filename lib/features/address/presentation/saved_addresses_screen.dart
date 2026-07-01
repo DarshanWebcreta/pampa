@@ -459,6 +459,7 @@ class _AddressSheetState extends State<_AddressSheet> {
   late final TextEditingController _streetCtrl;
   late final TextEditingController _cityCtrl;
   late final TextEditingController _zipCtrl;
+  String? _selectedState;
   bool _isDefault = false;
   bool _isLocating = false;
 
@@ -473,6 +474,29 @@ class _AddressSheetState extends State<_AddressSheet> {
     _cityCtrl = TextEditingController(text: a?.city ?? '');
     _zipCtrl = TextEditingController(text: a?.zipCode ?? '');
     _isDefault = a?.isDefault ?? false;
+
+    // Fetch config on init to verify active states and set dropdown initial value
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ap = context.read<AddressProvider>();
+      ap.fetchGoogleMapsApiKey().then((_) {
+        if (mounted) {
+          final activeList = ap.getActiveStatesList();
+          String? initial;
+          if (a?.state != null && a!.state!.isNotEmpty) {
+            for (var s in activeList) {
+              if (s['code']?.toLowerCase() == a.state!.toLowerCase() ||
+                  s['name']?.toLowerCase() == a.state!.toLowerCase()) {
+                initial = s['name'];
+                break;
+              }
+            }
+          }
+          setState(() {
+            _selectedState = initial ?? (activeList.isNotEmpty ? activeList.first['name'] : null);
+          });
+        }
+      });
+    });
   }
 
   @override
@@ -484,6 +508,68 @@ class _AddressSheetState extends State<_AddressSheet> {
     super.dispose();
   }
 
+  void _showNotAvailableDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Service Unavailable',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColor.darkGrey,
+            ),
+          ),
+          content: const Text(
+            'Sorry, we are not available at this state.',
+            style: TextStyle(
+              color: AppColor.grey,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  color: AppColor.authButton,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _updateStateFromFetch(String stateVal) {
+    if (stateVal.isEmpty) return;
+    final provider = context.read<AddressProvider>();
+    final activeList = provider.getActiveStatesList();
+    
+    Map<String, String>? match;
+    for (var s in activeList) {
+      if (s['code']?.toLowerCase() == stateVal.toLowerCase() ||
+          s['name']?.toLowerCase() == stateVal.toLowerCase()) {
+        match = s;
+        break;
+      }
+    }
+    
+    if (match != null) {
+      setState(() {
+        _selectedState = match!['name'];
+      });
+    } else {
+      _showNotAvailableDialog();
+    }
+  }
+
   Future<void> _useCurrentLocation() async {
     debugPrint("SavedAddressesScreen: _useCurrentLocation called");
     setState(() => _isLocating = true);
@@ -491,11 +577,13 @@ class _AddressSheetState extends State<_AddressSheet> {
       final res = await context.read<AddressProvider>().findMyLocation();
       debugPrint("SavedAddressesScreen: findMyLocation result = $res");
       if (res != null) {
+        final stateVal = res['state'] ?? '';
         setState(() {
           _streetCtrl.text = res['streetAddress'] ?? '';
           _cityCtrl.text = res['city'] ?? '';
           _zipCtrl.text = res['zipCode'] ?? '';
         });
+        _updateStateFromFetch(stateVal);
       }
     } catch (e) {
       debugPrint("SavedAddressesScreen: error in _useCurrentLocation = $e");
@@ -519,11 +607,13 @@ class _AddressSheetState extends State<_AddressSheet> {
       MaterialPageRoute(builder: (_) => const AddressSearchScreen()),
     );
     if (result != null && mounted) {
+      final stateVal = result['state'] ?? '';
       setState(() {
         _streetCtrl.text = result['streetAddress'] ?? '';
         _cityCtrl.text = result['city'] ?? '';
         _zipCtrl.text = result['zipCode'] ?? '';
       });
+      _updateStateFromFetch(stateVal);
     }
   }
 
@@ -531,6 +621,12 @@ class _AddressSheetState extends State<_AddressSheet> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final provider = context.read<AddressProvider>();
+    final enteredState = _selectedState ?? '';
+    if (!provider.isStateActive(enteredState)) {
+      _showNotAvailableDialog();
+      return;
+    }
+
     bool ok;
 
     if (_isEditing) {
@@ -540,6 +636,7 @@ class _AddressSheetState extends State<_AddressSheet> {
         streetAddress: _streetCtrl.text.trim(),
         zipCode: _zipCtrl.text.trim(),
         city: _cityCtrl.text.trim(),
+        state: enteredState,
         isDefault: _isDefault,
       );
     } else {
@@ -548,6 +645,7 @@ class _AddressSheetState extends State<_AddressSheet> {
         streetAddress: _streetCtrl.text.trim(),
         zipCode: _zipCtrl.text.trim(),
         city: _cityCtrl.text.trim(),
+        state: enteredState,
       );
     }
 
@@ -567,8 +665,10 @@ class _AddressSheetState extends State<_AddressSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+    final bottomMargin = safeBottom > 0 ? safeBottom : 12.0;
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      margin: EdgeInsets.fromLTRB(12, 0, 12, bottomMargin),
       decoration: const BoxDecoration(
         color: AppColor.white,
         borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -676,7 +776,6 @@ class _AddressSheetState extends State<_AddressSheet> {
             Row(
               children: [
                 Expanded(
-                  flex: 3,
                   child: _Field(
                     label: 'City',
                     hint: 'New York',
@@ -687,7 +786,6 @@ class _AddressSheetState extends State<_AddressSheet> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  flex: 2,
                   child: _Field(
                     label: 'ZIP Code',
                     hint: '10001',
@@ -698,6 +796,15 @@ class _AddressSheetState extends State<_AddressSheet> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            Consumer<AddressProvider>(
+              builder: (context, ap, _) => _StateDropdownField(
+                label: 'State',
+                value: _selectedState,
+                items: ap.getActiveStatesList(),
+                onChanged: (v) => setState(() => _selectedState = v),
+              ),
             ),
             if (_isEditing) ...[
               const SizedBox(height: 4),
@@ -859,6 +966,97 @@ class _Field extends StatelessWidget {
               borderSide: const BorderSide(color: AppColor.deepRed, width: 1.5),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StateDropdownField extends StatelessWidget {
+  final String label;
+  final String? value;
+  final List<Map<String, String>> items;
+  final ValueChanged<String?> onChanged;
+
+  const _StateDropdownField({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text.rich(
+          TextSpan(
+            text: label,
+            style: const TextStyle(
+              fontSize: FontSizes.small,
+              fontWeight: FontWeights.medium,
+              color: AppColor.grey,
+            ),
+            children: const [
+              TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: value,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColor.grey),
+          hint: const Text(
+            'Select State',
+            style: TextStyle(
+              fontSize: FontSizes.regular,
+              color: AppColor.mediumGrey,
+            ),
+          ),
+          style: const TextStyle(
+            fontSize: FontSizes.regular,
+            color: AppColor.darkGrey,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColor.authBg,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColor.authButton,
+                width: 1.5,
+              ),
+            ),
+          ),
+          onChanged: onChanged,
+          items: items.map((s) {
+            final name = s['name'] ?? '';
+            final code = s['code'] ?? '';
+            return DropdownMenuItem<String>(
+              value: name,
+              child: Text(name.isNotEmpty ? name : code),
+            );
+          }).toList(),
         ),
       ],
     );

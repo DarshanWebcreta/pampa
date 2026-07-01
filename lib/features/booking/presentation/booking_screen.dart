@@ -1206,6 +1206,7 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
   final _streetCtrl = TextEditingController();
   final _zipCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
+  String? _selectedState;
   bool _isLocating = false;
 
   @override
@@ -1213,6 +1214,17 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
     super.initState();
     final z = StorageManager.readData(StoreKeys.zipCode) as String?;
     if (z != null && z.isNotEmpty) _zipCtrl.text = z;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ap = context.read<AddressProvider>();
+      ap.fetchGoogleMapsApiKey().then((_) {
+        if (mounted) {
+          final activeList = ap.getActiveStatesList();
+          setState(() {
+            _selectedState = activeList.isNotEmpty ? activeList.first['name'] : null;
+          });
+        }
+      });
+    });
   }
 
   @override
@@ -1224,6 +1236,68 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
     super.dispose();
   }
 
+  void _showNotAvailableDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Service Unavailable',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColor.darkGrey,
+            ),
+          ),
+          content: const Text(
+            'Sorry, we are not available at this state.',
+            style: TextStyle(
+              color: AppColor.grey,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  color: AppColor.authButton,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _updateStateFromFetch(String stateVal) {
+    if (stateVal.isEmpty) return;
+    final provider = context.read<AddressProvider>();
+    final activeList = provider.getActiveStatesList();
+    
+    Map<String, String>? match;
+    for (var s in activeList) {
+      if (s['code']?.toLowerCase() == stateVal.toLowerCase() ||
+          s['name']?.toLowerCase() == stateVal.toLowerCase()) {
+        match = s;
+        break;
+      }
+    }
+    
+    if (match != null) {
+      setState(() {
+        _selectedState = match!['name'];
+      });
+    } else {
+      _showNotAvailableDialog();
+    }
+  }
+
   Future<void> _useCurrentLocation() async {
     debugPrint("BookingScreen: _useCurrentLocation called");
     setState(() => _isLocating = true);
@@ -1231,11 +1305,13 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
       final res = await context.read<AddressProvider>().findMyLocation();
       debugPrint("BookingScreen: findMyLocation result = $res");
       if (res != null) {
+        final stateVal = res['state'] ?? '';
         setState(() {
           _streetCtrl.text = res['streetAddress'] ?? '';
           _cityCtrl.text = res['city'] ?? '';
           _zipCtrl.text = res['zipCode'] ?? '';
         });
+        _updateStateFromFetch(stateVal);
       }
     } catch (e) {
       debugPrint("BookingScreen: error in _useCurrentLocation = $e");
@@ -1258,22 +1334,30 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
       MaterialPageRoute(builder: (_) => const AddressSearchScreen()),
     );
     if (result != null && mounted) {
+      final stateVal = result['state'] ?? '';
       setState(() {
         _streetCtrl.text = result['streetAddress'] ?? '';
         _cityCtrl.text = result['city'] ?? '';
         _zipCtrl.text = result['zipCode'] ?? '';
       });
+      _updateStateFromFetch(stateVal);
     }
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final ap = context.read<AddressProvider>();
+    final enteredState = _selectedState ?? '';
+    if (!ap.isStateActive(enteredState)) {
+      _showNotAvailableDialog();
+      return;
+    }
     final ok = await ap.storeAddress(
       addressName: _nameCtrl.text.trim(),
       streetAddress: _streetCtrl.text.trim(),
       zipCode: _zipCtrl.text.trim(),
       city: _cityCtrl.text.trim(),
+      state: enteredState,
     );
     if (!mounted) return;
     if (ok) {
@@ -1306,7 +1390,9 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
         left: 20,
         right: 20,
         top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).padding.bottom +
+            24,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1439,6 +1525,17 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
                   children: [
                     Expanded(
                       child: _Field(
+                        ctrl: _cityCtrl,
+                        label: 'City',
+                        hint: 'Raleigh',
+                        icon: Icons.location_city_outlined,
+                        validator: (v) =>
+                            v == null || v.trim().isEmpty ? 'Required' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _Field(
                         ctrl: _zipCtrl,
                         label: 'ZIP Code',
                         hint: '90210',
@@ -1448,18 +1545,17 @@ class _AddAddressSheetState extends State<_AddAddressSheet> {
                             v == null || v.trim().isEmpty ? 'Required' : null,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _Field(
-                        ctrl: _cityCtrl,
-                        label: 'City',
-                        hint: 'Raleigh',
-                        icon: Icons.location_city_outlined,
-                        validator: (v) =>
-                            v == null || v.trim().isEmpty ? 'Required' : null,
-                      ),
-                    ),
                   ],
+                ),
+                const SizedBox(height: 14),
+                Consumer<AddressProvider>(
+                  builder: (context, ap, _) => _StateDropdownField(
+                    label: 'State',
+                    value: _selectedState,
+                    icon: Icons.map_outlined,
+                    items: ap.getActiveStatesList(),
+                    onChanged: (v) => setState(() => _selectedState = v),
+                  ),
                 ),
               ],
             ),
@@ -1654,6 +1750,84 @@ class _ErrorView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _StateDropdownField extends StatelessWidget {
+  final String label;
+  final String? value;
+  final IconData icon;
+  final List<Map<String, String>> items;
+  final ValueChanged<String?> onChanged;
+
+  const _StateDropdownField({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.items,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      isExpanded: true,
+      onChanged: onChanged,
+      style: const TextStyle(fontSize: 14, color: AppColor.darkGrey),
+      decoration: InputDecoration(
+        label: Text.rich(
+          TextSpan(
+            text: label,
+            children: const [
+              TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        prefixIcon: Icon(icon, size: 18, color: AppColor.grey),
+        labelStyle: const TextStyle(fontSize: 13, color: AppColor.grey),
+        filled: true,
+        fillColor: const Color(0xFFF8F8F8),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColor.lightGrey),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColor.lightGrey),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColor.authButton, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        ),
+      ),
+      items: items.map((s) {
+        final name = s['name'] ?? '';
+        final code = s['code'] ?? '';
+        return DropdownMenuItem<String>(
+          value: name,
+          child: Text(name.isNotEmpty ? name : code),
+        );
+      }).toList(),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
@@ -29,6 +30,12 @@ class AddressProvider extends ChangeNotifier {
   String _fetchError = '';
   String _saveError = '';
   String _deleteError = '';
+
+  List<String> _activeStates = [];
+  List<Map<String, String>> _states = [];
+
+  List<String> get activeStates => _activeStates;
+  List<Map<String, String>> get states => _states;
 
   String? _googleMapsApiKey;
   List<Predictions> _suggestions = [];
@@ -94,19 +101,101 @@ class AddressProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchGoogleMapsApiKey() async {
-    if (_googleMapsApiKey != null) return;
+  Future<void> fetchConfiguration() async {
     try {
-      _googleMapsApiKey = await _repository.getGoogleMapsApiKey();
-      debugPrint("AddressProvider: googleMapsApiKey fetched from repository = $_googleMapsApiKey");
-      if (_googleMapsApiKey == null || _googleMapsApiKey!.isEmpty) {
-        _googleMapsApiKey = "db-override-mock-key";
-        debugPrint("AddressProvider: key was empty, falling back to mock key: $_googleMapsApiKey");
+      final config = await _repository.getConfiguration();
+      if (config['status'] == true && config['data'] != null) {
+        final data = config['data'] as Map<String, dynamic>;
+        
+        // Parse active_states
+        final activeList = data['active_states'] as List<dynamic>? ?? [];
+        _activeStates = activeList.map((e) => e.toString().trim()).toList();
+        
+        // Parse states
+        final statesList = data['states'] as List<dynamic>? ?? [];
+        _states = statesList.map((e) {
+          final m = e as Map<String, dynamic>;
+          return {
+            'code': (m['code'] ?? '').toString().trim(),
+            'name': (m['name'] ?? '').toString().trim(),
+          };
+        }).toList();
+        
+        _googleMapsApiKey = data['google_maps_api_key'] ?? '';
+        debugPrint("AddressProvider: Configuration loaded. Active States: $_activeStates, States count: ${_states.length}");
+        notifyListeners();
       }
     } catch (e) {
-      debugPrint("AddressProvider: failed to fetch maps key from repository, falling back to mock key: $e");
-      _googleMapsApiKey = "db-override-mock-key";
+      debugPrint("AddressProvider: failed to fetch configuration: $e");
     }
+  }
+
+  Future<void> fetchGoogleMapsApiKey() async {
+    if (_googleMapsApiKey != null && _googleMapsApiKey!.isNotEmpty && _googleMapsApiKey != "db-override-mock-key") return;
+    await fetchConfiguration();
+    if (_googleMapsApiKey == null || _googleMapsApiKey!.isEmpty) {
+      _googleMapsApiKey = "db-override-mock-key";
+      debugPrint("AddressProvider: key was empty, falling back to mock key: $_googleMapsApiKey");
+    }
+  }
+
+  bool isStateActive(String enteredState) {
+    final trimmedInput = enteredState.trim().toLowerCase();
+    if (trimmedInput.isEmpty) return false;
+    if (_activeStates.isEmpty) {
+      // If config is not loaded or has no active states, let's fall back to California as active by default
+      return trimmedInput == 'california' || trimmedInput == 'ca';
+    }
+    
+    // Find the state by code or name
+    String? matchedName;
+    String? matchedCode;
+    for (var s in _states) {
+      final code = s['code']?.toLowerCase();
+      final name = s['name']?.toLowerCase();
+      if (trimmedInput == code || trimmedInput == name) {
+        matchedName = s['name'];
+        matchedCode = s['code'];
+        break;
+      }
+    }
+    
+    // Check if entered state or mapped details match any active state
+    for (var active in _activeStates) {
+      final activeLower = active.toLowerCase();
+      if (trimmedInput == activeLower) return true;
+      if (matchedName != null && matchedName.toLowerCase() == activeLower) return true;
+      if (matchedCode != null && matchedCode.toLowerCase() == activeLower) return true;
+    }
+    
+    return false;
+  }
+
+  List<Map<String, String>> getActiveStatesList() {
+    if (_activeStates.isEmpty) {
+      // Fallback if config is not fetched yet
+      return [
+        {'code': 'CA', 'name': 'California'}
+      ];
+    }
+    
+    final List<Map<String, String>> activeList = [];
+    for (var active in _activeStates) {
+      final activeLower = active.trim().toLowerCase();
+      Map<String, String>? matched;
+      for (var s in _states) {
+        if (s['code']?.toLowerCase() == activeLower || s['name']?.toLowerCase() == activeLower) {
+          matched = s;
+          break;
+        }
+      }
+      if (matched != null) {
+        activeList.add(matched);
+      } else {
+        activeList.add({'code': active, 'name': active});
+      }
+    }
+    return activeList;
   }
 
   Future<void> fetchSuggestions(String query) async {
@@ -136,7 +225,7 @@ class AddressProvider extends ChangeNotifier {
 
     try {
       final locationService = getIt<LocationService>();
-      final response = await locationService.getData(query, "", _googleMapsApiKey!);
+      final response = await locationService.getData(query, "country:us", _googleMapsApiKey!);
       _suggestions = response.predictions ?? [];
     } catch (e) {
       _suggestions = [];
@@ -241,6 +330,11 @@ class AddressProvider extends ChangeNotifier {
         desiredAccuracy: LocationAccuracy.high,
       );
       debugPrint("AddressProvider: position coordinates = ${position.latitude}, ${position.longitude}");
+      try {
+        debugPrint("AddressProvider: whole position details = ${jsonEncode(position.toJson())}");
+      } catch (e) {
+        debugPrint("AddressProvider: failed to serialize position to json: $e. toString = $position");
+      }
     } catch (e) {
       debugPrint("AddressProvider: failed to get current position: $e");
       rethrow;
@@ -249,6 +343,14 @@ class AddressProvider extends ChangeNotifier {
     try {
       debugPrint("AddressProvider: attempting native reverse geocoding...");
       final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      debugPrint("AddressProvider: whole native geocoding list length = ${placemarks.length}");
+      for (int i = 0; i < placemarks.length; i++) {
+        try {
+          debugPrint("AddressProvider: native geocoding placemark #$i = ${jsonEncode(placemarks[i].toJson())}");
+        } catch (e) {
+          debugPrint("AddressProvider: failed to serialize placemark #$i: $e. toString = ${placemarks[i]}");
+        }
+      }
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
         debugPrint("AddressProvider: native geocoding success: $place");
@@ -288,6 +390,11 @@ class AddressProvider extends ChangeNotifier {
       debugPrint("AddressProvider: calling reverse geocoding API URL: $url");
       final response = await getIt<Dio>().get(url);
       debugPrint("AddressProvider: geocoding response status code = ${response.statusCode}");
+      try {
+        debugPrint("AddressProvider: whole geocoding API response data = ${jsonEncode(response.data)}");
+      } catch (e) {
+        debugPrint("AddressProvider: failed to serialize geocoding API response: $e. toString = ${response.data}");
+      }
       if (response.data != null && response.data['results'] != null && response.data['results'].isNotEmpty) {
         final components = response.data['results'][0]['address_components'] as List<dynamic>? ?? [];
         final parsed = _parseAddressComponents(components);
@@ -344,6 +451,7 @@ class AddressProvider extends ChangeNotifier {
     required String streetAddress,
     required String zipCode,
     required String city,
+    required String state,
   }) async {
     _saveStatus = AddressSaveStatus.saving;
     _saveError = '';
@@ -355,6 +463,7 @@ class AddressProvider extends ChangeNotifier {
         streetAddress: streetAddress,
         zipCode: zipCode,
         city: city,
+        state: state,
       );
       await fetchAddresses();
       _selectedAddressId = _addresses.firstOrNull?.id;
@@ -382,6 +491,7 @@ class AddressProvider extends ChangeNotifier {
     required String streetAddress,
     required String zipCode,
     required String city,
+    required String state,
     required bool isDefault,
   }) async {
     _saveStatus = AddressSaveStatus.saving;
@@ -395,6 +505,7 @@ class AddressProvider extends ChangeNotifier {
         streetAddress: streetAddress,
         zipCode: zipCode,
         city: city,
+        state: state,
         isDefault: isDefault,
       );
       await fetchAddresses();

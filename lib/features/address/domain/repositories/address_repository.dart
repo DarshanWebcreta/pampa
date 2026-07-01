@@ -8,6 +8,7 @@ abstract class AddressRepository {
     required String streetAddress,
     required String zipCode,
     required String city,
+    required String state,
   });
 
   Future<AddressModel> updateAddress({
@@ -16,6 +17,7 @@ abstract class AddressRepository {
     required String streetAddress,
     required String zipCode,
     required String city,
+    required String state,
     required bool isDefault,
   });
 
@@ -24,4 +26,6 @@ abstract class AddressRepository {
   Future<void> deleteAddress(int id);
 
   Future<String> getGoogleMapsApiKey();
+
+  Future<Map<String, dynamic>> getConfiguration();
 }

@@ -43,6 +43,7 @@ class AddressRepositoryImpl implements AddressRepository {
     required String streetAddress,
     required String zipCode,
     required String city,
+    required String state,
   }) async {
     try {
       final raw = await _apiService.storeAddress({
@@ -50,6 +51,7 @@ class AddressRepositoryImpl implements AddressRepository {
         'street_address': streetAddress,
         'zip_code': zipCode,
         'city': city,
+        'state': state,
       });
 
       final result = _parseResponse(raw);
@@ -75,6 +77,7 @@ class AddressRepositoryImpl implements AddressRepository {
     required String streetAddress,
     required String zipCode,
     required String city,
+    required String state,
     required bool isDefault,
   }) async {
     try {
@@ -83,6 +86,7 @@ class AddressRepositoryImpl implements AddressRepository {
         'street_address': streetAddress,
         'zip_code': zipCode,
         'city': city,
+        'state': state,
         'is_default': isDefault ? 1 : 0,
       });
 
@@ -102,6 +106,7 @@ class AddressRepositoryImpl implements AddressRepository {
         streetAddress: streetAddress,
         zipCode: zipCode,
         city: city,
+        state: state,
         country: '',
         isDefault: isDefault,
       );
@@ -147,6 +152,18 @@ class AddressRepositoryImpl implements AddressRepository {
         return map['data']['google_maps_api_key'] ?? '';
       }
       throw Exception(map['message'] ?? 'Failed to load Google Maps API key.');
+    } on DioException catch (e) {
+      throw Exception(_extractServerMessage(e) ?? HandleExeption.handleError(e));
+    } on Exception {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getConfiguration() async {
+    try {
+      final response = await _apiService.getConfiguration();
+      return response as Map<String, dynamic>;
     } on DioException catch (e) {
       throw Exception(_extractServerMessage(e) ?? HandleExeption.handleError(e));
     } on Exception {
