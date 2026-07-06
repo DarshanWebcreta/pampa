@@ -470,7 +470,7 @@ class _DateGroupCard extends StatelessWidget {
             onTap: onToggle,
             borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
                   Container(
@@ -527,12 +527,12 @@ class _DateGroupCard extends StatelessWidget {
                 if (!isExpanded) ...[
                   // Collapsed view: list of titles
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Divider(height: 1, color: Colors.black.withValues(alpha: 0.06)),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         ...bookings.map((booking) => Padding(
                               padding: const EdgeInsets.only(bottom: 6),
                               child: Row(
@@ -564,7 +564,7 @@ class _DateGroupCard extends StatelessWidget {
                 ] else ...[
                   // Expanded view: list of full appointment details
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -574,8 +574,9 @@ class _DateGroupCard extends StatelessWidget {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: bookings.length,
+                          padding: EdgeInsets.zero,
                           separatorBuilder: (_, __) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.black.withValues(alpha: 0.06),
@@ -734,7 +735,7 @@ class _DetailedAppointmentRow extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: Wrap(
