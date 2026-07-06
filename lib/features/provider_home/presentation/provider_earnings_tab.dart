@@ -489,7 +489,7 @@ class _ServiceBreakdownCard extends StatelessWidget {
   final String Function(double) fmt;
 
   static const _dotColors = [
-    Color(0xFF5A1837),
+    Color(0xFF490335),
     Color(0xFF1A5A37),
     Color(0xFF1A3757),
     Color(0xFF571A5A),

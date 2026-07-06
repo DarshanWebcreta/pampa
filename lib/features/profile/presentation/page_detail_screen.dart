@@ -97,15 +97,15 @@ class _PageDetailScreenState extends State<PageDetailScreen> {
       color: #323232;
       padding: 20px;
       margin: 0;
-      background: #fdf8fa;
+      background: #F5E6ED;
     }
-    h1 { font-size: 20px; font-weight: 700; color: #5A1837; margin-top: 0; }
-    h2 { font-size: 16px; font-weight: 600; color: #5A1837; margin-top: 20px; }
+    h1 { font-size: 20px; font-weight: 700; color: #490335; margin-top: 0; }
+    h2 { font-size: 16px; font-weight: 600; color: #490335; margin-top: 20px; }
     h3 { font-size: 15px; font-weight: 600; }
     p  { margin: 8px 0; }
     ul, ol { padding-left: 20px; }
     li { margin-bottom: 4px; }
-    a  { color: #5A1837; }
+    a  { color: #490335; }
     strong { font-weight: 600; }
   </style>
 </head>
